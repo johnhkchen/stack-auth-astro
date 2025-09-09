@@ -8,6 +8,7 @@
  */
 
 import * as React from 'react';
+import type { User, Session, StackClientApp } from '@stackframe/stack';
 
 // TODO: Implement component re-exports in Sprint 004
 // For now, just provide the module structure with React namespace test
@@ -16,10 +17,49 @@ import * as React from 'react';
 export interface StackAuthComponentProps {
   children?: React.ReactNode;
   className?: string;
+  user?: User | null;
+  session?: Session | null;
 }
 
-// Placeholder type tests for React components
+// Advanced React component types for Stack Auth integration
+export interface StackProviderProps {
+  app: StackClientApp;
+  children: React.ReactNode;
+}
+
+// Test React.FC compatibility with Stack Auth types
+export type StackAuthFC<P = {}> = React.FC<P & StackAuthComponentProps>;
+
+// Test React component types
 export type ReactFC<P = {}> = React.FC<P>;
 export type ReactElement = React.ReactElement;
+export type ReactComponent<P = {}> = React.ComponentType<P>;
+
+// Test React hooks compatibility
+export type UseStackAuthHook = () => {
+  user: User | null;
+  session: Session | null;
+  isLoading: boolean;
+};
+
+// Test React context types
+export type StackAuthContextType = {
+  user: User | null;
+  session: Session | null;
+  app?: StackClientApp;
+};
+
+// Test React ref types for Stack Auth components
+export type StackAuthRef<T = HTMLElement> = React.Ref<T>;
+
+// Test React event types that Stack Auth components might use
+export type StackAuthEvent<T = Element> = React.SyntheticEvent<T>;
+export type StackAuthMouseEvent<T = Element> = React.MouseEvent<T>;
+export type StackAuthChangeEvent<T = Element> = React.ChangeEvent<T>;
+
+// Test forwardRef compatibility
+export interface ForwardRefStackComponentProps extends StackAuthComponentProps {
+  onClick?: (event: StackAuthMouseEvent) => void;
+}
 
 export default {};
