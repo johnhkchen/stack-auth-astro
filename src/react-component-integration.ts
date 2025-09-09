@@ -12,8 +12,7 @@ import * as React from 'react';
 import type { 
   User, 
   Session, 
-  StackClientApp,
-  ClientUserManager 
+  StackClientApp
 } from '@stackframe/stack';
 
 import type {
@@ -61,7 +60,7 @@ const UseStateIntegrationTest: React.FC = () => {
   return React.createElement('div', null, [
     React.createElement('h3', { key: 'title' }, 'useState Integration Test'),
     React.createElement('p', { key: 'loading' }, `Loading: ${isLoading}`),
-    React.createElement('p', { key: 'user' }, `User: ${user?.displayName || 'None'}`),
+    React.createElement('p', { key: 'user' }, `User: ${user?.display_name || 'None'}`),
     React.createElement('p', { key: 'session' }, `Session: ${session ? 'Active' : 'None'}`),
     error ? React.createElement('p', { key: 'error' }, `Error: ${error}`) : null
   ]);
@@ -76,10 +75,10 @@ const UseEffectIntegrationTest: React.FC<{ app: StackClientApp }> = ({ app }) =>
   React.useEffect(() => {
     const setupAuth = async () => {
       try {
-        const currentUser = app.userManager.currentUser;
+        const currentUser = await app.getUser();
         setUser(currentUser);
         
-        const currentSession = app.userManager.currentSession;
+        const currentSession = await app.getSession();
         setSession(currentSession);
       } catch (error) {
         console.error('Auth setup failed:', error);
@@ -101,7 +100,7 @@ const UseEffectIntegrationTest: React.FC<{ app: StackClientApp }> = ({ app }) =>
 
   return React.createElement('div', null, [
     React.createElement('h3', { key: 'title' }, 'useEffect Integration Test'),
-    React.createElement('p', { key: 'user' }, `User: ${user?.displayName || 'None'}`),
+    React.createElement('p', { key: 'user' }, `User: ${user?.display_name || 'None'}`),
     React.createElement('p', { key: 'session' }, `Session: ${session?.id || 'None'}`)
   ]);
 };
@@ -158,9 +157,9 @@ const UseMemoIntegrationTest: React.FC<{ user: User | null; session: Session | n
     if (!user) return { name: 'Anonymous', email: 'N/A', avatar: null };
     
     return {
-      name: user.displayName || user.primaryEmail || 'Unknown',
-      email: user.primaryEmail || 'No email',
-      avatar: user.profileImageUrl || null
+      name: user.display_name || user.primary_email || 'Unknown',
+      email: user.primary_email || 'No email',
+      avatar: user.profile_image_url || null
     };
   }, [user]);
 
@@ -250,10 +249,10 @@ const StackAuthContextProvider: React.FC<{
   React.useEffect(() => {
     const setupContext = async () => {
       try {
-        const currentUser = app.userManager.currentUser;
+        const currentUser = await app.getUser();
         setUser(currentUser);
         
-        const currentSession = app.userManager.currentSession;
+        const currentSession = await app.getSession();
         setSession(currentSession);
       } catch (error) {
         console.error('Context setup failed:', error);
@@ -287,7 +286,7 @@ const StackAuthContextConsumer: React.FC = () => {
 
   return React.createElement('div', null, [
     React.createElement('h3', { key: 'title' }, 'Context Consumer Test'),
-    React.createElement('p', { key: 'user' }, `Context User: ${user?.displayName || 'None'}`),
+    React.createElement('p', { key: 'user' }, `Context User: ${user?.display_name || 'None'}`),
     React.createElement('p', { key: 'session' }, `Context Session: ${session ? 'Active' : 'None'}`),
     React.createElement('p', { key: 'app' }, `Context App: ${app ? 'Available' : 'None'}`)
   ]);
@@ -307,7 +306,7 @@ const ReactFCTest: ReactFC<StackAuthComponentProps & { title: string }> = ({
 }) => {
   return React.createElement('div', { className }, [
     React.createElement('h3', { key: 'title' }, title),
-    React.createElement('p', { key: 'user' }, `User: ${user?.displayName || 'None'}`),
+    React.createElement('p', { key: 'user' }, `User: ${user?.display_name || 'None'}`),
     React.createElement('p', { key: 'session' }, `Session: ${session ? 'Active' : 'None'}`),
     children
   ]);
@@ -329,7 +328,7 @@ const StackAuthFCTest: StackAuthFC<{ title: string; onClick?: () => void }> = ({
 
   return React.createElement('div', { className, onClick: handleClick }, [
     React.createElement('h3', { key: 'title' }, title),
-    React.createElement('p', { key: 'user-info' }, user ? `Welcome ${user.displayName}` : 'Not authenticated'),
+    React.createElement('p', { key: 'user-info' }, user ? `Welcome ${user.display_name}` : 'Not authenticated'),
     children
   ]);
 };
@@ -352,7 +351,7 @@ const ForwardRefStackAuth = React.forwardRef<
     onClick: handleClick
   }, [
     React.createElement('h3', { key: 'title' }, title),
-    React.createElement('p', { key: 'user' }, `Ref User: ${user?.displayName || 'None'}`),
+    React.createElement('p', { key: 'user' }, `Ref User: ${user?.display_name || 'None'}`),
     React.createElement('p', { key: 'session' }, `Ref Session: ${session ? 'Active' : 'None'}`),
     children
   ]);
@@ -437,7 +436,7 @@ const BaseComponent: React.FC<StackAuthComponentProps & { message: string }> = (
 }) => {
   return React.createElement('div', null, [
     React.createElement('p', { key: 'message' }, message),
-    React.createElement('p', { key: 'user' }, `HOC User: ${user?.displayName || 'None'}`),
+    React.createElement('p', { key: 'user' }, `HOC User: ${user?.display_name || 'None'}`),
     React.createElement('p', { key: 'session' }, `HOC Session: ${session ? 'Active' : 'None'}`)
   ]);
 };
@@ -544,7 +543,7 @@ const ComprehensiveReactIntegrationTest: React.FC<ComprehensiveReactTestProps> =
       }, ({ user, session, isLoading, signIn, signOut }) =>
         React.createElement('div', null, [
           React.createElement('h4', { key: 'title' }, 'Render Props Test'),
-          React.createElement('p', { key: 'user' }, `Render Props User: ${user?.displayName || 'None'}`),
+          React.createElement('p', { key: 'user' }, `Render Props User: ${user?.display_name || 'None'}`),
           React.createElement('p', { key: 'loading' }, `Loading: ${isLoading}`),
           React.createElement('button', {
             key: 'signin',

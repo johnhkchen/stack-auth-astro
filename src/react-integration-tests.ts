@@ -14,18 +14,17 @@ import type {
   Session, 
   StackClientApp,
   StackServerApp,
-  ClientUserManager,
   Project
 } from '@stackframe/stack';
 
-// Import Stack Auth UI components for type testing
+// Import Stack Auth components for type testing (from main package, not UI)
 import type {
   SignIn as StackSignIn,
   SignUp as StackSignUp,
   UserButton as StackUserButton,
   AccountSettings as StackAccountSettings,
   StackProvider as StackStackProvider
-} from '@stackframe/stack-ui';
+} from '@stackframe/stack';
 
 // Import our local type definitions
 import type {
@@ -72,24 +71,20 @@ const TestStackClientIntegration: React.FC<TestStackClientAppProps> = ({
   user, 
   session 
 }) => {
-  // Test accessing Stack Auth client methods
+  // Test accessing Stack Auth client methods (methods are directly on app)
   const handleSignIn = async () => {
     // These should compile without errors if types are correct
-    const userManager: ClientUserManager = app.userManager;
-    await userManager.signInWithEmailAndPassword({
-      email: 'test@example.com',
-      password: 'password'
-    });
+    await app.signInWithCredential('test@example.com', 'password');
   };
 
   const handleSignOut = async () => {
-    await app.userManager.signOut();
+    await app.signOut();
   };
 
   // Test React component with real Stack Auth types
   return React.createElement('div', null, [
     React.createElement('h1', { key: 'title' }, 'Stack Auth Integration Test'),
-    user ? React.createElement('p', { key: 'user' }, `User: ${user.displayName || user.primaryEmail}`) : null,
+    user ? React.createElement('p', { key: 'user' }, `User: ${user.display_name || user.primary_email}`) : null,
     session ? React.createElement('p', { key: 'session' }, `Session ID: ${session.id}`) : null,
     React.createElement('button', { key: 'signin', onClick: handleSignIn }, 'Sign In'),
     React.createElement('button', { key: 'signout', onClick: handleSignOut }, 'Sign Out')
@@ -122,7 +117,7 @@ const StackUIIntegrationComponent: React.FC<StackUIIntegrationProps> = ({ app, u
   const userButtonElement = user ? React.createElement('div', {
     'data-component': 'UserButton',
     'data-user': user.id
-  }, `${user.displayName} button`) : null;
+  }, `${user.display_name} button`) : null;
 
   return React.createElement('div', { className: 'stack-ui-integration' }, [
     signInElement,
@@ -153,7 +148,7 @@ export type {
 
 // Test namespace imports
 import * as StackSDK from '@stackframe/stack';
-import * as StackUI from '@stackframe/stack-ui';
+import * as StackUI from '@stackframe/stack';
 
 // Verify namespace imports work correctly
 type NamespaceUser = StackSDK.User;
@@ -224,7 +219,7 @@ const ReactHooksIntegrationTest: React.FC = () => {
 
   // Test useMemo with Stack Auth types
   const userDisplayName = React.useMemo(() => {
-    return user?.displayName || user?.primaryEmail || 'Anonymous';
+    return user?.display_name || user?.primary_email || 'Anonymous';
   }, [user]);
 
   // Test useRef with Stack Auth component types
@@ -258,7 +253,7 @@ const StackAuthForwardRefComponent = React.forwardRef<
     
     // Test that we can access Stack Auth properties in event handlers
     if (user) {
-      console.log(`User ${user.displayName} clicked`);
+      console.log(`User ${user.display_name} clicked`);
     }
   }, [onClick, user]);
 
@@ -297,12 +292,12 @@ const StackAuthProvider: React.FC<StackAuthProviderProps> = ({ app, children }) 
   React.useEffect(() => {
     const setupAuth = async () => {
       try {
-        // Test that we can call Stack Auth SDK methods
-        const currentUser = app.userManager.currentUser;
+        // Test that we can call Stack Auth SDK methods (methods directly on app)
+        const currentUser = await app.getUser();
         setUser(currentUser);
         
         // Test session management
-        const currentSession = app.userManager.currentSession;
+        const currentSession = await app.getSession();
         setSession(currentSession);
       } catch (error) {
         console.error('Auth setup failed:', error);
@@ -373,13 +368,10 @@ const ComprehensiveIntegrationTest: React.FC<ComprehensiveTestProps> = ({
   const handleAuth = React.useCallback(async (action: 'signIn' | 'signOut') => {
     try {
       if (action === 'signIn') {
-        // Test Stack Auth SDK method calls
-        await initialApp.userManager.signInWithEmailAndPassword({
-          email: 'test@example.com',
-          password: 'password123'
-        });
+        // Test Stack Auth SDK method calls (methods directly on app)
+        await initialApp.signInWithCredential('test@example.com', 'password123');
       } else {
-        await initialApp.userManager.signOut();
+        await initialApp.signOut();
       }
     } catch (error) {
       console.error(`${action} failed:`, error);

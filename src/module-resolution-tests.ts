@@ -18,17 +18,16 @@ import {
   Session, 
   StackClientApp,
   StackServerApp,
-  ClientUserManager,
   Project
 } from '@stackframe/stack';
 
-// Test direct named imports from Stack Auth UI
+// Test direct named imports from Stack Auth components (from main package)
 import type {
   SignIn,
   SignUp,
   UserButton,
   AccountSettings
-} from '@stackframe/stack-ui';
+} from '@stackframe/stack';
 
 // Test direct named imports from our modules
 import {
@@ -54,7 +53,7 @@ import {
 // Test namespace imports
 import * as React from 'react';
 import * as StackAuth from '@stackframe/stack';
-import * as StackAuthUI from '@stackframe/stack-ui';
+import * as StackAuthUI from '@stackframe/stack';
 import * as StackTypes from './types';
 import * as StackComponents from './components';
 
@@ -166,8 +165,8 @@ declare module '@stackframe/stack' {
 // Test augmented types work
 const testAugmentedUser: User = {
   id: 'test',
-  primaryEmail: 'test@example.com',
-  displayName: 'Test User',
+  primary_email: 'test@example.com',
+  display_name: 'Test User',
   customProperty: 'augmented'
 } as User;
 
@@ -294,7 +293,7 @@ const ModuleResolutionTestComponent: React.FC<ModuleResolutionTestProps> = ({
     'data-resolver': resolverType
   }, [
     React.createElement('h3', { key: 'title' }, `Module Resolution: ${resolverType}`),
-    React.createElement('p', { key: 'user' }, `User: ${currentUser?.displayName || 'None'}`),
+    React.createElement('p', { key: 'user' }, `User: ${currentUser?.display_name || 'None'}`),
     React.createElement('p', { key: 'session' }, `Session: ${currentSession ? 'Active' : 'None'}`),
     React.createElement('button', {
       key: 'clear-user',

@@ -129,7 +129,7 @@ const React18CompatibilityTest: React.FC = () => {
   return React.createElement('div', null, [
     React.createElement('h3', { key: 'title' }, 'React 18 Compatibility Test'),
     React.createElement('p', { key: 'id' }, `Unique ID: ${userId}`),
-    React.createElement('p', { key: 'user' }, `User: ${deferredUser?.displayName || 'None'}`),
+    React.createElement('p', { key: 'user' }, `User: ${deferredUser?.display_name || 'None'}`),
     React.createElement('p', { key: 'pending' }, `Pending: ${isPending}`),
     React.createElement('p', { key: 'online' }, `Online: ${onlineStatus}`),
     React.createElement('button', {
@@ -155,7 +155,7 @@ const React19CompatibilityTest: React.FC = () => {
   return React.createElement('div', null, [
     React.createElement('h3', { key: 'title' }, 'React 19 Compatibility Test'),
     React.createElement('p', { key: 'use' }, `Has React.use: ${hasReactUse}`),
-    React.createElement('p', { key: 'user' }, `User: ${user?.displayName || 'None'}`),
+    React.createElement('p', { key: 'user' }, `User: ${user?.display_name || 'None'}`),
     React.createElement('p', { key: 'loading' }, `Loading: ${loading}`)
   ]);
 };
@@ -209,9 +209,9 @@ interface StackAuthEventMap {
 }
 
 const eventHandlers = {
-  signin: (user: User) => console.log('Signed in:', user.displayName),
+  signin: (user: User) => console.log('Signed in:', user.display_name),
   signout: () => console.log('Signed out'),
-  userUpdate: (user: User | null) => console.log('User updated:', user?.displayName)
+  userUpdate: (user: User | null) => console.log('User updated:', user?.display_name)
 } satisfies StackAuthEventMap;
 
 // Test TypeScript 5.0+ features (const type parameters)
@@ -238,11 +238,11 @@ const StackAuthVersionCompatibilityTest: React.FC<{ app: StackClientApp }> = ({ 
   React.useEffect(() => {
     // Test Stack Auth SDK version compatibility
     const testVersionCompat = () => {
-      const hasUserManager = !!app.userManager;
-      const hasClientUserManager = app.userManager instanceof Object;
+      const hasUserManager = typeof app.getUser === 'function';
+      const hasClientUserManager = typeof app.signInWithCredential === 'function';
       
       // Test if email/password auth is available
-      const supportsEmailPassword = typeof app.userManager?.signInWithEmailAndPassword === 'function';
+      const supportsEmailPassword = typeof app.signInWithCredential === 'function';
       
       setVersionInfo({
         hasUserManager,
