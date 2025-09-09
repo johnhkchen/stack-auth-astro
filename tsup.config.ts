@@ -6,7 +6,8 @@ export default defineConfig({
     index: 'src/index.ts',
     server: 'src/server.ts', 
     client: 'src/client.ts',
-    components: 'src/components.ts'
+    components: 'src/components.ts',
+    middleware: 'src/middleware.ts'
   },
   format: ['cjs', 'esm'],
   dts: true,

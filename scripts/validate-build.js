@@ -24,7 +24,8 @@ const EXPECTED_ENTRY_POINTS = [
   'index',
   'server', 
   'client',
-  'components'
+  'components',
+  'middleware'
 ];
 
 // Expected file formats

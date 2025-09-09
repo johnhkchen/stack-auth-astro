@@ -24,7 +24,8 @@ const ENTRY_POINTS = [
   'index',
   'server', 
   'client',
-  'components'
+  'components',
+  'middleware'
 ];
 
 let errors = [];
@@ -176,6 +177,18 @@ function testModuleFunctionality() {
     // In Sprint 001, components module should at least have a default export
     if (!module.default) {
       throw new Error('Components module missing default export');
+    }
+  });
+
+  // Test middleware module 
+  smokeTest('Middleware module has valid exports', () => {
+    const modulePath = path.join(DIST_DIR, 'middleware.js');
+    delete require.cache[path.resolve(modulePath)];
+    const module = require(modulePath);
+    
+    // In Sprint 001, middleware module should at least have a default export
+    if (!module.default) {
+      throw new Error('Middleware module missing default export');
     }
   });
   
