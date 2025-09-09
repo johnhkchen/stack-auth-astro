@@ -190,13 +190,13 @@ const ES2018CompatibilityTest: React.FC = () => {
 // ES2020 compatibility test
 const ES2020CompatibilityTest: React.FC = () => {
   // Use features available in ES2020
-  const user: User | null = null;
+  const testUser: User | null = null;
   
-  // Optional chaining (ES2020)
-  const userName = user?.displayName ?? 'Anonymous';
+  // Optional chaining (ES2020) - Type assertion to help TypeScript
+  const userName = (testUser as User | null)?.displayName ?? 'Anonymous';
   
-  // Nullish coalescing (ES2020)
-  const email = user?.primaryEmail ?? 'no-email@example.com';
+  // Nullish coalescing (ES2020) - Type assertion to help TypeScript  
+  const email = (testUser as User | null)?.primaryEmail ?? 'no-email@example.com';
   
   // BigInt support (ES2020)
   const bigNumber = BigInt(123456789);

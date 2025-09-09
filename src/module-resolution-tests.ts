@@ -151,24 +151,34 @@ const testDynamicImports = async () => {
 // 7. MODULE AUGMENTATION TEST
 // =============================================================================
 
-// Test module augmentation compatibility
-declare module '@stackframe/stack' {
-  interface User {
-    customProperty?: string;
-  }
-  
-  interface Session {
-    customSessionProperty?: number;
-  }
+// Note: Module augmentation doesn't work with type aliases (User = BaseUser)
+// Stack Auth exports types, not interfaces, so we can't use declare module augmentation
+// Instead, we create extended interfaces if needed
+interface ExtendedUser extends User {
+  customProperty?: string;
+}
+
+interface ExtendedSession extends Session {
+  customSessionProperty?: number;
 }
 
 // Test augmented types work
-const testAugmentedUser: User = {
+const testExtendedUser: ExtendedUser = {
   id: 'test',
-  primary_email: 'test@example.com',
-  display_name: 'Test User',
-  customProperty: 'augmented'
-} as User;
+  primaryEmail: 'test@example.com',
+  displayName: 'Test User',
+  primaryEmailVerified: true,
+  profileImageUrl: null,
+  signedUpAt: new Date(),
+  clientMetadata: null,
+  clientReadOnlyMetadata: null,
+  hasPassword: true,
+  otpAuthEnabled: false,
+  passkeyAuthEnabled: false,
+  isMultiFactorRequired: false,
+  oauthProviders: [],
+  customProperty: 'extended'
+};
 
 // =============================================================================
 // 8. PATH MAPPING COMPATIBILITY
@@ -293,7 +303,7 @@ const ModuleResolutionTestComponent: React.FC<ModuleResolutionTestProps> = ({
     'data-resolver': resolverType
   }, [
     React.createElement('h3', { key: 'title' }, `Module Resolution: ${resolverType}`),
-    React.createElement('p', { key: 'user' }, `User: ${currentUser?.display_name || 'None'}`),
+    React.createElement('p', { key: 'user' }, `User: ${currentUser?.displayName || 'None'}`),
     React.createElement('p', { key: 'session' }, `Session: ${currentSession ? 'Active' : 'None'}`),
     React.createElement('button', {
       key: 'clear-user',

@@ -74,18 +74,21 @@ const TestStackClientIntegration: React.FC<TestStackClientAppProps> = ({
   // Test accessing Stack Auth client methods (methods are directly on app)
   const handleSignIn = async () => {
     // These should compile without errors if types are correct
-    await app.signInWithCredential('test@example.com', 'password');
+    await app.signInWithCredential({ email: 'test@example.com', password: 'password' });
   };
 
   const handleSignOut = async () => {
-    await app.signOut();
+    const currentUser = await app.getUser();
+    if (currentUser) {
+      await currentUser.signOut();
+    }
   };
 
   // Test React component with real Stack Auth types
   return React.createElement('div', null, [
     React.createElement('h1', { key: 'title' }, 'Stack Auth Integration Test'),
-    user ? React.createElement('p', { key: 'user' }, `User: ${user.display_name || user.primary_email}`) : null,
-    session ? React.createElement('p', { key: 'session' }, `Session ID: ${session.id}`) : null,
+    user ? React.createElement('p', { key: 'user' }, `User: ${user.displayName || user.primaryEmail}`) : null,
+    session ? React.createElement('p', { key: 'session' }, `Session: Active`) : null,
     React.createElement('button', { key: 'signin', onClick: handleSignIn }, 'Sign In'),
     React.createElement('button', { key: 'signout', onClick: handleSignOut }, 'Sign Out')
   ]);
@@ -117,7 +120,7 @@ const StackUIIntegrationComponent: React.FC<StackUIIntegrationProps> = ({ app, u
   const userButtonElement = user ? React.createElement('div', {
     'data-component': 'UserButton',
     'data-user': user.id
-  }, `${user.display_name} button`) : null;
+  }, `${user.displayName} button`) : null;
 
   return React.createElement('div', { className: 'stack-ui-integration' }, [
     signInElement,
@@ -171,7 +174,7 @@ const MixedImportComponent: React.FC<{
   // Test that both import styles work interchangeably
   const userId1 = directUser.id;
   const userId2 = namespaceUser.id;
-  const sessionId = session?.id;
+  const sessionId = session ? 'active' : null;
 
   return React.createElement('div', null, [
     React.createElement('p', { key: 'user1' }, `Direct import user: ${userId1}`),
@@ -219,7 +222,7 @@ const ReactHooksIntegrationTest: React.FC = () => {
 
   // Test useMemo with Stack Auth types
   const userDisplayName = React.useMemo(() => {
-    return user?.display_name || user?.primary_email || 'Anonymous';
+    return user?.displayName || user?.primaryEmail || 'Anonymous';
   }, [user]);
 
   // Test useRef with Stack Auth component types
@@ -253,7 +256,7 @@ const StackAuthForwardRefComponent = React.forwardRef<
     
     // Test that we can access Stack Auth properties in event handlers
     if (user) {
-      console.log(`User ${user.display_name} clicked`);
+      console.log(`User ${user.displayName} clicked`);
     }
   }, [onClick, user]);
 
@@ -296,8 +299,8 @@ const StackAuthProvider: React.FC<StackAuthProviderProps> = ({ app, children }) 
         const currentUser = await app.getUser();
         setUser(currentUser);
         
-        // Test session management
-        const currentSession = await app.getSession();
+        // Test session management - session is available through user's Auth interface
+        const currentSession = currentUser?.currentSession || null;
         setSession(currentSession);
       } catch (error) {
         console.error('Auth setup failed:', error);
@@ -369,9 +372,12 @@ const ComprehensiveIntegrationTest: React.FC<ComprehensiveTestProps> = ({
     try {
       if (action === 'signIn') {
         // Test Stack Auth SDK method calls (methods directly on app)
-        await initialApp.signInWithCredential('test@example.com', 'password123');
+        await initialApp.signInWithCredential({ email: 'test@example.com', password: 'password123' });
       } else {
-        await initialApp.signOut();
+        const currentUser = await initialApp.getUser();
+        if (currentUser) {
+          await currentUser.signOut();
+        }
       }
     } catch (error) {
       console.error(`${action} failed:`, error);
