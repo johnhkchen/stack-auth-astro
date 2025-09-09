@@ -45,7 +45,10 @@
     "type:check-strict": "tsc --noEmit --project test-configs/tsconfig.strict.json",
     "type:check-loose": "tsc --noEmit --project test-configs/tsconfig.loose.json",
     "type:integration": "npm run type:check-all && npm run build",
-    "test:types": "npm run type:integration"
+    "test:types": "npm run type:integration",
+    "stack:validate": "npm list @stackframe/stack @stackframe/stack-ui",
+    "stack:reinstall": "npm uninstall @stackframe/stack @stackframe/stack-ui && npm install @stackframe/stack @stackframe/stack-ui",
+    "postinstall": "npm run stack:validate"
   },
   "keywords": [
     "astro",
