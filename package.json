@@ -1,0 +1,11 @@
+{
+  "devDependencies": {
+    "markdown-doctest": "^1.1.0"
+  },
+  "scripts": {
+    "docs:test": "markdown-doctest spec/features/*.md",
+    "docs:test:watch": "markdown-doctest --watch spec/features/*.md",
+    "sprints:test": "markdown-doctest sprints/**/*.md",
+    "test:all": "npm run docs:test && npm run sprints:test"
+  }
+}
