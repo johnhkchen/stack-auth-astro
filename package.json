@@ -1,11 +1,67 @@
 {
-  "devDependencies": {
-    "markdown-doctest": "^1.1.0"
+  "name": "astro-stack-auth",
+  "version": "0.1.0",
+  "description": "Stack Auth integration for Astro",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts", 
+      "import": "./dist/server.mjs",
+      "require": "./dist/server.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.mjs", 
+      "require": "./dist/client.js"
+    },
+    "./components": {
+      "types": "./dist/components.d.ts",
+      "import": "./dist/components.mjs",
+      "require": "./dist/components.js"
+    }
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
     "docs:test": "markdown-doctest spec/features/*.md",
     "docs:test:watch": "markdown-doctest --watch spec/features/*.md",
     "sprints:test": "markdown-doctest sprints/**/*.md",
     "test:all": "npm run docs:test && npm run sprints:test"
+  },
+  "keywords": [
+    "astro",
+    "authentication",
+    "stack-auth",
+    "integration"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "@stackframe/stack": "^2.8.36",
+    "@stackframe/stack-ui": "^2.8.36"
+  },
+  "peerDependencies": {
+    "astro": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "astro": "^5.13.7",
+    "markdown-doctest": "^1.1.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
   }
 }
