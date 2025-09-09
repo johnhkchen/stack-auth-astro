@@ -1,12 +1,14 @@
-/**
- * TypeScript definitions for astro-stack-auth
- */
-
 import type { User, Session } from '@stackframe/stack';
 
-/**
- * Stack Auth configuration options
- */
+export interface StackAuthOptions {
+  projectId?: string;
+  publishableClientKey?: string;
+  secretServerKey?: string;
+  prefix?: string;
+  injectRoutes?: boolean;
+  addReactRenderer?: boolean;
+}
+
 export interface StackAuthConfig {
   projectId: string;
   publishableClientKey: string;
@@ -15,40 +17,23 @@ export interface StackAuthConfig {
   prefix?: string;
 }
 
-/**
- * Options for requireAuth function
- */
 export interface RequireAuthOptions {
+  signInUrl?: string;
   redirectTo?: string;
   throwOnUnauthenticated?: boolean;
 }
 
-/**
- * Sign in options
- */
 export interface SignInOptions {
-  provider?: string;
   redirectTo?: string;
-  email?: string;
+  provider?: string;
 }
 
-/**
- * Sign out options
- */
 export interface SignOutOptions {
   redirectTo?: string;
+  clearLocalStorage?: boolean;
+  onSuccess?: () => void;
+  onError?: (error: Error) => void;
 }
 
-/**
- * Extend Astro's locals with Stack Auth user and session
- */
-declare global {
-  namespace App {
-    interface Locals {
-      user: User | null;
-      session: Session | null;
-    }
-  }
-}
-
-export {};
+// Re-export Stack Auth types for convenience
+export type { User, Session };
