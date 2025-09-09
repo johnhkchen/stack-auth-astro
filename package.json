@@ -39,7 +39,13 @@
     "docs:test": "markdown-doctest spec/features/*.md",
     "docs:test:watch": "markdown-doctest --watch spec/features/*.md",
     "sprints:test": "markdown-doctest sprints/**/*.md",
-    "test:all": "npm run docs:test && npm run sprints:test"
+    "test:all": "npm run docs:test && npm run sprints:test",
+    "type:check": "tsc --noEmit",
+    "type:check-all": "node scripts/type-check-all-configs.js",
+    "type:check-strict": "tsc --noEmit --project test-configs/tsconfig.strict.json",
+    "type:check-loose": "tsc --noEmit --project test-configs/tsconfig.loose.json",
+    "type:integration": "npm run type:check-all && npm run build",
+    "test:types": "npm run type:integration"
   },
   "keywords": [
     "astro",
