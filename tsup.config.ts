@@ -8,7 +8,8 @@ export default defineConfig({
     'src/components.ts',
     'src/middleware.ts',
     'src/config.ts',
-    'src/types.ts'
+    'src/types.ts',
+    'src/minimal-integration-test.ts'
   ],
   format: ['cjs', 'esm'],
   dts: true,
