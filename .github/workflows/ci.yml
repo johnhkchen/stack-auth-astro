@@ -1,0 +1,132 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run type checking
+      run: npm run type:check-all
+      
+    - name: Run specification tests
+      run: npm run docs:test
+      
+    - name: Run sprint tests  
+      run: npm run sprints:test
+      
+    - name: Run unit tests
+      run: npm test
+      
+  build-validation:
+    name: Build Validation
+    runs-on: ubuntu-latest
+    needs: test
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Clean build
+      run: npm run build:clean
+      
+    - name: Build project
+      run: npm run build
+      
+    - name: Validate build outputs
+      run: npm run build:validate
+      
+    - name: Validate TypeScript declarations
+      run: npm run build:validate:types
+      
+    - name: Run smoke tests
+      run: npm run build:smoke
+      
+    - name: Archive build artifacts
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: build-outputs-${{ matrix.node-version }}
+        path: |
+          dist/
+          *.log
+        retention-days: 7
+        
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest  
+    needs: build-validation
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Full build and validation test
+      run: npm run build:test
+      
+    - name: Test package can be installed
+      run: |
+        # Create a test project and try to install our package
+        mkdir test-install
+        cd test-install
+        npm init -y
+        npm install ../
+        node -e "console.log('Package installed successfully')"
+        
+    - name: Archive test artifacts
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: integration-test-artifacts-${{ matrix.node-version }}
+        path: |
+          test-install/
+          *.log
+        retention-days: 7

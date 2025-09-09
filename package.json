@@ -46,6 +46,12 @@
     "type:check-loose": "tsc --noEmit --project test-configs/tsconfig.loose.json",
     "type:integration": "npm run type:check-all && npm run build",
     "test:types": "npm run type:integration",
+    "build:validate": "node scripts/validate-build.js",
+    "build:validate:types": "node scripts/validate-types.js",
+    "build:smoke": "node scripts/smoke-test.js",
+    "build:test": "npm run build && npm run build:validate && npm run build:validate:types && npm run build:smoke",
+    "build:clean": "rm -rf dist",
+    "prebuild": "npm run build:clean",
     "stack:validate": "npm list @stackframe/stack @stackframe/stack-ui",
     "stack:reinstall": "npm uninstall @stackframe/stack @stackframe/stack-ui && npm install @stackframe/stack @stackframe/stack-ui",
     "postinstall": "npm run stack:validate"
