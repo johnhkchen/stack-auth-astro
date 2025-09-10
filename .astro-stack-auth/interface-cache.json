@@ -1,0 +1,12 @@
+{
+  "timestamp": "2025-09-10T20:37:54.352Z",
+  "sdkVersion": "2.8.36",
+  "interfaces": {
+    "SignIn": {},
+    "SignUp": {},
+    "UserButton": {},
+    "AccountSettings": {},
+    "StackProvider": {}
+  },
+  "generatedBy": "astro-stack-auth-interface-change-detector"
+}

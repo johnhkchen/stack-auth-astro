@@ -1,12 +1,16 @@
 # SignUp Component
 
 > 📝 **Static Type Specification**: Active  
-> ⚠️ **Dynamic Extraction**: Failed - TypeScript compilation or type extraction failed  
-> 🕒 **Last Attempted**: 9/10/2025, 1:28:50 PM
+> ⚠️ **Dynamic Extraction**: Failed - Extracted types failed validation  
+> 🕒 **Last Attempted**: 9/10/2025, 1:37:54 PM
 
 *Using static type specifications. Install @stackframe/stack-ui for automatic synchronization.*
 
+> ✅ **Interface Change Detection**: No changes detected  
+> 📊 **Version**: 2.8.36 → 2.8.36  
+> 🕒 **Last Checked**: 9/10/2025, 1:37:54 PM
 
+*No interface changes detected since last update.*
 
 ## Overview
 
