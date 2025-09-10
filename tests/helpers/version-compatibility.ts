@@ -9,6 +9,46 @@ import { readFile } from 'fs/promises';
 import { join } from 'path';
 
 /**
+ * Simple caching for version compatibility checks
+ */
+class VersionCache<T> {
+  private cache = new Map<string, { value: T; timestamp: number }>();
+  private ttl: number = 10 * 60 * 1000; // 10 minutes cache for version info
+
+  get(key: string): T | undefined {
+    const item = this.cache.get(key);
+    if (!item) return undefined;
+    
+    if (Date.now() - item.timestamp > this.ttl) {
+      this.cache.delete(key);
+      return undefined;
+    }
+    
+    return item.value;
+  }
+
+  set(key: string, value: T): void {
+    this.cache.set(key, { value, timestamp: Date.now() });
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+}
+
+// Global version compatibility caches
+const stackVersionCache = new VersionCache<string | null>();
+const compatibilityCache = new VersionCache<any>();
+
+/**
+ * Clear version compatibility caches
+ */
+export function clearVersionCaches(): void {
+  stackVersionCache.clear();
+  compatibilityCache.clear();
+}
+
+/**
  * Supported Stack Auth SDK version ranges for compatibility testing
  */
 export const SUPPORTED_STACK_VERSIONS = {
@@ -108,9 +148,16 @@ export const SERVER_API_COMPATIBILITY = {
 } as const;
 
 /**
- * Get the currently installed Stack Auth version
+ * Get the currently installed Stack Auth version (cached)
  */
 export async function getCurrentStackVersion(): Promise<string | null> {
+  const cacheKey = 'current-stack-version';
+  const cached = stackVersionCache.get(cacheKey);
+  
+  if (cached !== undefined) {
+    return cached;
+  }
+
   try {
     const packageJsonPath = join(process.cwd(), 'package.json');
     const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf-8'));
@@ -120,15 +167,19 @@ export async function getCurrentStackVersion(): Promise<string | null> {
       packageJson.dependencies?.['@stackframe/stack'] ||
       packageJson.devDependencies?.['@stackframe/stack'];
     
+    let result: string | null = null;
     if (stackVersion) {
       // Remove version prefix characters (^, ~, etc.)
-      return stackVersion.replace(/^[\^~>=<]/, '');
+      result = stackVersion.replace(/^[\^~>=<]/, '');
     }
     
-    return null;
+    stackVersionCache.set(cacheKey, result);
+    return result;
   } catch (error) {
     console.warn('Could not determine Stack Auth version:', error);
-    return null;
+    const result = null;
+    stackVersionCache.set(cacheKey, result);
+    return result;
   }
 }
 
@@ -244,6 +295,14 @@ export async function validateVersionCompatibility(
     deprecated: number;
   };
 }> {
+  // Create a cache key based on the imports to cache entire validation results
+  const cacheKey = `version-compatibility:${JSON.stringify(imports)}`;
+  const cached = compatibilityCache.get(cacheKey);
+  
+  if (cached) {
+    return cached;
+  }
+
   const currentVersion = await getCurrentStackVersion();
   const compatibilityIssues: Array<{
     line: number;
@@ -337,7 +396,7 @@ export async function validateVersionCompatibility(
     }
   }
 
-  return {
+  const result = {
     currentVersion,
     compatibilityIssues,
     summary: {
@@ -347,6 +406,9 @@ export async function validateVersionCompatibility(
       deprecated
     }
   };
+
+  compatibilityCache.set(cacheKey, result);
+  return result;
 }
 
 /**
@@ -358,25 +420,36 @@ export async function checkMinimumVersionRequirement(): Promise<{
   minimum: string;
   recommendation?: string;
 }> {
+  const cacheKey = 'minimum-version-check';
+  const cached = compatibilityCache.get(cacheKey);
+  
+  if (cached) {
+    return cached;
+  }
+
   const currentVersion = await getCurrentStackVersion();
   
+  let result;
   if (!currentVersion) {
-    return {
+    result = {
       meets: false,
       current: null,
       minimum: SUPPORTED_STACK_VERSIONS.minimum,
       recommendation: 'Install Stack Auth SDK: npm install @stackframe/stack @stackframe/stack-ui'
     };
+  } else {
+    const meets = compareVersions(currentVersion, SUPPORTED_STACK_VERSIONS.minimum) >= 0;
+    
+    result = {
+      meets,
+      current: currentVersion,
+      minimum: SUPPORTED_STACK_VERSIONS.minimum,
+      recommendation: meets ? undefined : `Upgrade to Stack Auth ${SUPPORTED_STACK_VERSIONS.minimum} or later`
+    };
   }
-  
-  const meets = compareVersions(currentVersion, SUPPORTED_STACK_VERSIONS.minimum) >= 0;
-  
-  return {
-    meets,
-    current: currentVersion,
-    minimum: SUPPORTED_STACK_VERSIONS.minimum,
-    recommendation: meets ? undefined : `Upgrade to Stack Auth ${SUPPORTED_STACK_VERSIONS.minimum} or later`
-  };
+
+  compatibilityCache.set(cacheKey, result);
+  return result;
 }
 
 /**

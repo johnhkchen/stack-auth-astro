@@ -31,75 +31,324 @@ import {
 } from './version-compatibility.js';
 
 /**
+ * Performance monitoring and caching utilities
+ */
+interface ValidationCache<T> {
+  get(key: string): T | undefined;
+  set(key: string, value: T): void;
+  clear(): void;
+  size: number;
+}
+
+class LRUCache<T> implements ValidationCache<T> {
+  private cache = new Map<string, { value: T; timestamp: number }>();
+  private maxSize: number;
+  private ttl: number; // time-to-live in ms
+
+  constructor(maxSize: number = 100, ttl: number = 5 * 60 * 1000) { // 5 minutes default
+    this.maxSize = maxSize;
+    this.ttl = ttl;
+  }
+
+  get(key: string): T | undefined {
+    const item = this.cache.get(key);
+    if (!item) return undefined;
+    
+    // Check if expired
+    if (Date.now() - item.timestamp > this.ttl) {
+      this.cache.delete(key);
+      return undefined;
+    }
+    
+    // Move to end (most recently used)
+    this.cache.delete(key);
+    this.cache.set(key, item);
+    return item.value;
+  }
+
+  set(key: string, value: T): void {
+    // Remove oldest if at capacity
+    if (this.cache.size >= this.maxSize) {
+      const firstKey = this.cache.keys().next().value;
+      this.cache.delete(firstKey);
+    }
+    
+    this.cache.set(key, { value, timestamp: Date.now() });
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+
+  get size(): number {
+    return this.cache.size;
+  }
+}
+
+/**
+ * Performance measurement utility
+ */
+interface PerformanceMetrics {
+  operation: string;
+  duration: number;
+  cacheHit: boolean;
+  timestamp: number;
+}
+
+class PerformanceTracker {
+  private metrics: PerformanceMetrics[] = [];
+  private enabled: boolean;
+
+  constructor(enabled: boolean = process.env.STACK_AUTH_PERF_DEBUG === 'true' || process.env.NODE_ENV === 'test') {
+    this.enabled = enabled;
+  }
+
+  time<T>(operation: string, fn: () => T | Promise<T>, cacheHit: boolean = false): T | Promise<T> {
+    if (!this.enabled) {
+      return fn();
+    }
+
+    const start = performance.now();
+    const result = fn();
+
+    if (result instanceof Promise) {
+      return result.then(
+        (value) => {
+          this.recordMetric(operation, performance.now() - start, cacheHit);
+          return value;
+        },
+        (error) => {
+          this.recordMetric(operation, performance.now() - start, cacheHit);
+          throw error;
+        }
+      );
+    } else {
+      this.recordMetric(operation, performance.now() - start, cacheHit);
+      return result;
+    }
+  }
+
+  private recordMetric(operation: string, duration: number, cacheHit: boolean): void {
+    this.metrics.push({
+      operation,
+      duration,
+      cacheHit,
+      timestamp: Date.now()
+    });
+
+    // Keep only last 1000 metrics
+    if (this.metrics.length > 1000) {
+      this.metrics = this.metrics.slice(-1000);
+    }
+  }
+
+  getMetrics(): PerformanceMetrics[] {
+    return [...this.metrics];
+  }
+
+  generateReport(): {
+    totalOperations: number;
+    totalDuration: number;
+    cacheHitRate: number;
+    operationStats: Record<string, {
+      count: number;
+      totalDuration: number;
+      avgDuration: number;
+      cacheHits: number;
+      cacheHitRate: number;
+    }>;
+  } {
+    const stats: Record<string, {
+      count: number;
+      totalDuration: number;
+      avgDuration: number;
+      cacheHits: number;
+      cacheHitRate: number;
+    }> = {};
+
+    let totalCacheHits = 0;
+
+    for (const metric of this.metrics) {
+      if (!stats[metric.operation]) {
+        stats[metric.operation] = {
+          count: 0,
+          totalDuration: 0,
+          avgDuration: 0,
+          cacheHits: 0,
+          cacheHitRate: 0
+        };
+      }
+
+      const stat = stats[metric.operation];
+      stat.count++;
+      stat.totalDuration += metric.duration;
+      if (metric.cacheHit) {
+        stat.cacheHits++;
+        totalCacheHits++;
+      }
+    }
+
+    // Calculate averages and rates
+    for (const stat of Object.values(stats)) {
+      stat.avgDuration = stat.count > 0 ? stat.totalDuration / stat.count : 0;
+      stat.cacheHitRate = stat.count > 0 ? stat.cacheHits / stat.count : 0;
+    }
+
+    return {
+      totalOperations: this.metrics.length,
+      totalDuration: this.metrics.reduce((sum, m) => sum + m.duration, 0),
+      cacheHitRate: this.metrics.length > 0 ? totalCacheHits / this.metrics.length : 0,
+      operationStats: stats
+    };
+  }
+
+  clear(): void {
+    this.metrics = [];
+  }
+}
+
+// Global caches and performance tracker
+const moduleValidationCache = new LRUCache<{ isValid: boolean; error?: string }>();
+const componentValidationCache = new LRUCache<{ isValid: boolean; error?: string; componentType?: string }>();
+const moduleExportsCache = new LRUCache<any>();
+const dynamicImportCache = new LRUCache<any>();
+const perfTracker = new PerformanceTracker();
+
+/**
+ * Clear all validation caches (useful for development scenarios)
+ */
+export function clearValidationCaches(): void {
+  moduleValidationCache.clear();
+  componentValidationCache.clear();
+  moduleExportsCache.clear();
+  dynamicImportCache.clear();
+  perfTracker.clear();
+}
+
+/**
+ * Get validation performance metrics
+ */
+export function getValidationMetrics() {
+  return perfTracker.generateReport();
+}
+
+/**
+ * Memoized version of importWithBuildFallback for performance
+ */
+async function memoizedImportWithBuildFallback(exportName: string): Promise<any> {
+  const cacheKey = `import:${exportName}`;
+  const cached = dynamicImportCache.get(cacheKey);
+  
+  if (cached) {
+    return perfTracker.time(`importWithBuildFallback:${exportName}`, () => cached, true);
+  }
+
+  return perfTracker.time(`importWithBuildFallback:${exportName}`, async () => {
+    const result = await importWithBuildFallback(exportName);
+    dynamicImportCache.set(cacheKey, result);
+    return result;
+  }, false);
+}
+
+/**
  * Validates that a module path and export name combination is valid
  */
 export async function validateRuntimeExport(
   modulePath: string,
   exportName: string
 ): Promise<{ isValid: boolean; error?: string }> {
-  try {
-    // Check against mock exports first
-    if (!isValidExport(modulePath, exportName)) {
-      return {
-        isValid: false,
-        error: `Export '${exportName}' is not expected in module '${modulePath}'`
-      };
-    }
-
-    // Try to import the actual module with enhanced error handling
-    if (modulePath.startsWith('astro-stack-auth/')) {
-      const exportName = modulePath.replace('astro-stack-auth/', '');
-      const importResult = await importWithBuildFallback(exportName);
-      
-      if (importResult.success) {
-        const module = importResult.module;
-        if (!(exportName in module)) {
-          return {
-            isValid: false,
-            error: `Export '${exportName}' does not exist in actual module '${modulePath}' (source: ${importResult.source})`
-          };
-        }
-        return { isValid: true };
-      } else if (isTestEnvironment()) {
-        // In test environment, it's ok if modules aren't built yet
-        console.warn(`Could not import actual module ${modulePath} (${importResult.error}), using mock validation only`);
-        return { isValid: true };
-      } else {
-        return {
-          isValid: false,
-          error: `Failed to import module '${modulePath}': ${importResult.error}`
-        };
-      }
-    } else {
-      // Fallback to old behavior for non-astro-stack-auth modules
-      try {
-        const actualModulePath = modulePath.replace('astro-stack-auth', '../..');
-        const importResult = await safeImport(actualModulePath);
-        
-        if (!importResult.success) {
-          console.warn(`Could not import actual module ${modulePath}, using mock validation only`);
-          return { isValid: true };
-        }
-        
-        if (!(exportName in importResult.module)) {
-          return {
-            isValid: false,
-            error: `Export '${exportName}' does not exist in actual module '${modulePath}'`
-          };
-        }
-        
-        return { isValid: true };
-      } catch (importError) {
-        console.warn(`Could not import actual module ${modulePath}, using mock validation only`);
-        return { isValid: true };
-      }
-    }
-  } catch (error) {
-    return {
-      isValid: false,
-      error: `Runtime validation error: ${error instanceof Error ? error.message : String(error)}`
-    };
+  const cacheKey = `runtime-export:${modulePath}:${exportName}`;
+  const cached = moduleValidationCache.get(cacheKey);
+  
+  if (cached) {
+    return perfTracker.time('validateRuntimeExport', () => cached, true);
   }
+
+  return perfTracker.time('validateRuntimeExport', async () => {
+    try {
+      // Check against mock exports first
+      if (!isValidExport(modulePath, exportName)) {
+        const result = {
+          isValid: false,
+          error: `Export '${exportName}' is not expected in module '${modulePath}'`
+        };
+        moduleValidationCache.set(cacheKey, result);
+        return result;
+      }
+
+      // Try to import the actual module with enhanced error handling
+      if (modulePath.startsWith('astro-stack-auth/')) {
+        const moduleExportName = modulePath.replace('astro-stack-auth/', '');
+        const importResult = await memoizedImportWithBuildFallback(moduleExportName);
+      
+        if (importResult.success) {
+          const module = importResult.module;
+          if (!(exportName in module)) {
+            const result = {
+              isValid: false,
+              error: `Export '${exportName}' does not exist in actual module '${modulePath}' (source: ${importResult.source})`
+            };
+            moduleValidationCache.set(cacheKey, result);
+            return result;
+          }
+          const result = { isValid: true };
+          moduleValidationCache.set(cacheKey, result);
+          return result;
+        } else if (isTestEnvironment()) {
+          // In test environment, it's ok if modules aren't built yet
+          console.warn(`Could not import actual module ${modulePath} (${importResult.error}), using mock validation only`);
+          const result = { isValid: true };
+          moduleValidationCache.set(cacheKey, result);
+          return result;
+        } else {
+          const result = {
+            isValid: false,
+            error: `Failed to import module '${modulePath}': ${importResult.error}`
+          };
+          moduleValidationCache.set(cacheKey, result);
+          return result;
+        }
+      } else {
+        // Fallback to old behavior for non-astro-stack-auth modules
+        try {
+          const actualModulePath = modulePath.replace('astro-stack-auth', '../..');
+          const importResult = await safeImport(actualModulePath);
+          
+          if (!importResult.success) {
+            console.warn(`Could not import actual module ${modulePath}, using mock validation only`);
+            const result = { isValid: true };
+            moduleValidationCache.set(cacheKey, result);
+            return result;
+          }
+          
+          if (!(exportName in importResult.module)) {
+            const result = {
+              isValid: false,
+              error: `Export '${exportName}' does not exist in actual module '${modulePath}'`
+            };
+            moduleValidationCache.set(cacheKey, result);
+            return result;
+          }
+          
+          const result = { isValid: true };
+          moduleValidationCache.set(cacheKey, result);
+          return result;
+        } catch (importError) {
+          console.warn(`Could not import actual module ${modulePath}, using mock validation only`);
+          const result = { isValid: true };
+          moduleValidationCache.set(cacheKey, result);
+          return result;
+        }
+      }
+    } catch (error) {
+      const result = {
+        isValid: false,
+        error: `Runtime validation error: ${error instanceof Error ? error.message : String(error)}`
+      };
+      moduleValidationCache.set(cacheKey, result);
+      return result;
+    }
+  }, false);
 }
 
 /**
@@ -109,17 +358,26 @@ export async function validateReactComponent(
   modulePath: string,
   componentName: string
 ): Promise<{ isValid: boolean; error?: string; componentType?: string }> {
-  try {
-    // First check if it's a valid export
-    const exportValidation = await validateRuntimeExport(modulePath, componentName);
-    if (!exportValidation.isValid) {
-      return exportValidation;
-    }
+  const cacheKey = `react-component:${modulePath}:${componentName}`;
+  const cached = componentValidationCache.get(cacheKey);
+  
+  if (cached) {
+    return perfTracker.time('validateReactComponent', () => cached, true);
+  }
 
-    // Try to import and check if it's a React component
-    if (modulePath.startsWith('astro-stack-auth/')) {
-      const exportName = modulePath.replace('astro-stack-auth/', '');
-      const importResult = await importWithBuildFallback(exportName);
+  return perfTracker.time('validateReactComponent', async () => {
+    try {
+      // First check if it's a valid export
+      const exportValidation = await validateRuntimeExport(modulePath, componentName);
+      if (!exportValidation.isValid) {
+        componentValidationCache.set(cacheKey, exportValidation);
+        return exportValidation;
+      }
+
+      // Try to import and check if it's a React component
+      if (modulePath.startsWith('astro-stack-auth/')) {
+        const exportName = modulePath.replace('astro-stack-auth/', '');
+        const importResult = await memoizedImportWithBuildFallback(exportName);
       
       if (importResult.success) {
         const module = importResult.module;
@@ -134,22 +392,28 @@ export async function validateReactComponent(
             React.isValidElement(component);
           
           if (!isReactComponent) {
-            return {
+            const result = {
               isValid: false,
               error: `Export '${componentName}' is not a valid React component`,
               componentType
             };
+            componentValidationCache.set(cacheKey, result);
+            return result;
           }
           
-          return { 
+          const result = { 
             isValid: true, 
             componentType: isReactComponent ? 'react-component' : componentType 
           };
+          componentValidationCache.set(cacheKey, result);
+          return result;
         }
       } else if (isTestEnvironment()) {
         // Module not available in test environment, use mock validation
         console.warn(`Could not import ${modulePath}/${componentName} for React validation`);
-        return { isValid: true, componentType: 'mock' };
+        const result = { isValid: true, componentType: 'mock' };
+        componentValidationCache.set(cacheKey, result);
+        return result;
       }
     } else {
       // Fallback for non-astro-stack-auth modules
@@ -168,59 +432,80 @@ export async function validateReactComponent(
               React.isValidElement(component);
             
             if (!isReactComponent) {
-              return {
+              const result = {
                 isValid: false,
                 error: `Export '${componentName}' is not a valid React component`,
                 componentType
               };
+              componentValidationCache.set(cacheKey, result);
+              return result;
             }
             
-            return { 
+            const result = { 
               isValid: true, 
               componentType: isReactComponent ? 'react-component' : componentType 
             };
+            componentValidationCache.set(cacheKey, result);
+            return result;
           }
         }
       } catch (importError) {
         // Module not available, use mock validation
         console.warn(`Could not import ${modulePath}/${componentName} for React validation`);
-        return { isValid: true, componentType: 'mock' };
+        const result = { isValid: true, componentType: 'mock' };
+        componentValidationCache.set(cacheKey, result);
+        return result;
       }
     }
     
-    return { isValid: true, componentType: 'unknown' };
+    const result = { isValid: true, componentType: 'unknown' };
+    componentValidationCache.set(cacheKey, result);
+    return result;
   } catch (error) {
-    return {
+    const result = {
       isValid: false,
       error: `React component validation error: ${error instanceof Error ? error.message : String(error)}`
     };
+    componentValidationCache.set(cacheKey, result);
+    return result;
   }
+  }, false);
 }
 
 /**
  * Validates a full module's exports against expected exports
  */
 export async function validateModuleExports(modulePath: string): Promise<PackageExportValidationResult> {
-  const expectedExports = getExpectedExports(modulePath);
-  const result: PackageExportValidationResult = {
-    isValid: true,
-    missingExports: [],
-    unexpectedExports: [],
-    modulePath
-  };
-
-  if (!expectedExports) {
-    return {
-      ...result,
-      isValid: false,
-      missingExports: [`No expected exports defined for module: ${modulePath}`]
-    };
+  const cacheKey = `module-exports:${modulePath}`;
+  const cached = moduleExportsCache.get(cacheKey);
+  
+  if (cached) {
+    return perfTracker.time('validateModuleExports', () => cached, true);
   }
 
-  // Try to import actual module with enhanced error handling
-  if (modulePath.startsWith('astro-stack-auth/')) {
-    const exportName = modulePath.replace('astro-stack-auth/', '');
-    const importResult = await importWithBuildFallback(exportName);
+  return perfTracker.time('validateModuleExports', async () => {
+    const expectedExports = getExpectedExports(modulePath);
+    const result: PackageExportValidationResult = {
+      isValid: true,
+      missingExports: [],
+      unexpectedExports: [],
+      modulePath
+    };
+
+    if (!expectedExports) {
+      const finalResult = {
+        ...result,
+        isValid: false,
+        missingExports: [`No expected exports defined for module: ${modulePath}`]
+      };
+      moduleExportsCache.set(cacheKey, finalResult);
+      return finalResult;
+    }
+
+    // Try to import actual module with enhanced error handling
+    if (modulePath.startsWith('astro-stack-auth/')) {
+      const exportName = modulePath.replace('astro-stack-auth/', '');
+      const importResult = await memoizedImportWithBuildFallback(exportName);
     
     if (importResult.success) {
       const module = importResult.module;
@@ -265,7 +550,9 @@ export async function validateModuleExports(modulePath: string): Promise<Package
     }
   }
 
+  moduleExportsCache.set(cacheKey, result);
   return result;
+  }, false);
 }
 
 /**
