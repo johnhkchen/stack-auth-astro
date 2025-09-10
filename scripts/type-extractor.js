@@ -539,23 +539,98 @@ function extractComponentProps() {
  */
 function resolveModulePath(moduleName) {
   try {
+    // First try standard Node.js resolution
     return require.resolve(moduleName);
   } catch (error) {
-    // Try alternative resolution paths
+    // Try alternative resolution paths for packages with complex exports
     const possiblePaths = [
+      // Direct package paths
       join(process.cwd(), 'node_modules', moduleName),
       join(process.cwd(), 'node_modules', moduleName, 'package.json'),
-      join(__dirname, '..', 'node_modules', moduleName)
+      join(process.cwd(), 'node_modules', moduleName, 'index.js'),
+      join(process.cwd(), 'node_modules', moduleName, 'dist', 'index.js'),
+      join(process.cwd(), 'node_modules', moduleName, 'lib', 'index.js'),
+      
+      // From script location
+      join(__dirname, '..', 'node_modules', moduleName),
+      join(__dirname, '..', 'node_modules', moduleName, 'package.json'),
+      
+      // Handle @stackframe packages specifically
+      ...(moduleName.startsWith('@stackframe/') ? [
+        join(process.cwd(), 'node_modules', moduleName, 'dist', 'index.mjs'),
+        join(process.cwd(), 'node_modules', moduleName, 'dist', 'index.cjs'),
+        join(process.cwd(), 'node_modules', moduleName, 'dist', 'index.d.ts')
+      ] : [])
     ];
     
     for (const path of possiblePaths) {
       if (existsSync(path)) {
+        // If we found a package.json, try to resolve the main entry
+        if (path.endsWith('package.json')) {
+          try {
+            const pkg = JSON.parse(readFileSync(path, 'utf-8'));
+            
+            // Handle exports field (modern module resolution)
+            if (pkg.exports) {
+              const exportPath = resolvePackageExports(pkg.exports, dirname(path));
+              if (exportPath) return exportPath;
+            }
+            
+            // Try main field
+            if (pkg.main) {
+              const mainPath = join(dirname(path), pkg.main);
+              if (existsSync(mainPath)) return mainPath;
+            }
+            
+            // Try module field (ESM)
+            if (pkg.module) {
+              const modulePath = join(dirname(path), pkg.module);
+              if (existsSync(modulePath)) return modulePath;
+            }
+            
+            // Try types field for TypeScript
+            if (pkg.types || pkg.typings) {
+              const typesPath = join(dirname(path), pkg.types || pkg.typings);
+              if (existsSync(typesPath)) return typesPath;
+            }
+          } catch (readError) {
+            // Continue to next path
+          }
+        }
         return path;
       }
     }
     
     return null;
   }
+}
+
+/**
+ * Resolve package exports field (handles modern package.json exports)
+ */
+function resolvePackageExports(exports, packageDir) {
+  if (!exports) return null;
+  
+  // Handle string exports
+  if (typeof exports === 'string') {
+    const path = join(packageDir, exports);
+    if (existsSync(path)) return path;
+  }
+  
+  // Handle object exports
+  if (typeof exports === 'object') {
+    // Try different export conditions in priority order
+    const conditions = ['.', 'import', 'require', 'default', 'node', 'types'];
+    
+    for (const condition of conditions) {
+      if (exports[condition]) {
+        const resolved = resolvePackageExports(exports[condition], packageDir);
+        if (resolved) return resolved;
+      }
+    }
+  }
+  
+  return null;
 }
 
 /**
