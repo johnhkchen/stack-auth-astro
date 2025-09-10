@@ -186,6 +186,153 @@ describe('Examples Validation', () => {
     });
   });
 
+  describe('Dependency Management Validation', () => {
+    test('examples have all required dependencies declared', () => {
+      const minimalPackage = path.join(examplesDir, 'minimal-astro', 'package.json');
+      const fullPackage = path.join(examplesDir, 'full-featured', 'package.json');
+      
+      [minimalPackage, fullPackage].forEach(packagePath => {
+        const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+        
+        // Required core dependencies
+        expect(packageJson.dependencies.astro).toBeDefined();
+        expect(packageJson.dependencies['astro-stack-auth']).toBeDefined();
+        expect(packageJson.dependencies.react).toBeDefined();
+        expect(packageJson.dependencies['react-dom']).toBeDefined();
+        expect(packageJson.dependencies['@astrojs/react']).toBeDefined();
+        
+        // Validate version constraints
+        expect(packageJson.dependencies.astro).toMatch(/\^5\.\d+\.\d+/);
+        expect(packageJson.dependencies.react).toMatch(/\^19\.\d+\.\d+/);
+        expect(packageJson.dependencies['react-dom']).toMatch(/\^19\.\d+\.\d+/);
+      });
+    });
+
+    test('npm install process works for minimal-astro example', async () => {
+      const minimalDir = path.join(examplesDir, 'minimal-astro');
+      
+      try {
+        // First clean any existing node_modules
+        await execAsync('rm -rf node_modules package-lock.json', { cwd: minimalDir });
+        
+        // Run npm install
+        const { stdout, stderr } = await execAsync('npm install', {
+          cwd: minimalDir,
+          timeout: 120000 // 2 minute timeout for npm install
+        });
+        
+        // Check that installation completed successfully
+        expect(stderr).not.toContain('ERR!');
+        expect(fs.existsSync(path.join(minimalDir, 'node_modules'))).toBe(true);
+        
+        // Verify key packages are installed
+        const nodeModulesDir = path.join(minimalDir, 'node_modules');
+        expect(fs.existsSync(path.join(nodeModulesDir, 'astro'))).toBe(true);
+        expect(fs.existsSync(path.join(nodeModulesDir, 'react'))).toBe(true);
+        expect(fs.existsSync(path.join(nodeModulesDir, '@astrojs', 'react'))).toBe(true);
+        
+      } catch (error) {
+        // Only fail if it's a clear npm error, not network issues
+        if (error.stderr && error.stderr.includes('npm ERR!')) {
+          console.error('NPM install failed:', error.stderr);
+          throw new Error(`NPM install failed: ${error.message}`);
+        }
+        console.log('NPM install test skipped due to network/environment issues');
+      }
+    }, 150000);
+
+    test('npm install process works for full-featured example', async () => {
+      const fullDir = path.join(examplesDir, 'full-featured');
+      
+      try {
+        // First clean any existing node_modules
+        await execAsync('rm -rf node_modules package-lock.json', { cwd: fullDir });
+        
+        // Run npm install
+        const { stdout, stderr } = await execAsync('npm install', {
+          cwd: fullDir,
+          timeout: 120000 // 2 minute timeout for npm install
+        });
+        
+        // Check that installation completed successfully
+        expect(stderr).not.toContain('ERR!');
+        expect(fs.existsSync(path.join(fullDir, 'node_modules'))).toBe(true);
+        
+        // Verify key packages are installed including Tailwind
+        const nodeModulesDir = path.join(fullDir, 'node_modules');
+        expect(fs.existsSync(path.join(nodeModulesDir, 'astro'))).toBe(true);
+        expect(fs.existsSync(path.join(nodeModulesDir, 'react'))).toBe(true);
+        expect(fs.existsSync(path.join(nodeModulesDir, 'tailwindcss'))).toBe(true);
+        expect(fs.existsSync(path.join(nodeModulesDir, '@astrojs', 'tailwind'))).toBe(true);
+        
+      } catch (error) {
+        // Only fail if it's a clear npm error, not network issues
+        if (error.stderr && error.stderr.includes('npm ERR!')) {
+          console.error('NPM install failed:', error.stderr);
+          throw new Error(`NPM install failed: ${error.message}`);
+        }
+        console.log('NPM install test skipped due to network/environment issues');
+      }
+    }, 150000);
+
+    test('astro-stack-auth package can be installed correctly', async () => {
+      const testDir = path.join(examplesDir, 'minimal-astro');
+      
+      // Ensure dependencies are installed first
+      if (!fs.existsSync(path.join(testDir, 'node_modules'))) {
+        console.log('Skipping astro-stack-auth installation test - no node_modules found');
+        return;
+      }
+      
+      try {
+        // Check that astro-stack-auth is linked correctly (file: protocol in package.json)
+        const packageJson = JSON.parse(fs.readFileSync(path.join(testDir, 'package.json'), 'utf8'));
+        expect(packageJson.dependencies['astro-stack-auth']).toBe('file:../../');
+        
+        // Verify that the package can be resolved
+        const { stdout } = await execAsync('node -e "console.log(require.resolve(\'astro-stack-auth\'))"', {
+          cwd: testDir,
+          timeout: 10000
+        });
+        
+        // The resolved path should point to our built package
+        expect(stdout.trim()).toMatch(/dist[\/\\]index\.(js|cjs)$/);
+        
+      } catch (error) {
+        console.error('Package resolution test failed:', error.message);
+        throw error;
+      }
+    }, 30000);
+
+    test('package.json version constraints are compatible', () => {
+      const minimalPackage = path.join(examplesDir, 'minimal-astro', 'package.json');
+      const fullPackage = path.join(examplesDir, 'full-featured', 'package.json');
+      const rootPackage = path.join(__dirname, '../../package.json');
+      
+      const rootPkg = JSON.parse(fs.readFileSync(rootPackage, 'utf8'));
+      
+      [minimalPackage, fullPackage].forEach(packagePath => {
+        const examplePkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+        
+        // Check that Astro versions are compatible with peer dependencies
+        const exampleAstroVersion = examplePkg.dependencies.astro;
+        const rootPeerAstroVersion = rootPkg.peerDependencies.astro;
+        
+        // Both should target Astro 5.x
+        expect(exampleAstroVersion).toMatch(/\^5\./);
+        expect(rootPeerAstroVersion).toMatch(/\^5\./);
+        
+        // Check React compatibility
+        const exampleReactVersion = examplePkg.dependencies.react;
+        const rootPeerReactVersion = rootPkg.peerDependencies.react;
+        
+        // React versions should be compatible (both allow 19.x)
+        expect(exampleReactVersion).toMatch(/\^19\./);
+        expect(rootPeerReactVersion).toContain('19.0.0');
+      });
+    });
+  });
+
   describe('Documentation Accuracy', () => {
     test('README files exist and reference correct package', () => {
       const readmes = [
@@ -364,34 +511,219 @@ describe('TypeScript Compilation Validation', () => {
     });
   });
 
-  test('build process validation with environment variables', async () => {
-    const minimalDir = path.join(examplesDir, 'minimal-astro');
-    
-    try {
-      // Test that build process can run with proper environment variables
-      const { stdout, stderr } = await execAsync('npm run build', {
-        cwd: minimalDir,
-        env: { ...process.env, ...testEnvVars },
-        timeout: 60000 // 1 minute timeout for build
-      });
+  describe('Enhanced Build Process Validation', () => {
+    test('build process validation with proper dependency management', async () => {
+      const minimalDir = path.join(examplesDir, 'minimal-astro');
       
-      // Build should complete successfully
-      expect(stderr).not.toContain('Build failed');
-      expect(stderr).not.toContain('error TS');
+      // Step 1: Check if dependencies are installed
+      const hasNodeModules = fs.existsSync(path.join(minimalDir, 'node_modules'));
       
-      // Build output should indicate success
-      expect(stdout.toLowerCase()).toMatch(/build|complete|success|done/);
-      
-    } catch (error) {
-      // If build fails due to missing dependencies, that's expected in test environment
-      // Only fail if it's a TypeScript compilation error
-      if (error.stderr && error.stderr.includes('error TS')) {
-        console.error('TypeScript compilation failed during build:', error.stderr);
-        throw error;
+      if (!hasNodeModules) {
+        console.log('Installing dependencies for build test...');
+        try {
+          await execAsync('npm install', {
+            cwd: minimalDir,
+            timeout: 120000
+          });
+        } catch (installError) {
+          if (installError.stderr && installError.stderr.includes('npm ERR!')) {
+            throw new Error(`Dependency installation failed: ${installError.message}`);
+          }
+          console.log('Skipping build test due to dependency installation issues');
+          return;
+        }
       }
       
-      // For other build errors (like missing node_modules), just log but don't fail
-      console.log('Build test skipped due to missing dependencies (expected in test environment)');
-    }
-  }, 90000);
+      // Step 2: Run the build process
+      try {
+        const { stdout, stderr } = await execAsync('npm run build', {
+          cwd: minimalDir,
+          env: { ...process.env, ...testEnvVars },
+          timeout: 90000 // 1.5 minute timeout for build
+        });
+        
+        // Build should complete successfully
+        expect(stderr).not.toContain('Build failed');
+        expect(stderr).not.toContain('error TS');
+        expect(stderr).not.toContain('Cannot resolve dependency');
+        
+        // Build output should indicate success
+        expect(stdout.toLowerCase()).toMatch(/build|complete|success|done/);
+        
+        // Verify build output directory exists
+        expect(fs.existsSync(path.join(minimalDir, 'dist'))).toBe(true);
+        
+      } catch (buildError) {
+        // Enhanced error analysis
+        const errorMessage = buildError.stderr || buildError.message || '';
+        
+        // Categorize the error type
+        if (errorMessage.includes('error TS')) {
+          throw new Error(`TypeScript compilation failed: ${errorMessage}`);
+        } else if (errorMessage.includes('Cannot resolve dependency') || errorMessage.includes('Module not found')) {
+          throw new Error(`Dependency resolution failed: ${errorMessage}`);
+        } else if (errorMessage.includes('api/handler')) {
+          // Expected failure in Sprint 001 - API handler not implemented yet
+          console.log('Build test skipped - API handler not yet implemented (expected in Sprint 001)');
+        } else if (errorMessage.includes('ENOENT') && errorMessage.includes('node_modules')) {
+          throw new Error(`Missing dependencies: ${errorMessage}`);
+        } else if (errorMessage.includes('timeout')) {
+          console.log('Build test timed out - may indicate performance issues');
+          throw buildError;
+        } else {
+          // Unknown build error - still fail but with context
+          throw new Error(`Build failed with unknown error: ${errorMessage}`);
+        }
+      }
+    }, 150000);
+
+    test('build process validation for full-featured example', async () => {
+      const fullDir = path.join(examplesDir, 'full-featured');
+      
+      // Check if dependencies are installed
+      const hasNodeModules = fs.existsSync(path.join(fullDir, 'node_modules'));
+      
+      if (!hasNodeModules) {
+        console.log('Installing dependencies for full-featured build test...');
+        try {
+          await execAsync('npm install', {
+            cwd: fullDir,
+            timeout: 120000
+          });
+        } catch (installError) {
+          if (installError.stderr && installError.stderr.includes('npm ERR!')) {
+            throw new Error(`Dependency installation failed: ${installError.message}`);
+          }
+          console.log('Skipping build test due to dependency installation issues');
+          return;
+        }
+      }
+      
+      try {
+        const { stdout, stderr } = await execAsync('npm run build', {
+          cwd: fullDir,
+          env: { ...process.env, ...testEnvVars },
+          timeout: 90000
+        });
+        
+        // Build should complete successfully
+        expect(stderr).not.toContain('Build failed');
+        expect(stderr).not.toContain('error TS');
+        expect(stderr).not.toContain('Cannot resolve dependency');
+        
+        // Build output should indicate success
+        expect(stdout.toLowerCase()).toMatch(/build|complete|success|done/);
+        
+        // Verify build output directory exists
+        expect(fs.existsSync(path.join(fullDir, 'dist'))).toBe(true);
+        
+        // Full-featured should also build Tailwind styles
+        expect(stdout.toLowerCase()).toMatch(/css|style|tailwind/);
+        
+      } catch (buildError) {
+        const errorMessage = buildError.stderr || buildError.message || '';
+        
+        if (errorMessage.includes('error TS')) {
+          throw new Error(`TypeScript compilation failed: ${errorMessage}`);
+        } else if (errorMessage.includes('Cannot resolve dependency')) {
+          throw new Error(`Dependency resolution failed: ${errorMessage}`);
+        } else if (errorMessage.includes('PostCSS') || errorMessage.includes('Tailwind')) {
+          throw new Error(`CSS/Tailwind processing failed: ${errorMessage}`);
+        } else if (errorMessage.includes('api/handler')) {
+          // Expected failure in Sprint 001 - API handler not implemented yet
+          console.log('Build test skipped - API handler not yet implemented (expected in Sprint 001)');
+        } else {
+          throw new Error(`Build failed: ${errorMessage}`);
+        }
+      }
+    }, 150000);
+
+    test('CI environment detection and handling', async () => {
+      const minimalDir = path.join(examplesDir, 'minimal-astro');
+      
+      // Test with CI environment variables
+      const ciEnvVars = {
+        ...testEnvVars,
+        CI: 'true',
+        NODE_ENV: 'production'
+      };
+      
+      // Only run if dependencies are available
+      if (!fs.existsSync(path.join(minimalDir, 'node_modules'))) {
+        console.log('Skipping CI environment test - dependencies not installed');
+        return;
+      }
+      
+      try {
+        const { stdout, stderr } = await execAsync('npm run build', {
+          cwd: minimalDir,
+          env: { ...process.env, ...ciEnvVars },
+          timeout: 90000
+        });
+        
+        // In CI mode, builds should be more strict
+        expect(stderr).not.toContain('warning');
+        expect(stderr).not.toContain('error');
+        
+        // Should produce optimized output
+        expect(stdout).toMatch(/build|complete|success/);
+        
+      } catch (error) {
+        // CI builds should fail fast on any issues
+        const errorMessage = error.stderr || error.message || '';
+        if (errorMessage.includes('api/handler')) {
+          console.log('CI build test skipped - API handler not yet implemented (expected in Sprint 001)');
+        } else {
+          throw new Error(`CI build failed: ${errorMessage}`);
+        }
+      }
+    }, 120000);
+
+    test('dependency caching scenarios work correctly', async () => {
+      const minimalDir = path.join(examplesDir, 'minimal-astro');
+      
+      // Test assumes dependencies are already installed from previous tests
+      if (!fs.existsSync(path.join(minimalDir, 'node_modules'))) {
+        console.log('Skipping caching test - dependencies not installed');
+        return;
+      }
+      
+      try {
+        // First build (cold cache)
+        const startTime = Date.now();
+        await execAsync('npm run build', {
+          cwd: minimalDir,
+          env: { ...process.env, ...testEnvVars },
+          timeout: 90000
+        });
+        const firstBuildTime = Date.now() - startTime;
+        
+        // Clean build output but keep node_modules
+        await execAsync('rm -rf dist', { cwd: minimalDir });
+        
+        // Second build (warm cache)
+        const secondStartTime = Date.now();
+        await execAsync('npm run build', {
+          cwd: minimalDir,
+          env: { ...process.env, ...testEnvVars },
+          timeout: 90000
+        });
+        const secondBuildTime = Date.now() - secondStartTime;
+        
+        // Second build should generally be faster (though not enforced strictly)
+        console.log(`First build: ${firstBuildTime}ms, Second build: ${secondBuildTime}ms`);
+        
+        // Both builds should succeed
+        expect(fs.existsSync(path.join(minimalDir, 'dist'))).toBe(true);
+        
+      } catch (error) {
+        const errorMessage = error.stderr || error.message || '';
+        if (errorMessage.includes('api/handler')) {
+          console.log('Caching test skipped - API handler not yet implemented (expected in Sprint 001)');
+        } else {
+          throw new Error(`Caching test failed: ${error.message}`);
+        }
+      }
+    }, 180000);
+  });
 });

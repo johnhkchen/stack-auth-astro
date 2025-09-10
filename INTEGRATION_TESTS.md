@@ -90,7 +90,7 @@ Sprint 001, Task 1.2.4 implements comprehensive integration testing to ensure Re
 
 ## Build Pipeline Integration
 
-### New Scripts
+### TypeScript Testing Scripts
 
 - `npm run type:check` - Basic TypeScript type checking
 - `npm run type:check-all` - Run type checking against all configurations
@@ -98,6 +98,16 @@ Sprint 001, Task 1.2.4 implements comprehensive integration testing to ensure Re
 - `npm run type:check-loose` - Type check with loose configuration
 - `npm run type:integration` - Full integration test (all configs + build)
 - `npm run test:types` - Alias for type:integration
+
+### Enhanced Build Validation Scripts
+
+- `npm run build:validate` - Core build output validation
+- `npm run build:validate:types` - TypeScript declaration validation
+- `npm run build:validate:deps` - **NEW**: Dependency management validation
+- `npm run build:smoke` - Smoke testing of build outputs
+- `npm run build:test` - Complete build validation pipeline
+
+The enhanced build validation introduces comprehensive dependency management testing through Task 1.2.19.
 
 ### Test Runner Script
 
@@ -108,12 +118,44 @@ Sprint 001, Task 1.2.4 implements comprehensive integration testing to ensure Re
 3. **Build validation**: Runs production build to ensure everything compiles
 4. **Comprehensive reporting**: Detailed pass/fail results with error output
 
+### Enhanced Dependency Management Validation
+
+**Task 1.2.19** introduces `scripts/validate-dependencies.js` which provides comprehensive dependency management testing:
+
+#### Features:
+1. **Package.json Validation**: Ensures all required dependencies are declared with compatible versions
+2. **NPM Install Testing**: Validates that `npm install` works correctly for both examples
+3. **Package Resolution Testing**: Verifies that all dependencies can be resolved properly
+4. **Build Process Validation**: Tests the complete build pipeline with enhanced error categorization
+5. **CI Environment Support**: Handles network issues and timeouts gracefully in CI environments
+6. **Dependency Caching Testing**: Validates that repeated builds work correctly
+
+#### Error Categorization:
+- **TypeScript Compilation Errors**: Separated from dependency issues
+- **Dependency Resolution Failures**: Module not found, import errors
+- **Network Issues**: Timeouts, connection failures (handled gracefully)
+- **Version Compatibility Issues**: Peer dependency mismatches
+- **Build Environment Issues**: Missing files, permission problems
+
+#### Integration Test Enhancements:
+The examples validation test suite now includes:
+- **Dependency Management Validation**: Comprehensive dependency testing
+- **Enhanced Build Process Validation**: Better error handling and categorization
+- **CI Environment Detection**: Proper handling of CI-specific scenarios
+- **Dependency Caching Scenarios**: Testing repeat builds and cache performance
+
 ## Running the Tests
 
 ### Quick Start
 ```bash
-# Run all integration tests
+# Run all integration tests including dependency validation
+npm run build:test
+
+# Run TypeScript integration tests
 npm run test:types
+
+# Run dependency management validation
+npm run build:validate:deps
 
 # Run specific configurations
 npm run type:check-strict
@@ -128,9 +170,24 @@ npm run type:check
 # Run the comprehensive test runner
 npm run type:check-all
 
+# Run enhanced build validation pipeline
+npm run build:test
+
+# Run individual validation scripts
+npm run build:validate          # Core build output validation
+npm run build:validate:types    # TypeScript declarations validation
+npm run build:validate:deps     # Dependency management validation
+npm run build:smoke             # Smoke testing
+
+# Run integration tests
+npm test                        # Run all Vitest integration tests
+
 # Manual type checking
 npx tsc --noEmit --project test-configs/tsconfig.strict.json
 npx tsc --noEmit --project test-configs/tsconfig.loose.json
+
+# Manual dependency validation
+node scripts/validate-dependencies.js
 ```
 
 ## Test Coverage
