@@ -37,6 +37,9 @@ jobs:
     - name: Run sprint tests  
       run: npm run sprints:test
       
+    - name: Run all specification tests
+      run: npm run test:all
+      
     - name: Run unit tests
       run: npm test
       
