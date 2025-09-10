@@ -241,7 +241,7 @@ function validateDeclarationFileSyntax() {
   
   for (const entryPoint of ENTRY_POINTS) {
     const dtsFile = path.join(DIST_DIR, `${entryPoint}.d.ts`);
-    const dmtsFile = path.join(DIST_DIR, `${entryPoint}.d.mts`);
+    const dctsFile = path.join(DIST_DIR, `${entryPoint}.d.cts`);
     
     // Validate .d.ts file
     if (fs.existsSync(dtsFile)) {
@@ -283,18 +283,18 @@ function validateDeclarationFileSyntax() {
       errors.push(`Missing declaration file: ${entryPoint}.d.ts`);
     }
     
-    // Validate .d.mts file
-    if (fs.existsSync(dmtsFile)) {
+    // Validate .d.cts file
+    if (fs.existsSync(dctsFile)) {
       try {
-        const content = fs.readFileSync(dmtsFile, 'utf8');
+        const content = fs.readFileSync(dctsFile, 'utf8');
         if (!content.trim()) {
-          warnings.push(`${entryPoint}.d.mts is empty`);
+          warnings.push(`${entryPoint}.d.cts is empty`);
         }
       } catch (error) {
-        errors.push(`Failed to read ${entryPoint}.d.mts: ${error.message}`);
+        errors.push(`Failed to read ${entryPoint}.d.cts: ${error.message}`);
       }
     } else {
-      errors.push(`Missing ESM declaration file: ${entryPoint}.d.mts`);
+      errors.push(`Missing CJS declaration file: ${entryPoint}.d.cts`);
     }
   }
   

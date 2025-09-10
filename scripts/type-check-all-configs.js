@@ -10,9 +10,13 @@
  * Task: 1.2.4 - React Type Integration Testing
  */
 
-const { spawn } = require('child_process');
-const path = require('path');
-const fs = require('fs');
+import { spawn } from 'child_process';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const configs = [
   'tsconfig.json',
@@ -230,14 +234,14 @@ async function main() {
   }
 }
 
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(error => {
     console.error('💥 Script failed:', error);
     process.exit(1);
   });
 }
 
-module.exports = {
+export {
   runTypeCheck,
   validateTestFiles,
   validateConfigs,

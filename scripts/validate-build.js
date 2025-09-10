@@ -30,15 +30,15 @@ const EXPECTED_ENTRY_POINTS = [
 
 // Expected file formats
 const EXPECTED_FORMATS = [
-  '.js',   // CommonJS
+  '.cjs',  // CommonJS
   '.mjs',  // ESM
   '.d.ts', // TypeScript declarations
-  '.d.mts' // TypeScript ESM declarations
+  '.d.cts' // TypeScript CJS declarations
 ];
 
 // Expected source map files
 const EXPECTED_SOURCE_MAPS = [
-  '.js.map',
+  '.cjs.map',
   '.mjs.map'
 ];
 
@@ -255,7 +255,7 @@ function runSmokeTests() {
   
   // Test main integration export
   try {
-    const mainModule = require(path.join(DIST_DIR, 'index.js'));
+    const mainModule = require(path.join(DIST_DIR, 'index.cjs'));
     
     if (!mainModule.default && !mainModule.stackAuth) {
       warnings.push('Main module does not export expected integration function');
@@ -268,7 +268,7 @@ function runSmokeTests() {
   
   // Test server module exports
   try {
-    const serverModule = require(path.join(DIST_DIR, 'server.js'));
+    const serverModule = require(path.join(DIST_DIR, 'server.cjs'));
     
     const expectedServerExports = ['getUser', 'requireAuth', 'getSession'];
     for (const exportName of expectedServerExports) {
@@ -284,7 +284,7 @@ function runSmokeTests() {
   
   // Test client module exports
   try {
-    const clientModule = require(path.join(DIST_DIR, 'client.js'));
+    const clientModule = require(path.join(DIST_DIR, 'client.cjs'));
     
     const expectedClientExports = ['signIn', 'signOut', 'redirectToSignIn', 'redirectToSignUp'];
     for (const exportName of expectedClientExports) {
