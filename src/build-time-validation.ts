@@ -15,8 +15,8 @@ import { parse as parseAstro } from '@astrojs/compiler';
 import { parse as parseJS } from '@babel/parser';
 // @ts-ignore - No type definitions available
 import * as traverseModule from '@babel/traverse';
-// @ts-ignore
-const traverse = (traverseModule as any).default || traverseModule;
+// @ts-ignore - Handle complex ESM/CJS default export pattern
+const traverse = (traverseModule as any).default?.default || (traverseModule as any).default || traverseModule;
 import type { AstroIntegration } from 'astro';
 import { 
   validateComponentProps, 
@@ -219,7 +219,7 @@ export async function extractJSXComponentUsages(
                 column: loc?.start.column || 0,
                 source: getSourceLine(content, loc?.start.line || 0)
               },
-              type: path.parent.type === 'TSXElement' ? 'tsx' : 'jsx'
+              type: filePath.endsWith('.tsx') ? 'tsx' : 'jsx'
             });
           }
         }
