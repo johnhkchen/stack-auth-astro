@@ -41,7 +41,7 @@ export default defineConfig({
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
-      '**/build/**',
+      './build/**',
       '**/.{idea,git,cache,output,temp}/**'
     ],
     
