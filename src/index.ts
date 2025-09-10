@@ -194,3 +194,20 @@ export default function astroStackAuth(options: StackAuthOptions = {}): AstroInt
 
 // Re-export types for convenience  
 export type { StackAuthConfig } from './types.js';
+
+// Re-export React component types for public API
+export type {
+  StackAuthComponentProps,
+  StackProviderProps,
+  StackAuthFC,
+  ReactFC,
+  ReactElement,
+  ReactComponent,
+  UseStackAuthHook,
+  StackAuthContextType,
+  StackAuthRef,
+  StackAuthEvent,
+  StackAuthMouseEvent,
+  StackAuthChangeEvent,
+  ForwardRefStackComponentProps
+} from './components.js';
