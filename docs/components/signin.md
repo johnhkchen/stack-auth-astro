@@ -1,44 +1,16 @@
 # SignIn Component
 
-> 🔄 **Dynamic Type Extraction**: ✅ Active  
-> 📊 **SDK Version**: 2.8.36  
-> 🕒 **Last Updated**: 9/10/2025, 1:51:06 PM  
-> 📈 **Components**: 5 components with live type data
+> 📝 **Static Type Specification**: Active  
+> ⚠️ **Dynamic Extraction**: Failed - TypeScript compilation or type extraction failed  
+> 🕒 **Last Attempted**: 9/10/2025, 2:00:54 PM
 
-*This documentation is automatically synchronized with your installed Stack Auth SDK version.*
+*Using static type specifications. Install @stackframe/stack-ui for automatic synchronization.*
 
-> ✅ **Interface Change Detection**: Non-breaking changes detected  
-> 📊 **Version**: 2.8.36 → 2.8.36  
-> 🔢 **Changes**: 0 breaking, 0 non-breaking, 24 additions  
-> 🕒 **Detected**: 9/10/2025, 1:51:06 PM
 
-*Safe to upgrade - no breaking changes detected.*
 
 ## Overview
 
 The SignIn component is a Stack Auth UI component that provides user authentication with support for multiple providers.
-
-
-## Recent Changes
-
-> 📅 **Version 2.8.36 → 2.8.36**
-
-### ✨ New Features
-
-- **fullPage**: New prop 'fullPage' added
-  - **Usage**: Optional prop 'fullPage' of type 'boolean' is now available
-
-- **automaticRedirect**: New prop 'automaticRedirect' added
-  - **Usage**: Optional prop 'automaticRedirect' of type 'boolean' is now available
-
-- **extraInfo**: New prop 'extraInfo' added
-  - **Usage**: Optional prop 'extraInfo' of type 'react-node' is now available
-
-- **firstTab**: New prop 'firstTab' added
-  - **Usage**: Optional prop 'firstTab' of type '"magic-link" | "password"' is now available
-
-- **mockProject**: New prop 'mockProject' added
-  - **Usage**: Optional prop 'mockProject' of type '{ config: { signupenabled: boolean; credentialenabled: boolean; passkeyenabled: boolean; magiclinkenabled: boolean; oauthproviders: { id: string; }[]; }; }' is now available
 
 
 
@@ -55,11 +27,7 @@ The SignIn component is a Stack Auth UI component that provides user authenticat
 | privacyUrl | `string | undefined` | ❌ | URL to privacy policy page | 📝 Static |
 | style | `object | undefined` | ❌ | Custom CSS styles for the component | 📝 Static |
 | className | `string | undefined` | ❌ | CSS class name for custom styling | 📝 Static |
-| fullPage | `boolean | undefined` | ❌ | fullPage property | 🔄 Dynamic |
-| automaticRedirect | `boolean | undefined` | ❌ | automaticRedirect property | 🔄 Dynamic |
-| extraInfo | `ReactNode | undefined` | ❌ | extraInfo property | 🔄 Dynamic |
-| firstTab | `"magic-link" | "password" | undefined` | ❌ | firstTab property | 🔄 Dynamic |
-| mockProject | `{ config: { signupenabled: boolean; credentialenabled: boolean; passkeyenabled: boolean; magiclinkenabled: boolean; oauthproviders: { id: string; }[]; }; } | undefined` | ❌ | mockProject property | 🔄 Dynamic |
+| fullPage | `boolean | undefined` | ❌ | Whether to render as a full-page component or inline | 📝 Static |
 
 ## Usage Examples
 
@@ -128,9 +96,6 @@ The SignIn component is a Stack Auth UI component that provides user authenticat
 | 2.9.x | className, style, onSuccess, onError, redirectUri, theme | None | 📝 Static |
 | 3.0.x | className, style, onSuccess, onError, redirectUri, theme, customization | onError | 📝 Static |
 
-> 📊 **Current SDK Version**: 2.8.36
-> 🕒 **Last Updated**: 9/10/2025, 1:51:06 PM
-
 
 ## TypeScript Integration
 
@@ -191,11 +156,11 @@ When updating Stack Auth versions, refer to the version compatibility matrix abo
 
 ## Recommendations
 
-✅ **Successfully extracted types for 5 components**  
-Documentation will automatically reflect the exact SDK types you have installed
+⚠️ **Dynamic type extraction failed, using static fallback**  
+Ensure @stackframe/stack-ui is properly installed and accessible
 
 
 
 ---
 
-*This documentation is automatically generated from your installed Stack Auth SDK types. For the latest Stack Auth features, refer to the [Stack Auth Documentation](https://docs.stack-auth.com/).*
+*This documentation is generated from static type specifications. For the latest Stack Auth features, refer to the [Stack Auth Documentation](https://docs.stack-auth.com/).*
