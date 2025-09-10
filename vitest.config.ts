@@ -1,5 +1,31 @@
 import { defineConfig } from 'vitest/config';
 import { resolve } from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Function to get reporters based on environment configuration
+function getReporters() {
+  const reporters: any[] = ['verbose'];
+  
+  // Add performance reporters if performance monitoring is enabled
+  if (process.env.STACK_AUTH_PERF_DEBUG === 'true' || process.env.VITEST_PERF === 'true') {
+    // Use path to custom reporter file
+    reporters.push('./tests/utils/custom-performance-reporter.js');
+    
+    // Add JSON reporter for CI consumption
+    if (process.env.CI || process.env.STACK_AUTH_PERF_JSON === 'true') {
+      reporters.push('json');
+    }
+  } else {
+    // Standard JSON reporter when performance monitoring is disabled
+    reporters.push('json');
+  }
+  
+  return reporters;
+}
 
 export default defineConfig({
   test: {
@@ -55,8 +81,8 @@ export default defineConfig({
     testTimeout: 10000,
     hookTimeout: 10000,
     
-    // Reporter configuration
-    reporter: ['verbose', 'json'],
+    // Reporter configuration - now dynamically loaded
+    reporter: getReporters(),
     
     // Mock configuration
     clearMocks: true,
