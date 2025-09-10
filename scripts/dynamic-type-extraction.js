@@ -8,7 +8,7 @@
  * to static specifications when needed.
  */
 
-import { extractComponentProps, getSDKVersion, validateExtractedTypes } from './type-extractor.js';
+import { extractComponentProps, getSDKVersion, validateExtractedTypes, detectAndParseTypeScriptConfig } from './type-extractor.js';
 import { 
   detectSDKVersions, 
   getVersionCompatibility, 
@@ -24,19 +24,23 @@ async function extractDynamicTypes() {
   console.log('🚀 Starting dynamic type extraction...');
   
   try {
-    // Step 1: Detect SDK versions
+    // Step 1: Detect and parse consumer TypeScript configuration
+    console.log('🔧 Detecting consumer project TypeScript configuration...');
+    const tsConfigResult = detectAndParseTypeScriptConfig();
+    
+    // Step 2: Detect SDK versions
     const sdkVersions = detectSDKVersions();
     
-    // Step 2: Get compatibility information
+    // Step 3: Get compatibility information
     const compatibility = getVersionCompatibility(sdkVersions);
     
-    // Step 3: Validate installation
+    // Step 4: Validate installation
     const validation = validateSDKInstallation(sdkVersions, compatibility);
     
-    // Step 4: Generate version report
-    const report = generateVersionReport(sdkVersions, compatibility, validation);
+    // Step 5: Generate version report (enhanced with TypeScript config info)
+    const report = generateVersionReport(sdkVersions, compatibility, validation, tsConfigResult);
     
-    // Step 5: Decide whether to attempt type extraction
+    // Step 6: Decide whether to attempt type extraction
     const shouldExtract = shouldAttemptTypeExtraction(compatibility, validation);
     
     if (!shouldExtract) {
@@ -45,12 +49,15 @@ async function extractDynamicTypes() {
         success: false,
         extractedTypes: null,
         report,
+        tsConfigResult,
         reason: 'Type extraction not supported or SDK validation failed'
       };
     }
     
-    // Step 6: Extract component props from TypeScript
+    // Step 7: Extract component props from TypeScript (now using consumer's config)
     console.log('🔧 Extracting component props from @stackframe/stack-ui...');
+    console.log(`   Using TypeScript config from: ${tsConfigResult.source}`);
+    
     const extractedProps = extractComponentProps();
     
     if (!extractedProps) {
@@ -59,11 +66,12 @@ async function extractDynamicTypes() {
         success: false,
         extractedTypes: null,
         report,
+        tsConfigResult,
         reason: 'TypeScript compilation or type extraction failed'
       };
     }
     
-    // Step 7: Validate extracted types
+    // Step 8: Validate extracted types
     const validatedTypes = validateExtractedTypes(extractedProps);
     
     if (Object.keys(validatedTypes).length === 0) {
@@ -72,27 +80,44 @@ async function extractDynamicTypes() {
         success: false,
         extractedTypes: null,
         report,
+        tsConfigResult,
         reason: 'Extracted types failed validation'
       };
     }
     
     console.log(`✅ Successfully extracted types for ${Object.keys(validatedTypes).length} components`);
+    console.log(`   TypeScript configuration: ${tsConfigResult.success ? 'Consumer project' : 'Fallback'}`);
     
     return {
       success: true,
       extractedTypes: validatedTypes,
       report,
+      tsConfigResult,
       componentCount: Object.keys(validatedTypes).length,
-      sdkVersion: compatibility.detectedVersion
+      sdkVersion: compatibility.detectedVersion,
+      typeScriptConfig: {
+        source: tsConfigResult.source,
+        configPath: tsConfigResult.configPath,
+        warnings: tsConfigResult.warnings
+      }
     };
     
   } catch (error) {
     console.error(`❌ Dynamic type extraction failed: ${error.message}`);
     console.error('Stack trace:', error.stack);
     
+    // Try to get tsconfig info even in error case
+    let tsConfigResult = null;
+    try {
+      tsConfigResult = detectAndParseTypeScriptConfig();
+    } catch (configError) {
+      console.warn('⚠️ Could not detect TypeScript config during error recovery');
+    }
+    
     return {
       success: false,
       extractedTypes: null,
+      tsConfigResult,
       error: error.message,
       reason: 'Unexpected error during type extraction'
     };
