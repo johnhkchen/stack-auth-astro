@@ -16,16 +16,104 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 /**
- * Create TypeScript program with proper module resolution
+ * Enhanced TypeScript configuration detection and parsing
  */
-function createTypeScriptProgram(entry) {
-  const configPath = ts.findConfigFile(
-    process.cwd(),
-    ts.sys.fileExists,
-    'tsconfig.json'
-  );
+function detectAndParseTypeScriptConfig(projectRoot = process.cwd()) {
+  console.log('🔍 Detecting consumer project TypeScript configuration...');
   
-  let compilerOptions = {
+  try {
+    // Find tsconfig.json in consumer project
+    const configPath = ts.findConfigFile(
+      projectRoot,
+      ts.sys.fileExists,
+      'tsconfig.json'
+    );
+
+    if (!configPath) {
+      console.warn('⚠️ No tsconfig.json found, using fallback configuration');
+      return {
+        success: false,
+        configPath: null,
+        compilerOptions: getFallbackCompilerOptions(),
+        warnings: ['No tsconfig.json found in consumer project'],
+        source: 'fallback'
+      };
+    }
+
+    console.log(`📁 Found tsconfig.json at: ${configPath}`);
+
+    // Read and parse the configuration file with extends chain support
+    const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
+    
+    if (configFile.error) {
+      console.warn(`⚠️ Error reading tsconfig.json: ${configFile.error.messageText}`);
+      return {
+        success: false,
+        configPath,
+        compilerOptions: getFallbackCompilerOptions(),
+        warnings: [`Failed to read tsconfig.json: ${configFile.error.messageText}`],
+        source: 'fallback'
+      };
+    }
+
+    // Parse JSON config file content (handles extends chains automatically)
+    const parsed = ts.parseJsonConfigFileContent(
+      configFile.config,
+      ts.sys,
+      dirname(configPath)
+    );
+
+    if (parsed.errors && parsed.errors.length > 0) {
+      const errorMessages = parsed.errors.map(error => 
+        typeof error.messageText === 'string' 
+          ? error.messageText 
+          : error.messageText.messageText
+      );
+      
+      console.warn('⚠️ TypeScript config parsing errors:', errorMessages);
+      return {
+        success: false,
+        configPath,
+        compilerOptions: getFallbackCompilerOptions(),
+        warnings: errorMessages,
+        source: 'fallback'
+      };
+    }
+
+    // Validate and enhance compiler options for type extraction
+    const validatedOptions = validateAndEnhanceCompilerOptions(parsed.options);
+    
+    console.log('✅ Successfully parsed consumer TypeScript configuration');
+    console.log(`   Target: ${ts.ScriptTarget[validatedOptions.target]}`);
+    console.log(`   Module: ${ts.ModuleKind[validatedOptions.module]}`);
+    console.log(`   Module Resolution: ${ts.ModuleResolutionKind[validatedOptions.moduleResolution]}`);
+    console.log(`   Strict: ${validatedOptions.strict}`);
+
+    return {
+      success: true,
+      configPath,
+      compilerOptions: validatedOptions,
+      warnings: validatedOptions._validationWarnings || [],
+      source: 'consumer'
+    };
+
+  } catch (error) {
+    console.error(`❌ Error detecting TypeScript configuration: ${error.message}`);
+    return {
+      success: false,
+      configPath: null,
+      compilerOptions: getFallbackCompilerOptions(),
+      warnings: [`Unexpected error: ${error.message}`],
+      source: 'fallback'
+    };
+  }
+}
+
+/**
+ * Get fallback compiler options when tsconfig.json is missing or invalid
+ */
+function getFallbackCompilerOptions() {
+  return {
     target: ts.ScriptTarget.ES2020,
     module: ts.ModuleKind.ESNext,
     moduleResolution: ts.ModuleResolutionKind.NodeNext,
@@ -35,17 +123,93 @@ function createTypeScriptProgram(entry) {
     allowSyntheticDefaultImports: true,
     esModuleInterop: true,
     jsx: ts.JsxEmit.ReactJSX,
+    lib: ['ES2020', 'DOM'],
+    types: ['node'],
+    noEmit: true,
+    isolatedModules: true
+  };
+}
+
+/**
+ * Validate and enhance compiler options for type extraction compatibility
+ */
+function validateAndEnhanceCompilerOptions(options) {
+  const warnings = [];
+  const enhanced = { ...options };
+
+  // Critical options for type extraction
+  const criticalOptions = {
+    // Ensure we can process declarations
+    declaration: true,
+    skipLibCheck: true,
+    noEmit: true,
+    
+    // Essential for module resolution
+    esModuleInterop: enhanced.esModuleInterop !== false,
+    allowSyntheticDefaultImports: enhanced.allowSyntheticDefaultImports !== false,
+    
+    // Ensure we can process JSX if needed
+    jsx: enhanced.jsx || ts.JsxEmit.ReactJSX
   };
 
-  if (configPath) {
-    const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
-    const parsed = ts.parseJsonConfigFileContent(
-      configFile.config,
-      ts.sys,
-      dirname(configPath)
-    );
-    compilerOptions = { ...compilerOptions, ...parsed.options };
+  // Apply critical options
+  Object.assign(enhanced, criticalOptions);
+
+  // Validate target compatibility
+  if (enhanced.target && enhanced.target < ts.ScriptTarget.ES2018) {
+    warnings.push(`Target ${ts.ScriptTarget[enhanced.target]} may cause issues with modern TypeScript features. Consider ES2018 or higher.`);
   }
+
+  // Validate module resolution
+  if (enhanced.moduleResolution === ts.ModuleResolutionKind.Classic) {
+    warnings.push('Classic module resolution may cause import resolution issues. Consider using Node or NodeNext.');
+  }
+
+  // Validate module format
+  const validModules = [
+    ts.ModuleKind.ESNext, 
+    ts.ModuleKind.ES2020, 
+    ts.ModuleKind.ES2022,
+    ts.ModuleKind.CommonJS,
+    ts.ModuleKind.NodeNext
+  ];
+  
+  if (enhanced.module && !validModules.includes(enhanced.module)) {
+    warnings.push(`Module format ${ts.ModuleKind[enhanced.module]} may not be fully supported.`);
+  }
+
+  // Ensure lib includes necessary libraries
+  if (!enhanced.lib || enhanced.lib.length === 0) {
+    enhanced.lib = ['ES2020', 'DOM'];
+    warnings.push('No lib specified, defaulting to ES2020 and DOM');
+  }
+
+  // Validate strict mode settings
+  if (enhanced.strict === false) {
+    warnings.push('Strict mode is disabled, which may affect type extraction accuracy.');
+  }
+
+  // Store warnings for reporting
+  enhanced._validationWarnings = warnings;
+
+  return enhanced;
+}
+
+/**
+ * Create TypeScript program with enhanced configuration detection
+ */
+function createTypeScriptProgram(entry) {
+  // Detect and parse consumer's TypeScript configuration
+  const configResult = detectAndParseTypeScriptConfig();
+  
+  // Log configuration source and any warnings
+  console.log(`🔧 Using TypeScript configuration from: ${configResult.source}`);
+  if (configResult.warnings.length > 0) {
+    console.warn('⚠️ Configuration warnings:');
+    configResult.warnings.forEach(warning => console.warn(`   ${warning}`));
+  }
+
+  const compilerOptions = configResult.compilerOptions;
 
   // Create a virtual entry file that imports the components
   const virtualEntry = `
@@ -323,5 +487,8 @@ export {
   getSDKVersion,
   validateExtractedTypes,
   createTypeScriptProgram,
-  extractInterfaceProperties
+  extractInterfaceProperties,
+  detectAndParseTypeScriptConfig,
+  getFallbackCompilerOptions,
+  validateAndEnhanceCompilerOptions
 };
