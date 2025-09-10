@@ -166,19 +166,17 @@ describe('Stack Auth Options Validation', () => {
     expect(result.errors).toContain('addReactRenderer must be a boolean');
   });
 
-  it('should validate nested config', () => {
+  it('should validate options with config fields', () => {
     const options = {
-      config: {
-        projectId: '',
-        publishableClientKey: 'pk_test_key',
-        secretServerKey: 'sk_test_key'
-      }
+      projectId: '',
+      publishableClientKey: 'pk_test_key',
+      secretServerKey: 'sk_test_key'
     };
     
     const result = validateStackAuthOptions(options);
     
     expect(result.isValid).toBe(false);
-    expect(result.errors).toContain('config.projectId is required');
+    expect(result.errors).toContain('projectId is required');
   });
 });
 

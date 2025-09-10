@@ -52,8 +52,8 @@ export function getConfig(): StackAuthConfig {
     projectId: process.env.STACK_PROJECT_ID!,
     publishableClientKey: process.env.STACK_PUBLISHABLE_CLIENT_KEY!,
     secretServerKey: process.env.STACK_SECRET_SERVER_KEY!,
-    baseUrl: process.env.STACK_BASE_URL,
-    prefix: process.env.STACK_AUTH_PREFIX || '/handler'
+    prefix: process.env.STACK_AUTH_PREFIX || '/handler',
+    ...(process.env.STACK_BASE_URL && { baseUrl: process.env.STACK_BASE_URL })
   };
 
   // Validate the configuration object
@@ -104,8 +104,8 @@ export function tryGetConfig(): { config: StackAuthConfig | null; validation: Va
       projectId: process.env.STACK_PROJECT_ID!,
       publishableClientKey: process.env.STACK_PUBLISHABLE_CLIENT_KEY!,
       secretServerKey: process.env.STACK_SECRET_SERVER_KEY!,
-      baseUrl: process.env.STACK_BASE_URL,
-      prefix: process.env.STACK_AUTH_PREFIX || '/handler'
+      prefix: process.env.STACK_AUTH_PREFIX || '/handler',
+      ...(process.env.STACK_BASE_URL && { baseUrl: process.env.STACK_BASE_URL })
     };
 
     const configValidation = validateConfiguration(config);

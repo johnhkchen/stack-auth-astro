@@ -175,7 +175,7 @@ const ReactDOMCompatibilityTest = () => {
   return {
     hasCreateRoot,
     reactVersion,
-    isReact18Plus: parseInt(React.version.split('.')[0]) >= 18
+    isReact18Plus: parseInt(React.version.split('.')[0] || '0') >= 18
   };
 };
 
@@ -413,12 +413,17 @@ const ServerEnvironmentTest: React.FC = () => {
   });
 
   React.useEffect(() => {
-    setEnvInfo({
+    const baseInfo = {
       isServer: typeof window === 'undefined',
       hasProcess: typeof process !== 'undefined',
-      hasGlobal: typeof global !== 'undefined',
-      nodeVersion: typeof process !== 'undefined' ? process.version : undefined
-    });
+      hasGlobal: typeof global !== 'undefined'
+    };
+    
+    setEnvInfo(
+      typeof process !== 'undefined' && process.version
+        ? { ...baseInfo, nodeVersion: process.version }
+        : baseInfo
+    );
   }, []);
 
   return React.createElement('div', null, [

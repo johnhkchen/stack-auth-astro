@@ -277,8 +277,7 @@ const StackAuthForwardRefComponent = React.forwardRef<
 // Test React Context with Stack Auth types
 const StackAuthContext = React.createContext<StackAuthContextType>({
   user: null,
-  session: null,
-  app: undefined
+  session: null
 });
 
 // Test Provider component with Stack Auth types

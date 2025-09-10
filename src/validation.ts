@@ -170,7 +170,8 @@ export function validateRuntimeCompatibility(): ValidationResult {
   try {
     // Check Node.js version
     const nodeVersion = process.version;
-    const majorVersion = parseInt(nodeVersion.slice(1).split('.')[0]);
+    const majorVersionString = nodeVersion.slice(1).split('.')[0];
+    const majorVersion = parseInt(majorVersionString || '0');
     
     if (majorVersion < 18) {
       errors.push(`Node.js ${majorVersion} is not supported. Please upgrade to Node.js 18 or higher.`);

@@ -236,8 +236,7 @@ const UseRefIntegrationTest: React.FC = () => {
 // Test React Context with Stack Auth types
 const StackAuthReactContext = React.createContext<StackAuthContextType>({
   user: null,
-  session: null,
-  app: undefined
+  session: null
 });
 
 const StackAuthContextProvider: React.FC<{ 

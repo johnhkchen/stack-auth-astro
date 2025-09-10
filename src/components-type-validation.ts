@@ -70,8 +70,7 @@ const TestFCAssignment: React.FC<StackAuthComponentProps & CustomProps> = StackA
 // Create test context using StackAuthContextType
 const StackAuthContext = React.createContext<StackAuthContextType>({
   user: null,
-  session: null,
-  app: undefined
+  session: null
 });
 
 // Test useContext hook with our context type
