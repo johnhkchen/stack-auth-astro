@@ -68,10 +68,10 @@ function testBuildFilesExist() {
   });
   
   for (const entryPoint of ENTRY_POINTS) {
-    smokeTest(`${entryPoint}.js exists`, () => {
-      const filePath = path.join(DIST_DIR, `${entryPoint}.js`);
+    smokeTest(`${entryPoint}.cjs exists`, () => {
+      const filePath = path.join(DIST_DIR, `${entryPoint}.cjs`);
       if (!fs.existsSync(filePath)) {
-        throw new Error(`Missing CommonJS build output: ${entryPoint}.js`);
+        throw new Error(`Missing CommonJS build output: ${entryPoint}.cjs`);
       }
     });
     
@@ -100,8 +100,8 @@ function testModuleImports() {
   log('info', 'Running module import tests...');
   
   for (const entryPoint of ENTRY_POINTS) {
-    smokeTest(`Can require ${entryPoint}.js`, () => {
-      const modulePath = path.join(DIST_DIR, `${entryPoint}.js`);
+    smokeTest(`Can require ${entryPoint}.cjs`, () => {
+      const modulePath = path.join(DIST_DIR, `${entryPoint}.cjs`);
       delete require.cache[path.resolve(modulePath)];
       const module = require(modulePath);
       
@@ -126,7 +126,7 @@ function testModuleFunctionality() {
   
   // Test index module
   smokeTest('Index module exports integration function', () => {
-    const modulePath = path.join(DIST_DIR, 'index.js');
+    const modulePath = path.join(DIST_DIR, 'index.cjs');
     delete require.cache[path.resolve(modulePath)];
     const module = require(modulePath);
     
@@ -142,7 +142,7 @@ function testModuleFunctionality() {
   
   // Test server module
   smokeTest('Server module exports auth functions', () => {
-    const modulePath = path.join(DIST_DIR, 'server.js');
+    const modulePath = path.join(DIST_DIR, 'server.cjs');
     delete require.cache[path.resolve(modulePath)];
     const module = require(modulePath);
     
@@ -156,7 +156,7 @@ function testModuleFunctionality() {
   
   // Test client module
   smokeTest('Client module exports auth functions', () => {
-    const modulePath = path.join(DIST_DIR, 'client.js');
+    const modulePath = path.join(DIST_DIR, 'client.cjs');
     delete require.cache[path.resolve(modulePath)];
     const module = require(modulePath);
     
@@ -170,7 +170,7 @@ function testModuleFunctionality() {
   
   // Test components module 
   smokeTest('Components module has valid exports', () => {
-    const modulePath = path.join(DIST_DIR, 'components.js');
+    const modulePath = path.join(DIST_DIR, 'components.cjs');
     delete require.cache[path.resolve(modulePath)];
     const module = require(modulePath);
     
@@ -182,7 +182,7 @@ function testModuleFunctionality() {
 
   // Test middleware module 
   smokeTest('Middleware module has valid exports', () => {
-    const modulePath = path.join(DIST_DIR, 'middleware.js');
+    const modulePath = path.join(DIST_DIR, 'middleware.cjs');
     delete require.cache[path.resolve(modulePath)];
     const module = require(modulePath);
     
@@ -202,8 +202,8 @@ function testFileSizes() {
   log('info', 'Running file size tests...');
   
   for (const entryPoint of ENTRY_POINTS) {
-    smokeTest(`${entryPoint}.js has reasonable size`, () => {
-      const filePath = path.join(DIST_DIR, `${entryPoint}.js`);
+    smokeTest(`${entryPoint}.cjs has reasonable size`, () => {
+      const filePath = path.join(DIST_DIR, `${entryPoint}.cjs`);
       const stats = fs.statSync(filePath);
       
       if (stats.size === 0) {
@@ -300,7 +300,7 @@ function testIntegrationSmoke() {
   log('info', 'Running integration smoke tests...');
   
   smokeTest('Integration can be called with options', () => {
-    const modulePath = path.join(DIST_DIR, 'index.js');
+    const modulePath = path.join(DIST_DIR, 'index.cjs');
     delete require.cache[path.resolve(modulePath)];
     const module = require(modulePath);
     

@@ -14,6 +14,12 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   outDir: 'dist',
+  // Use .cjs extension for CommonJS files when package.json has "type": "module"
+  outExtension({ format }) {
+    return {
+      js: format === 'cjs' ? '.cjs' : '.mjs'
+    }
+  },
   // Configure TypeScript to be more permissive for external dependencies
   tsconfig: './tsconfig.build.json',
   external: [
