@@ -49,6 +49,15 @@ export function validateEnvironmentVariables(): ValidationResult {
     warnings.push('STACK_BASE_URL not set, using Stack Auth default API endpoint');
   }
 
+  // Check cache configuration variables (optional)
+  if (process.env.STACK_AUTH_CACHE_SIZE && isNaN(parseInt(process.env.STACK_AUTH_CACHE_SIZE))) {
+    warnings.push('STACK_AUTH_CACHE_SIZE should be a numeric value');
+  }
+
+  if (process.env.STACK_AUTH_CACHE_TTL && isNaN(parseInt(process.env.STACK_AUTH_CACHE_TTL))) {
+    warnings.push('STACK_AUTH_CACHE_TTL should be a numeric value (milliseconds)');
+  }
+
   // Validate environment variable formats
   if (process.env.STACK_PROJECT_ID && !isValidProjectId(process.env.STACK_PROJECT_ID)) {
     errors.push('STACK_PROJECT_ID format appears invalid (should be a UUID or similar identifier)');

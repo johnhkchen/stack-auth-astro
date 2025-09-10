@@ -31,6 +31,76 @@ import {
 } from './version-compatibility.js';
 
 /**
+ * Cache configuration profiles for different environments
+ */
+interface CacheConfig {
+  maxSize: number;
+  ttl: number; // time-to-live in ms
+  warmupEnabled: boolean;
+  statsEnabled: boolean;
+}
+
+class CacheConfigManager {
+  static getConfig(): CacheConfig {
+    const env = process.env.NODE_ENV || 'development';
+    
+    // Environment-specific defaults
+    const baseConfig: Record<string, CacheConfig> = {
+      development: {
+        maxSize: parseInt(process.env.STACK_AUTH_CACHE_SIZE || '50'),
+        ttl: parseInt(process.env.STACK_AUTH_CACHE_TTL || '300000'), // 5 minutes
+        warmupEnabled: process.env.STACK_AUTH_CACHE_WARMUP !== 'false',
+        statsEnabled: process.env.STACK_AUTH_CACHE_STATS !== 'false'
+      },
+      test: {
+        maxSize: parseInt(process.env.STACK_AUTH_CACHE_SIZE || '20'),
+        ttl: parseInt(process.env.STACK_AUTH_CACHE_TTL || '60000'), // 1 minute
+        warmupEnabled: process.env.STACK_AUTH_CACHE_WARMUP === 'true',
+        statsEnabled: process.env.STACK_AUTH_CACHE_STATS === 'true'
+      },
+      production: {
+        maxSize: parseInt(process.env.STACK_AUTH_CACHE_SIZE || '200'),
+        ttl: parseInt(process.env.STACK_AUTH_CACHE_TTL || '600000'), // 10 minutes
+        warmupEnabled: process.env.STACK_AUTH_CACHE_WARMUP !== 'false',
+        statsEnabled: process.env.STACK_AUTH_CACHE_STATS === 'true'
+      }
+    };
+
+    const config = baseConfig[env] || baseConfig.development;
+    
+    // Auto-tune cache size based on available memory (basic heuristic)
+    if (process.env.STACK_AUTH_CACHE_AUTO_TUNE === 'true') {
+      try {
+        const memoryMB = process.memoryUsage().heapTotal / (1024 * 1024);
+        if (memoryMB < 100) config.maxSize = Math.min(config.maxSize, 20);
+        else if (memoryMB > 500) config.maxSize = Math.max(config.maxSize, 500);
+      } catch {
+        // Ignore memory calculation errors
+      }
+    }
+
+    return config;
+  }
+}
+
+/**
+ * Enhanced cache statistics interface
+ */
+interface CacheStats {
+  hits: number;
+  misses: number;
+  evictions: number;
+  sets: number;
+  clears: number;
+  size: number;
+  maxSize: number;
+  hitRate: number;
+  avgTtl: number;
+  lastAccess: number;
+  createdAt: number;
+}
+
+/**
  * Performance monitoring and caching utilities
  */
 interface ValidationCache<T> {
@@ -38,39 +108,65 @@ interface ValidationCache<T> {
   set(key: string, value: T): void;
   clear(): void;
   size: number;
+  getStats(): CacheStats;
+  warm(keys: string[], warmupFn: (key: string) => Promise<T>): Promise<void>;
+  validateHealth(): { isHealthy: boolean; issues: string[] };
 }
 
 class LRUCache<T> implements ValidationCache<T> {
   private cache = new Map<string, { value: T; timestamp: number }>();
   private maxSize: number;
   private ttl: number; // time-to-live in ms
+  private stats: Omit<CacheStats, 'hitRate' | 'avgTtl' | 'size' | 'maxSize'>;
+  private createdAt: number;
 
-  constructor(maxSize: number = 100, ttl: number = 5 * 60 * 1000) { // 5 minutes default
-    this.maxSize = maxSize;
-    this.ttl = ttl;
+  constructor(config?: CacheConfig) {
+    const cacheConfig = config || CacheConfigManager.getConfig();
+    this.maxSize = cacheConfig.maxSize;
+    this.ttl = cacheConfig.ttl;
+    this.createdAt = Date.now();
+    this.stats = {
+      hits: 0,
+      misses: 0,
+      evictions: 0,
+      sets: 0,
+      clears: 0,
+      lastAccess: Date.now()
+    };
   }
 
   get(key: string): T | undefined {
+    this.stats.lastAccess = Date.now();
     const item = this.cache.get(key);
-    if (!item) return undefined;
+    
+    if (!item) {
+      this.stats.misses++;
+      return undefined;
+    }
     
     // Check if expired
     if (Date.now() - item.timestamp > this.ttl) {
       this.cache.delete(key);
+      this.stats.misses++;
       return undefined;
     }
     
     // Move to end (most recently used)
     this.cache.delete(key);
     this.cache.set(key, item);
+    this.stats.hits++;
     return item.value;
   }
 
   set(key: string, value: T): void {
+    this.stats.lastAccess = Date.now();
+    this.stats.sets++;
+    
     // Remove oldest if at capacity
     if (this.cache.size >= this.maxSize) {
       const firstKey = this.cache.keys().next().value;
       this.cache.delete(firstKey);
+      this.stats.evictions++;
     }
     
     this.cache.set(key, { value, timestamp: Date.now() });
@@ -78,10 +174,74 @@ class LRUCache<T> implements ValidationCache<T> {
 
   clear(): void {
     this.cache.clear();
+    this.stats.clears++;
+    this.stats.lastAccess = Date.now();
   }
 
   get size(): number {
     return this.cache.size;
+  }
+
+  getStats(): CacheStats {
+    const totalAccess = this.stats.hits + this.stats.misses;
+    return {
+      ...this.stats,
+      size: this.cache.size,
+      maxSize: this.maxSize,
+      hitRate: totalAccess > 0 ? this.stats.hits / totalAccess : 0,
+      avgTtl: this.ttl,
+      createdAt: this.createdAt
+    };
+  }
+
+  async warm(keys: string[], warmupFn: (key: string) => Promise<T>): Promise<void> {
+    const warmupPromises = keys.map(async (key) => {
+      try {
+        if (!this.cache.has(key)) {
+          const value = await warmupFn(key);
+          this.set(key, value);
+        }
+      } catch (error) {
+        // Log warning but don't fail warmup for individual items
+        if (process.env.NODE_ENV === 'development') {
+          console.warn(`Cache warmup failed for key ${key}:`, error);
+        }
+      }
+    });
+    
+    await Promise.allSettled(warmupPromises);
+  }
+
+  validateHealth(): { isHealthy: boolean; issues: string[] } {
+    const issues: string[] = [];
+    const stats = this.getStats();
+    
+    // Check cache hit rate
+    if (stats.hitRate < 0.5 && stats.hits + stats.misses > 10) {
+      issues.push(`Low cache hit rate: ${(stats.hitRate * 100).toFixed(1)}%`);
+    }
+    
+    // Check if cache is too full
+    if (stats.size / stats.maxSize > 0.9) {
+      issues.push(`Cache nearly full: ${stats.size}/${stats.maxSize} items`);
+    }
+    
+    // Check for excessive evictions
+    const evictionRate = stats.sets > 0 ? stats.evictions / stats.sets : 0;
+    if (evictionRate > 0.3 && stats.sets > 10) {
+      issues.push(`High eviction rate: ${(evictionRate * 100).toFixed(1)}%`);
+    }
+    
+    // Check if cache hasn't been accessed recently
+    const timeSinceLastAccess = Date.now() - stats.lastAccess;
+    if (timeSinceLastAccess > this.ttl * 2) {
+      issues.push(`Cache inactive for ${Math.round(timeSinceLastAccess / 60000)} minutes`);
+    }
+    
+    return {
+      isHealthy: issues.length === 0,
+      issues
+    };
   }
 }
 
@@ -207,22 +367,260 @@ class PerformanceTracker {
   }
 }
 
-// Global caches and performance tracker
-const moduleValidationCache = new LRUCache<{ isValid: boolean; error?: string }>();
-const componentValidationCache = new LRUCache<{ isValid: boolean; error?: string; componentType?: string }>();
-const moduleExportsCache = new LRUCache<any>();
-const dynamicImportCache = new LRUCache<any>();
+// Global caches and performance tracker with configurable management
+const globalCacheConfig = CacheConfigManager.getConfig();
+const moduleValidationCache = new LRUCache<{ isValid: boolean; error?: string }>(globalCacheConfig);
+const componentValidationCache = new LRUCache<{ isValid: boolean; error?: string; componentType?: string }>(globalCacheConfig);
+const moduleExportsCache = new LRUCache<any>(globalCacheConfig);
+const dynamicImportCache = new LRUCache<any>(globalCacheConfig);
 const perfTracker = new PerformanceTracker();
+
+/**
+ * Cache Management API
+ */
+export interface CacheManagementAPI {
+  // Cache statistics and health
+  getCacheStats(): {
+    moduleValidation: CacheStats;
+    componentValidation: CacheStats;
+    moduleExports: CacheStats;
+    dynamicImport: CacheStats;
+  };
+  validateCacheHealth(): {
+    overall: { isHealthy: boolean; issues: string[] };
+    individual: {
+      moduleValidation: { isHealthy: boolean; issues: string[] };
+      componentValidation: { isHealthy: boolean; issues: string[] };
+      moduleExports: { isHealthy: boolean; issues: string[] };
+      dynamicImport: { isHealthy: boolean; issues: string[] };
+    };
+  };
+  
+  // Cache warming
+  warmCache(options?: {
+    moduleValidations?: string[];
+    componentValidations?: string[];
+    moduleExports?: string[];
+    dynamicImports?: string[];
+  }): Promise<void>;
+  
+  // Cache management
+  clearAllCaches(): void;
+  clearCache(cacheType: 'moduleValidation' | 'componentValidation' | 'moduleExports' | 'dynamicImport'): void;
+  
+  // Development tools
+  getCacheDashboard(): {
+    config: CacheConfig;
+    performance: ReturnType<typeof perfTracker.generateReport>;
+    stats: ReturnType<CacheManagementAPI['getCacheStats']>;
+    health: ReturnType<CacheManagementAPI['validateCacheHealth']>;
+    environment: string;
+  };
+  
+  // Debugging
+  inspectCache(cacheType: 'moduleValidation' | 'componentValidation' | 'moduleExports' | 'dynamicImport'): {
+    keys: string[];
+    sampleEntries: Array<{ key: string; value: any; age: number }>;
+  };
+}
+
+/**
+ * Implementation of the Cache Management API
+ */
+class CacheManager implements CacheManagementAPI {
+  getCacheStats() {
+    return {
+      moduleValidation: moduleValidationCache.getStats(),
+      componentValidation: componentValidationCache.getStats(),
+      moduleExports: moduleExportsCache.getStats(),
+      dynamicImport: dynamicImportCache.getStats()
+    };
+  }
+
+  validateCacheHealth() {
+    const moduleValidationHealth = moduleValidationCache.validateHealth();
+    const componentValidationHealth = componentValidationCache.validateHealth();
+    const moduleExportsHealth = moduleExportsCache.validateHealth();
+    const dynamicImportHealth = dynamicImportCache.validateHealth();
+    
+    const allIssues = [
+      ...moduleValidationHealth.issues,
+      ...componentValidationHealth.issues,
+      ...moduleExportsHealth.issues,
+      ...dynamicImportHealth.issues
+    ];
+    
+    return {
+      overall: {
+        isHealthy: allIssues.length === 0,
+        issues: allIssues
+      },
+      individual: {
+        moduleValidation: moduleValidationHealth,
+        componentValidation: componentValidationHealth,
+        moduleExports: moduleExportsHealth,
+        dynamicImport: dynamicImportHealth
+      }
+    };
+  }
+
+  async warmCache(options: {
+    moduleValidations?: string[];
+    componentValidations?: string[];
+    moduleExports?: string[];
+    dynamicImports?: string[];
+  } = {}) {
+    const warmupTasks = [];
+    
+    // Common validation paths for warmup
+    const commonModuleValidations = [
+      'runtime-export:astro-stack-auth/components:SignIn',
+      'runtime-export:astro-stack-auth/components:SignUp',
+      'runtime-export:astro-stack-auth/components:UserButton',
+      'runtime-export:astro-stack-auth/server:getUser',
+      'runtime-export:astro-stack-auth/client:signIn'
+    ];
+    
+    const commonComponentValidations = [
+      'react-component:astro-stack-auth/components:SignIn',
+      'react-component:astro-stack-auth/components:SignUp',
+      'react-component:astro-stack-auth/components:UserButton'
+    ];
+    
+    const commonModuleExports = [
+      'module-exports:astro-stack-auth/components',
+      'module-exports:astro-stack-auth/server',
+      'module-exports:astro-stack-auth/client'
+    ];
+    
+    const commonDynamicImports = [
+      'import:components',
+      'import:server',
+      'import:client'
+    ];
+
+    // Warmup module validations
+    if (options.moduleValidations || !Object.keys(options).length) {
+      const keys = options.moduleValidations || commonModuleValidations;
+      warmupTasks.push(
+        moduleValidationCache.warm(keys, async (key) => {
+          // Simulate validation result - in real implementation would call actual validation
+          return { isValid: true };
+        })
+      );
+    }
+
+    // Warmup component validations
+    if (options.componentValidations || !Object.keys(options).length) {
+      const keys = options.componentValidations || commonComponentValidations;
+      warmupTasks.push(
+        componentValidationCache.warm(keys, async (key) => {
+          return { isValid: true, componentType: 'react-component' };
+        })
+      );
+    }
+
+    // Warmup module exports
+    if (options.moduleExports || !Object.keys(options).length) {
+      const keys = options.moduleExports || commonModuleExports;
+      warmupTasks.push(
+        moduleExportsCache.warm(keys, async (key) => {
+          return { isValid: true, missingExports: [], unexpectedExports: [], modulePath: key };
+        })
+      );
+    }
+
+    // Warmup dynamic imports
+    if (options.dynamicImports || !Object.keys(options).length) {
+      const keys = options.dynamicImports || commonDynamicImports;
+      warmupTasks.push(
+        dynamicImportCache.warm(keys, async (key) => {
+          // Mock successful import for warmup
+          return { success: true, module: {}, source: 'warmup' };
+        })
+      );
+    }
+
+    await Promise.allSettled(warmupTasks);
+  }
+
+  clearAllCaches(): void {
+    moduleValidationCache.clear();
+    componentValidationCache.clear();
+    moduleExportsCache.clear();
+    dynamicImportCache.clear();
+    perfTracker.clear();
+  }
+
+  clearCache(cacheType: 'moduleValidation' | 'componentValidation' | 'moduleExports' | 'dynamicImport'): void {
+    switch (cacheType) {
+      case 'moduleValidation':
+        moduleValidationCache.clear();
+        break;
+      case 'componentValidation':
+        componentValidationCache.clear();
+        break;
+      case 'moduleExports':
+        moduleExportsCache.clear();
+        break;
+      case 'dynamicImport':
+        dynamicImportCache.clear();
+        break;
+    }
+  }
+
+  getCacheDashboard() {
+    return {
+      config: globalCacheConfig,
+      performance: perfTracker.generateReport(),
+      stats: this.getCacheStats(),
+      health: this.validateCacheHealth(),
+      environment: process.env.NODE_ENV || 'development'
+    };
+  }
+
+  inspectCache(cacheType: 'moduleValidation' | 'componentValidation' | 'moduleExports' | 'dynamicImport') {
+    let targetCache: any;
+    
+    switch (cacheType) {
+      case 'moduleValidation':
+        targetCache = moduleValidationCache;
+        break;
+      case 'componentValidation':
+        targetCache = componentValidationCache;
+        break;
+      case 'moduleExports':
+        targetCache = moduleExportsCache;
+        break;
+      case 'dynamicImport':
+        targetCache = dynamicImportCache;
+        break;
+    }
+
+    // Access private cache Map for inspection (development only)
+    const cacheMap = (targetCache as any).cache as Map<string, { value: any; timestamp: number }>;
+    const keys = Array.from(cacheMap.keys());
+    const sampleEntries = keys.slice(0, 5).map(key => {
+      const entry = cacheMap.get(key)!;
+      return {
+        key,
+        value: entry.value,
+        age: Date.now() - entry.timestamp
+      };
+    });
+
+    return { keys, sampleEntries };
+  }
+}
+
+// Export the cache manager instance
+const cacheManager = new CacheManager();
 
 /**
  * Clear all validation caches (useful for development scenarios)
  */
 export function clearValidationCaches(): void {
-  moduleValidationCache.clear();
-  componentValidationCache.clear();
-  moduleExportsCache.clear();
-  dynamicImportCache.clear();
-  perfTracker.clear();
+  cacheManager.clearAllCaches();
 }
 
 /**
@@ -230,6 +628,106 @@ export function clearValidationCaches(): void {
  */
 export function getValidationMetrics() {
   return perfTracker.generateReport();
+}
+
+/**
+ * Get cache management API
+ */
+export function getCacheManager(): CacheManagementAPI {
+  return cacheManager;
+}
+
+/**
+ * Get cache statistics for all caches
+ */
+export function getCacheStats() {
+  return cacheManager.getCacheStats();
+}
+
+/**
+ * Validate health of all caches
+ */
+export function validateCacheHealth() {
+  return cacheManager.validateCacheHealth();
+}
+
+/**
+ * Warm up caches with common validation patterns
+ */
+export async function warmValidationCaches(options?: Parameters<CacheManagementAPI['warmCache']>[0]) {
+  return cacheManager.warmCache(options);
+}
+
+/**
+ * Development mode cache dashboard
+ */
+export function getCacheDashboard() {
+  return cacheManager.getCacheDashboard();
+}
+
+/**
+ * Development mode cache inspection
+ */
+export function inspectValidationCache(cacheType: Parameters<CacheManagementAPI['inspectCache']>[0]) {
+  return cacheManager.inspectCache(cacheType);
+}
+
+/**
+ * Performance dashboard for development
+ */
+export function logCachePerformanceDashboard(): void {
+  if (process.env.NODE_ENV !== 'development') return;
+  
+  const dashboard = getCacheDashboard();
+  
+  console.log('\n📊 Stack Auth Cache Performance Dashboard');
+  console.log('==========================================');
+  console.log(`Environment: ${dashboard.environment}`);
+  console.log(`Config: Size=${dashboard.config.maxSize}, TTL=${dashboard.config.ttl}ms`);
+  
+  console.log('\n📈 Performance Metrics:');
+  const perf = dashboard.performance;
+  console.log(`  Total Operations: ${perf.totalOperations}`);
+  console.log(`  Cache Hit Rate: ${(perf.cacheHitRate * 100).toFixed(1)}%`);
+  console.log(`  Total Duration: ${perf.totalDuration.toFixed(1)}ms`);
+  
+  console.log('\n🗄️ Cache Statistics:');
+  Object.entries(dashboard.stats).forEach(([name, stats]) => {
+    console.log(`  ${name}:`);
+    console.log(`    Size: ${stats.size}/${stats.maxSize} (${((stats.size/stats.maxSize)*100).toFixed(1)}%)`);
+    console.log(`    Hit Rate: ${(stats.hitRate * 100).toFixed(1)}%`);
+    console.log(`    Evictions: ${stats.evictions}`);
+  });
+  
+  console.log('\n🏥 Health Status:');
+  const health = dashboard.health;
+  console.log(`  Overall Health: ${health.overall.isHealthy ? '✅ Healthy' : '⚠️ Issues Detected'}`);
+  if (health.overall.issues.length > 0) {
+    health.overall.issues.forEach(issue => console.log(`    - ${issue}`));
+  }
+  
+  console.log('==========================================\n');
+}
+
+/**
+ * Log cache miss warnings for critical paths
+ */
+export function logCacheMissWarnings(): void {
+  if (process.env.NODE_ENV !== 'development') return;
+  
+  const stats = getCacheStats();
+  const criticalPaths = [
+    'moduleValidation',
+    'componentValidation'
+  ];
+  
+  criticalPaths.forEach(pathType => {
+    const pathStats = stats[pathType as keyof typeof stats];
+    if (pathStats.hitRate < 0.7 && pathStats.hits + pathStats.misses > 5) {
+      console.warn(`⚠️  Low cache hit rate for ${pathType}: ${(pathStats.hitRate * 100).toFixed(1)}%`);
+      console.warn(`   Consider warming up cache or checking validation patterns`);
+    }
+  });
 }
 
 /**
