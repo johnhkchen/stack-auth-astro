@@ -348,6 +348,55 @@ export function cleanupTempFiles(): void {
 }
 
 /**
+ * Safe file writing (with performance monitoring)
+ */
+export function writeFileContent(filePath: string, content: string): boolean {
+  return fileOpTracker.time('writeFileContent', filePath, () => {
+    try {
+      fs.writeFileSync(filePath, content, 'utf8');
+      return true;
+    } catch (error) {
+      console.warn(`Warning: Could not write file ${filePath}:`, error);
+      return false;
+    }
+  });
+}
+
+/**
+ * Safe directory creation
+ */
+export function createDirectory(dirPath: string): boolean {
+  return fileOpTracker.time('createDirectory', dirPath, () => {
+    try {
+      if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+      }
+      return true;
+    } catch (error) {
+      console.warn(`Warning: Could not create directory ${dirPath}:`, error);
+      return false;
+    }
+  });
+}
+
+/**
+ * Safe file removal
+ */
+export function removeFile(filePath: string): boolean {
+  return fileOpTracker.time('removeFile', filePath, () => {
+    try {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+      return true;
+    } catch (error) {
+      console.warn(`Warning: Could not remove file ${filePath}:`, error);
+      return false;
+    }
+  });
+}
+
+/**
  * Project root utilities
  */
 export const PROJECT_ROOT = path.resolve(__dirname, '../..');
