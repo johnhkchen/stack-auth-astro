@@ -11,6 +11,7 @@ import * as ts from 'typescript';
 import { existsSync, readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
 
 /**
  * Error categories for classification
@@ -416,10 +417,16 @@ export function validateDependencies() {
   };
   
   // Check for required packages
+  // Only check for packages that are essential for type extraction
+  // React types are not required unless the consumer is actually using React features
   const requiredPackages = [
     '@stackframe/stack',
     '@stackframe/stack-ui',
-    'typescript',
+    'typescript'
+  ];
+  
+  // Check for optional packages separately
+  const optionalPackages = [
     'react',
     '@types/react'
   ];
@@ -459,6 +466,23 @@ export function validateDependencies() {
     }
   }
   
+  // Check optional packages (don't fail validation, just provide suggestions)
+  for (const packageName of optionalPackages) {
+    const validation = validateSinglePackage(packageName);
+    
+    if (!validation.installed) {
+      results.suggestions.push({
+        type: 'info',
+        priority: 'low',
+        title: `Optional Package Not Installed: ${packageName}`,
+        description: `The package "${packageName}" may be needed if using React components, but is not required for basic type extraction.`,
+        action: `Consider installing ${packageName} if using React features`,
+        commands: [`npm install ${packageName}`],
+        links: []
+      });
+    }
+  }
+  
   return results;
 }
 
@@ -469,14 +493,43 @@ function validateSinglePackage(packageName) {
   verboseLog(`Validating package: ${packageName}`);
   
   try {
-    // Try to resolve the package
-    require.resolve(packageName);
+    // Try multiple resolution strategies
+    let packagePath = null;
+    let packageJson = null;
+    
+    // Strategy 1: Try standard require.resolve
+    try {
+      packagePath = require.resolve(`${packageName}/package.json`);
+    } catch {
+      // Strategy 2: Check common locations
+      const possiblePaths = [
+        join(process.cwd(), 'node_modules', packageName, 'package.json'),
+        join(dirname(fileURLToPath(import.meta.url)), '..', 'node_modules', packageName, 'package.json'),
+        join(dirname(fileURLToPath(import.meta.url)), '../..', 'node_modules', packageName, 'package.json')
+      ];
+      
+      for (const path of possiblePaths) {
+        if (existsSync(path)) {
+          packagePath = path;
+          break;
+        }
+      }
+    }
+    
+    if (!packagePath) {
+      // Package not found
+      return {
+        installed: false,
+        currentVersion: null,
+        latestVersion: null,
+        needsUpdate: false
+      };
+    }
     
     // Get current version
     let currentVersion = null;
     try {
-      const packageJsonPath = require.resolve(`${packageName}/package.json`);
-      const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+      packageJson = JSON.parse(readFileSync(packagePath, 'utf-8'));
       currentVersion = packageJson.version;
     } catch (error) {
       verboseLog(`Could not read version for ${packageName}:`, error.message);

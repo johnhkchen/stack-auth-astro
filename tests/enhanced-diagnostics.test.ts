@@ -136,6 +136,33 @@ describe('Enhanced Error Diagnostics', () => {
         }
       }
     });
+
+    it('should treat React and @types/react as optional dependencies', () => {
+      const result = validateDependencies();
+      
+      // React and @types/react should not cause validation to fail
+      const reactSuggestions = result.suggestions.filter(s => 
+        s.title.includes('Optional Package') && 
+        (s.title.includes('react') || s.title.includes('@types/react'))
+      );
+      
+      // If React packages are missing, they should be marked as optional (low priority)
+      reactSuggestions.forEach(suggestion => {
+        expect(suggestion.type).toBe('info');
+        expect(suggestion.priority).toBe('low');
+        expect(suggestion.description).toContain('not required for basic type extraction');
+      });
+      
+      // Missing React packages should not affect validity for basic extraction
+      const requiredMissing = result.missing.filter(pkg => 
+        !['react', '@types/react'].includes(pkg)
+      );
+      
+      // Validity should only be affected by truly required packages
+      if (requiredMissing.length === 0) {
+        expect(result.valid).toBe(true);
+      }
+    });
   });
 
   describe('Diagnostic Report Generation', () => {
