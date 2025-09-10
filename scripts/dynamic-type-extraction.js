@@ -16,12 +16,25 @@ import {
   shouldAttemptTypeExtraction,
   generateVersionReport
 } from './sdk-version-detector.js';
+import { 
+  generateDiagnosticReport, 
+  formatDiagnosticReport,
+  setVerboseMode 
+} from './enhanced-diagnostics.js';
 
 /**
  * Main dynamic type extraction orchestrator
  */
 async function extractDynamicTypes() {
   console.log('🚀 Starting dynamic type extraction...');
+  
+  // Check for verbose mode
+  const verboseMode = process.env.STACK_AUTH_VERBOSE === 'true' || process.argv.includes('--verbose');
+  setVerboseMode(verboseMode);
+  
+  if (verboseMode) {
+    console.log('🔍 Verbose mode enabled - detailed diagnostics will be shown');
+  }
   
   try {
     // Step 1: Detect and parse consumer TypeScript configuration
@@ -61,13 +74,39 @@ async function extractDynamicTypes() {
     const extractedProps = extractComponentProps();
     
     if (!extractedProps) {
+      const error = new Error('TypeScript compilation or type extraction failed');
+      const diagnosticReport = generateDiagnosticReport(error, {
+        sdkVersions,
+        compatibility,
+        validation,
+        tsConfigResult
+      });
+      
       console.log('⚠️ Type extraction failed, using static fallback');
+      
+      if (verboseMode) {
+        console.log('\n📋 Enhanced Failure Diagnostics:');
+        console.log(formatDiagnosticReport(diagnosticReport));
+      } else {
+        console.log('💡 For detailed failure analysis, run with --verbose or set STACK_AUTH_VERBOSE=true');
+        
+        // Show critical suggestions only
+        const criticalSuggestions = diagnosticReport.suggestions.filter(s => s.priority === 'high').slice(0, 2);
+        if (criticalSuggestions.length > 0) {
+          console.log('💡 Quick fixes:');
+          criticalSuggestions.forEach(suggestion => {
+            console.log(`   • ${suggestion.title}: ${suggestion.action}`);
+          });
+        }
+      }
+      
       return {
         success: false,
         extractedTypes: null,
         report,
         tsConfigResult,
-        reason: 'TypeScript compilation or type extraction failed'
+        reason: 'TypeScript compilation or type extraction failed',
+        diagnosticReport: verboseMode ? diagnosticReport : null
       };
     }
     
@@ -104,7 +143,6 @@ async function extractDynamicTypes() {
     
   } catch (error) {
     console.error(`❌ Dynamic type extraction failed: ${error.message}`);
-    console.error('Stack trace:', error.stack);
     
     // Try to get tsconfig info even in error case
     let tsConfigResult = null;
@@ -114,12 +152,36 @@ async function extractDynamicTypes() {
       console.warn('⚠️ Could not detect TypeScript config during error recovery');
     }
     
+    // Generate comprehensive diagnostic report
+    const diagnosticReport = generateDiagnosticReport(error, {
+      extractionPhase: 'orchestration',
+      tsConfigResult
+    });
+    
+    if (verboseMode) {
+      console.error('\n📋 Comprehensive Error Analysis:');
+      console.error(formatDiagnosticReport(diagnosticReport));
+    } else {
+      console.error('Stack trace:', error.stack);
+      console.error('💡 For comprehensive error analysis, run with --verbose or set STACK_AUTH_VERBOSE=true');
+      
+      // Show immediate actions only
+      const immediateActions = diagnosticReport.suggestions.filter(s => s.priority === 'high').slice(0, 3);
+      if (immediateActions.length > 0) {
+        console.error('💡 Immediate actions to try:');
+        immediateActions.forEach((action, index) => {
+          console.error(`   ${index + 1}. ${action.title}: ${action.action}`);
+        });
+      }
+    }
+    
     return {
       success: false,
       extractedTypes: null,
       tsConfigResult,
       error: error.message,
-      reason: 'Unexpected error during type extraction'
+      reason: 'Unexpected error during type extraction',
+      diagnosticReport: verboseMode ? diagnosticReport : null
     };
   }
 }

@@ -11,6 +11,13 @@ import * as ts from 'typescript';
 import { readFileSync, existsSync } from 'fs';
 import { dirname, join, resolve } from 'path';
 import { fileURLToPath } from 'url';
+import { 
+  analyzeTypeScriptDiagnostics, 
+  generateDiagnosticReport, 
+  formatDiagnosticReport,
+  validateDependencies,
+  setVerboseMode 
+} from './enhanced-diagnostics.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -363,11 +370,49 @@ function getJSDocComment(symbol) {
 function extractComponentProps() {
   console.log('🔍 Extracting component props from @stackframe/stack...');
   
+  // Check for verbose mode
+  const verboseMode = process.env.STACK_AUTH_VERBOSE === 'true' || process.argv.includes('--verbose');
+  setVerboseMode(verboseMode);
+  
   try {
+    // Pre-flight dependency validation
+    console.log('🔍 Validating dependencies...');
+    const dependencyValidation = validateDependencies();
+    
+    if (!dependencyValidation.valid) {
+      console.error('❌ Dependency validation failed:');
+      dependencyValidation.missing.forEach(pkg => {
+        console.error(`   Missing: ${pkg}`);
+      });
+      
+      const report = generateDiagnosticReport(
+        new Error('Required dependencies are missing'), 
+        { dependencies: dependencyValidation }
+      );
+      
+      if (verboseMode) {
+        console.error('\n' + formatDiagnosticReport(report));
+      } else {
+        console.error('💡 Run with --verbose or set STACK_AUTH_VERBOSE=true for detailed diagnostics');
+      }
+      
+      return null;
+    }
+    
     // Check if @stackframe/stack is available
     const stackPath = resolveModulePath('@stackframe/stack');
     if (!stackPath) {
+      const error = new Error('@stackframe/stack not found');
+      const report = generateDiagnosticReport(error, { 
+        moduleName: '@stackframe/stack',
+        stackPath 
+      });
+      
       console.warn('⚠️ @stackframe/stack not found, falling back to static types');
+      if (verboseMode) {
+        console.warn('\n' + formatDiagnosticReport(report));
+      }
+      
       return null;
     }
     
@@ -378,42 +423,52 @@ function extractComponentProps() {
     const program = createTypeScriptProgram(virtualEntry);
     const checker = program.getTypeChecker();
     
+    // Get all diagnostics
+    const syntacticDiagnostics = program.getSyntacticDiagnostics();
+    const semanticDiagnostics = program.getSemanticDiagnostics();
+    const allDiagnostics = [...syntacticDiagnostics, ...semanticDiagnostics];
+    
     // Get the source file with enhanced diagnostics
     const sourceFile = program.getSourceFile(virtualEntry);
     if (!sourceFile) {
+      const error = new Error('Could not create virtual source file for type extraction');
+      const report = generateDiagnosticReport(error, {
+        virtualEntry,
+        program,
+        diagnostics: allDiagnostics,
+        rootFileNames: program.getRootFileNames()
+      });
+      
       console.error('❌ Failed to create virtual source file');
       console.error(`   Virtual entry path: ${virtualEntry}`);
       console.error(`   Program root names: ${program.getRootFileNames().join(', ')}`);
       
-      // Check for compilation errors
-      const syntacticDiagnostics = program.getSyntacticDiagnostics();
-      const semanticDiagnostics = program.getSemanticDiagnostics();
-      
-      if (syntacticDiagnostics.length > 0) {
-        console.error('❌ Syntactic diagnostics:');
-        syntacticDiagnostics.forEach(diagnostic => {
-          const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
-          console.error(`   ${message}`);
-        });
+      if (allDiagnostics.length > 0) {
+        const diagnosticAnalysis = analyzeTypeScriptDiagnostics(allDiagnostics, program);
+        console.error(`❌ Found ${diagnosticAnalysis.summary.total} TypeScript errors:`);
+        console.error(`   Actionable: ${diagnosticAnalysis.summary.actionable}`);
+        console.error(`   Critical: ${diagnosticAnalysis.summary.critical}`);
+        
+        if (verboseMode) {
+          console.error('\n📊 Detailed Analysis:');
+          diagnosticAnalysis.categorizedErrors.slice(0, 5).forEach(error => {
+            console.error(`   ${error.category}: ${error.message.substring(0, 100)}...`);
+          });
+          
+          console.error('\n💡 Top Suggestions:');
+          diagnosticAnalysis.suggestions.slice(0, 3).forEach(suggestion => {
+            console.error(`   ${suggestion.title}: ${suggestion.description}`);
+          });
+        }
       }
       
-      if (semanticDiagnostics.length > 0) {
-        console.error('❌ Semantic diagnostics:');
-        semanticDiagnostics.forEach(diagnostic => {
-          const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
-          console.error(`   ${message}`);
-        });
+      if (verboseMode) {
+        console.error('\n' + formatDiagnosticReport(report));
+      } else {
+        console.error('💡 Run with --verbose for detailed diagnostic information');
       }
       
-      // Check if @stackframe/stack types are available
-      try {
-        const stackPath = require.resolve('@stackframe/stack');
-        console.error(`   @stackframe/stack resolved to: ${stackPath}`);
-      } catch (error) {
-        console.error(`   @stackframe/stack resolution failed: ${error.message}`);
-      }
-      
-      throw new Error('Could not create virtual source file - check diagnostics above');
+      throw error;
     }
     
     const extractedProps = {};
@@ -445,8 +500,36 @@ function extractComponentProps() {
     return extractedProps;
     
   } catch (error) {
+    const verboseMode = process.env.STACK_AUTH_VERBOSE === 'true' || process.argv.includes('--verbose');
+    
     console.warn(`⚠️ Type extraction failed: ${error.message}`);
     console.warn('Falling back to static prop specifications');
+    
+    // Generate comprehensive diagnostic report
+    const report = generateDiagnosticReport(error, {
+      extractionPhase: 'component_extraction',
+      dependencies: validateDependencies()
+    });
+    
+    if (verboseMode) {
+      console.warn('\n📋 Enhanced Error Diagnostics:');
+      console.warn(formatDiagnosticReport(report));
+    } else {
+      console.warn('💡 For detailed error diagnostics, run with --verbose or set STACK_AUTH_VERBOSE=true');
+      
+      // Show only the most critical suggestions
+      const criticalSuggestions = report.suggestions.filter(s => s.priority === 'high').slice(0, 2);
+      if (criticalSuggestions.length > 0) {
+        console.warn('💡 Quick fixes:');
+        criticalSuggestions.forEach(suggestion => {
+          console.warn(`   • ${suggestion.title}: ${suggestion.action}`);
+          if (suggestion.commands.length > 0) {
+            console.warn(`     Run: ${suggestion.commands[0]}`);
+          }
+        });
+      }
+    }
+    
     return null;
   }
 }
