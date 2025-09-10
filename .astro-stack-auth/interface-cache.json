@@ -1,12 +1,137 @@
 {
-  "timestamp": "2025-09-10T20:37:54.352Z",
+  "timestamp": "2025-09-10T20:51:06.267Z",
   "sdkVersion": "2.8.36",
   "interfaces": {
-    "SignIn": {},
-    "SignUp": {},
-    "UserButton": {},
-    "AccountSettings": {},
-    "StackProvider": {}
+    "SignIn": {
+      "fullPage": {
+        "type": "boolean",
+        "required": false,
+        "description": "fullPage property"
+      },
+      "automaticRedirect": {
+        "type": "boolean",
+        "required": false,
+        "description": "automaticRedirect property"
+      },
+      "extraInfo": {
+        "type": "react-node",
+        "required": false,
+        "description": "extraInfo property"
+      },
+      "firstTab": {
+        "type": "\"magic-link\" | \"password\"",
+        "required": false,
+        "description": "firstTab property"
+      },
+      "mockProject": {
+        "type": "{ config: { signupenabled: boolean; credentialenabled: boolean; passkeyenabled: boolean; magiclinkenabled: boolean; oauthproviders: { id: string; }[]; }; }",
+        "required": false,
+        "description": "mockProject property"
+      }
+    },
+    "SignUp": {
+      "fullPage": {
+        "type": "boolean",
+        "required": false,
+        "description": "fullPage property"
+      },
+      "automaticRedirect": {
+        "type": "boolean",
+        "required": false,
+        "description": "automaticRedirect property"
+      },
+      "noPasswordRepeat": {
+        "type": "boolean",
+        "required": false,
+        "description": "noPasswordRepeat property"
+      },
+      "extraInfo": {
+        "type": "react-node",
+        "required": false,
+        "description": "extraInfo property"
+      },
+      "firstTab": {
+        "type": "\"magic-link\" | \"password\"",
+        "required": false,
+        "description": "firstTab property"
+      }
+    },
+    "UserButton": {
+      "showUserInfo": {
+        "type": "boolean",
+        "required": false,
+        "description": "showUserInfo property"
+      },
+      "colorModeToggle": {
+        "type": "function",
+        "required": false,
+        "description": "colorModeToggle property"
+      },
+      "extraItems": {
+        "type": "array",
+        "required": false,
+        "description": "extraItems property"
+      },
+      "mockUser": {
+        "type": "{ displayname?: string; primaryemail?: string; profileimageurl?: string; }",
+        "required": false,
+        "description": "mockUser property"
+      }
+    },
+    "AccountSettings": {
+      "fullPage": {
+        "type": "boolean",
+        "required": false,
+        "description": "fullPage property"
+      },
+      "extraItems": {
+        "type": "array",
+        "required": false,
+        "description": "extraItems property"
+      },
+      "mockUser": {
+        "type": "{ displayname?: string; profileimageurl?: string; }",
+        "required": false,
+        "description": "mockUser property"
+      },
+      "mockApiKeys": {
+        "type": "array",
+        "required": false,
+        "description": "mockApiKeys property"
+      },
+      "mockProject": {
+        "type": "{ config: { allowuserapikeys: boolean; clientteamcreationenabled: boolean; }; }",
+        "required": false,
+        "description": "mockProject property"
+      },
+      "mockSessions": {
+        "type": "array",
+        "required": false,
+        "description": "mockSessions property"
+      }
+    },
+    "StackProvider": {
+      "lang": {
+        "type": "\"de-de\" | \"en-us\" | \"es-419\" | \"es-es\" | \"fr-ca\" | \"fr-fr\" | \"it-it\" | \"ja-jp\" | \"ko-kr\" | \"pt-br\" | \"pt-pt\" | \"zh-cn\" | \"zh-tw\"",
+        "required": false,
+        "description": "lang property"
+      },
+      "translationOverrides": {
+        "type": "record<string, string>",
+        "required": false,
+        "description": "A mapping of English translations to translated equivalents.\n\nThese will take priority over the translations from the language specified in the `lang` property. Note that the\nkeys are case-sensitive."
+      },
+      "children": {
+        "type": "react-node",
+        "required": true,
+        "description": "children property"
+      },
+      "app": {
+        "type": "stackclientapp<true, string> | stackserverapp<true, string> | stackadminapp<true, string>",
+        "required": true,
+        "description": "app property"
+      }
+    }
   },
   "generatedBy": "astro-stack-auth-interface-change-detector"
 }

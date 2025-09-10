@@ -4,7 +4,7 @@
  * TypeScript Type Extraction System
  * 
  * Uses the TypeScript Compiler API to extract prop interfaces from
- * @stackframe/stack-ui components at build time for dynamic documentation generation.
+ * @stackframe/stack components at build time for dynamic documentation generation.
  */
 
 import * as ts from 'typescript';
@@ -213,13 +213,14 @@ function createTypeScriptProgram(entry) {
 
   // Create a virtual entry file that imports the components
   const virtualEntry = `
-    import type { 
+    import { 
       SignIn as SignInComponent,
       SignUp as SignUpComponent, 
       UserButton as UserButtonComponent,
       AccountSettings as AccountSettingsComponent,
       StackProvider as StackProviderComponent
-    } from '@stackframe/stack-ui';
+    } from '@stackframe/stack';
+    import React from 'react';
     
     export type SignInProps = React.ComponentProps<typeof SignInComponent>;
     export type SignUpProps = React.ComponentProps<typeof SignUpComponent>;  
@@ -357,16 +358,16 @@ function getJSDocComment(symbol) {
 }
 
 /**
- * Extract component props from @stackframe/stack-ui
+ * Extract component props from @stackframe/stack
  */
 function extractComponentProps() {
-  console.log('🔍 Extracting component props from @stackframe/stack-ui...');
+  console.log('🔍 Extracting component props from @stackframe/stack...');
   
   try {
-    // Check if @stackframe/stack-ui is available
-    const stackUIPath = resolveModulePath('@stackframe/stack-ui');
-    if (!stackUIPath) {
-      console.warn('⚠️ @stackframe/stack-ui not found, falling back to static types');
+    // Check if @stackframe/stack is available
+    const stackPath = resolveModulePath('@stackframe/stack');
+    if (!stackPath) {
+      console.warn('⚠️ @stackframe/stack not found, falling back to static types');
       return null;
     }
     
@@ -404,12 +405,12 @@ function extractComponentProps() {
         });
       }
       
-      // Check if @stackframe/stack-ui types are available
+      // Check if @stackframe/stack types are available
       try {
-        const stackUIPath = require.resolve('@stackframe/stack-ui');
-        console.error(`   @stackframe/stack-ui resolved to: ${stackUIPath}`);
+        const stackPath = require.resolve('@stackframe/stack');
+        console.error(`   @stackframe/stack resolved to: ${stackPath}`);
       } catch (error) {
-        console.error(`   @stackframe/stack-ui resolution failed: ${error.message}`);
+        console.error(`   @stackframe/stack resolution failed: ${error.message}`);
       }
       
       throw new Error('Could not create virtual source file - check diagnostics above');
@@ -479,7 +480,7 @@ function resolveModulePath(moduleName) {
  */
 function getSDKVersion() {
   try {
-    const packagePath = resolveModulePath('@stackframe/stack-ui/package.json');
+    const packagePath = resolveModulePath('@stackframe/stack/package.json');
     if (!packagePath) {
       return null;
     }
