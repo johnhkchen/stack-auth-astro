@@ -5,10 +5,11 @@
  * for the Stack Auth Astro integration tests.
  */
 
-import { vi } from 'vitest';
+import { vi, beforeEach, afterEach, afterAll } from 'vitest';
 import type { AstroIntegration } from 'astro';
 import { validateTestEnvironment } from './utils/dependency-helpers.js';
 import { cleanupTempFiles } from './utils/file-helpers.js';
+import { performanceHooks } from './utils/vitest-performance-plugin.js';
 
 // Global test utilities available in all tests
 declare global {
@@ -210,16 +211,27 @@ vi.mock('@stackframe/stack', () => stackAuthMocks.createStackMock());
 vi.mock('@stackframe/stack-ui', () => stackAuthMocks.createStackUIMocks());
 
 // Setup and teardown hooks
-beforeEach(() => {
+beforeEach((context) => {
   // Clear all mocks before each test
   vi.clearAllMocks();
   testUtils.clearEnvMocks();
+  
+  // Start performance monitoring for this test
+  performanceHooks.beforeEach(context);
 });
 
-afterEach(() => {
+afterEach((context) => {
+  // End performance monitoring for this test
+  performanceHooks.afterEach(context);
+  
   // Clean up after each test
   vi.restoreAllMocks();
   cleanupTempFiles();
+});
+
+afterAll(() => {
+  // Generate final performance report
+  performanceHooks.afterAll();
 });
 
 // Export default test utilities
