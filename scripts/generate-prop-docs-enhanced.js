@@ -12,6 +12,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { extractDynamicTypes, createExtractionResult } from './dynamic-type-extraction.js';
+import { detectInterfaceChanges, generateChangeReport } from './interface-change-detector.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -227,6 +228,105 @@ function generateCompatibilityMatrix(componentName, versionCompatibility, extrac
 }
 
 /**
+ * Generate change detection banner
+ */
+function generateChangeDetectionBanner(extractionResult) {
+  if (!extractionResult.changeDetection?.enabled) {
+    return '';
+  }
+  
+  const { report } = extractionResult.changeDetection;
+  
+  if (!report) {
+    return `> 🔍 **Interface Change Detection**: Enabled (baseline established)  
+> 📊 **Status**: No previous version to compare against  
+> 🕒 **Timestamp**: ${new Date().toISOString()}
+
+*Interface change detection is now active and will detect changes on future updates.*`;
+  }
+  
+  const { summary } = report;
+  
+  if (summary.totalChanges === 0) {
+    return `> ✅ **Interface Change Detection**: No changes detected  
+> 📊 **Version**: ${report.versionComparison.previous} → ${report.versionComparison.current}  
+> 🕒 **Last Checked**: ${new Date(report.timestamp).toLocaleString()}
+
+*No interface changes detected since last update.*`;
+  }
+  
+  const breakingIcon = summary.breakingChanges > 0 ? '⚠️' : '✅';
+  const statusText = summary.breakingChanges > 0 ? 'Breaking changes detected!' : 'Non-breaking changes detected';
+  
+  return `> ${breakingIcon} **Interface Change Detection**: ${statusText}  
+> 📊 **Version**: ${report.versionComparison.previous} → ${report.versionComparison.current}  
+> 🔢 **Changes**: ${summary.breakingChanges} breaking, ${summary.nonBreakingChanges} non-breaking, ${summary.additions} additions  
+> 🕒 **Detected**: ${new Date(report.timestamp).toLocaleString()}
+
+${summary.breakingChanges > 0 ? '*⚠️ Review migration guidance below before upgrading.*' : '*Safe to upgrade - no breaking changes detected.*'}`;
+}
+
+/**
+ * Generate component-specific change information
+ */
+function generateComponentChangeInfo(componentName, extractionResult) {
+  if (!extractionResult.changeDetection?.enabled || !extractionResult.changeDetection?.report) {
+    return '';
+  }
+  
+  const { report } = extractionResult.changeDetection;
+  const componentChanges = report.breakingChanges.filter(c => c.component === componentName)
+    .concat(report.nonBreakingChanges.filter(c => c.component === componentName))
+    .concat(report.additions.filter(c => c.component === componentName));
+  
+  if (componentChanges.length === 0) {
+    return '';
+  }
+  
+  let changeSection = '\n## Recent Changes\n\n';
+  changeSection += `> 📅 **Version ${report.versionComparison.previous} → ${report.versionComparison.current}**\n\n`;
+  
+  const breakingChanges = componentChanges.filter(c => c.severity === 'breaking');
+  const nonBreakingChanges = componentChanges.filter(c => c.severity === 'non-breaking'); 
+  const additions = componentChanges.filter(c => c.severity === 'addition');
+  
+  if (breakingChanges.length > 0) {
+    changeSection += '### ⚠️ Breaking Changes\n\n';
+    for (const change of breakingChanges) {
+      changeSection += `- **${change.propName}**: ${change.description}\n`;
+      changeSection += `  - **Migration**: ${change.migration}\n`;
+      if (change.codeExample?.before && change.codeExample?.after) {
+        changeSection += `  - **Before**: \`${change.codeExample.before}\`\n`;
+        changeSection += `  - **After**: \`${change.codeExample.after}\`\n`;
+      }
+      changeSection += '\n';
+    }
+  }
+  
+  if (nonBreakingChanges.length > 0) {
+    changeSection += '### ℹ️ Non-Breaking Changes\n\n';
+    for (const change of nonBreakingChanges) {
+      changeSection += `- **${change.propName}**: ${change.description}\n`;
+      if (change.migration !== 'No migration required, description change only') {
+        changeSection += `  - **Migration**: ${change.migration}\n`;
+      }
+      changeSection += '\n';
+    }
+  }
+  
+  if (additions.length > 0) {
+    changeSection += '### ✨ New Features\n\n';
+    for (const change of additions) {
+      changeSection += `- **${change.propName}**: ${change.description}\n`;
+      changeSection += `  - **Usage**: ${change.migration}\n`;
+      changeSection += '\n';
+    }
+  }
+  
+  return changeSection;
+}
+
+/**
  * Generate extraction status banner
  */
 function generateExtractionStatusBanner(extractionResult) {
@@ -256,9 +356,13 @@ function generateComponentDoc(componentName, propSpecs, extractionResult) {
 
 ${generateExtractionStatusBanner(extractionResult)}
 
+${generateChangeDetectionBanner(extractionResult)}
+
 ## Overview
 
 The ${componentName} component is a Stack Auth UI component that provides ${getComponentDescription(componentName)}.
+
+${generateComponentChangeInfo(componentName, extractionResult)}
 
 ## Props
 
@@ -433,6 +537,8 @@ function generateIndexDoc(extractionResult) {
 
 ${generateExtractionStatusBanner(extractionResult)}
 
+${generateChangeDetectionBanner(extractionResult)}
+
 This directory contains automatically generated documentation for all Stack Auth components available in the \`astro-stack-auth\` integration.
 
 ## Available Components
@@ -504,25 +610,48 @@ When adding new components or updating existing ones:
 async function generateDocumentation() {
   console.log('🔧 Starting enhanced prop documentation generation...');
   
-  // Step 1: Attempt dynamic type extraction
+  // Step 1: Detect interface changes
+  console.log('🔍 Detecting interface changes...');
+  const changeDetectionResult = await detectInterfaceChanges();
+  
+  // Step 2: Attempt dynamic type extraction
   const dynamicExtractionResult = await extractDynamicTypes();
   
-  // Step 2: Create comprehensive extraction result
+  // Step 3: Create comprehensive extraction result with change detection
   const extractionResult = createExtractionResult(
     dynamicExtractionResult,
     STATIC_COMPONENT_PROP_SPECS,
     STATIC_VERSION_COMPATIBILITY
   );
   
+  // Step 4: Integrate change detection results
+  if (changeDetectionResult.success) {
+    const changeReport = generateChangeReport(changeDetectionResult);
+    extractionResult.changeDetection = {
+      enabled: true,
+      result: changeDetectionResult,
+      report: changeReport
+    };
+    
+    if (changeReport && changeReport.summary.breakingChanges > 0) {
+      console.log(`⚠️ ${changeReport.summary.breakingChanges} breaking changes detected!`);
+    }
+  } else {
+    extractionResult.changeDetection = {
+      enabled: false,
+      reason: changeDetectionResult.reason
+    };
+  }
+  
   console.log(`📊 Using ${extractionResult.dynamicExtractionSucceeded ? 'dynamic' : 'static'} type specifications`);
   console.log(`📈 Generating docs for ${extractionResult.componentCount} components`);
   
-  // Step 3: Ensure docs directory exists
+  // Step 5: Ensure docs directory exists
   if (!existsSync(DOCS_DIR)) {
     mkdirSync(DOCS_DIR, { recursive: true });
   }
   
-  // Step 4: Generate component documentation
+  // Step 6: Generate component documentation
   const components = Object.keys(extractionResult.componentSpecs);
   let generatedCount = 0;
   
@@ -538,7 +667,7 @@ async function generateDocumentation() {
     console.log(`✅ Generated documentation for ${componentName} (${dynamicProps} dynamic props)`);
   }
   
-  // Step 5: Generate enhanced index documentation
+  // Step 7: Generate enhanced index documentation
   const indexContent = generateIndexDoc(extractionResult);
   const indexPath = join(DOCS_DIR, 'README.md');
   writeFileSync(indexPath, indexContent, 'utf-8');
@@ -547,7 +676,7 @@ async function generateDocumentation() {
   console.log(`📚 Successfully generated documentation for ${generatedCount} components`);
   console.log(`📁 Documentation saved to: ${DOCS_DIR}`);
   
-  // Step 6: Display extraction summary
+  // Step 8: Display extraction summary
   if (extractionResult.dynamicExtractionSucceeded) {
     console.log(`🎉 Dynamic type extraction succeeded!`);
     console.log(`   📊 SDK Version: ${extractionResult.sdkVersionDetected}`);

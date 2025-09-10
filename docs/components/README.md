@@ -2,9 +2,11 @@
 
 > 📝 **Static Type Specification**: Active  
 > ⚠️ **Dynamic Extraction**: Failed - TypeScript compilation or type extraction failed  
-> 🕒 **Last Attempted**: 9/10/2025, 1:15:00 PM
+> 🕒 **Last Attempted**: 9/10/2025, 1:28:50 PM
 
 *Using static type specifications. Install @stackframe/stack-ui for automatic synchronization.*
+
+
 
 This directory contains automatically generated documentation for all Stack Auth components available in the `astro-stack-auth` integration.
 
