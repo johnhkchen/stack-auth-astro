@@ -7,7 +7,8 @@ export default defineConfig({
     server: 'src/server.ts', 
     client: 'src/client.ts',
     components: 'src/components.ts',
-    middleware: 'src/middleware.ts'
+    middleware: 'src/middleware.ts',
+    'build-time-validation': 'src/build-time-validation.ts'
   },
   format: ['cjs', 'esm'],
   dts: true,
@@ -28,6 +29,9 @@ export default defineConfig({
     '@stackframe/stack',
     '@stackframe/stack-ui',
     'react',
-    'react-dom'
+    'react-dom',
+    '@astrojs/compiler',
+    '@babel/parser',
+    '@babel/traverse'
   ]
 });
