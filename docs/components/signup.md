@@ -1,6 +1,10 @@
 # SignUp Component
 
-> Auto-generated documentation from validation schema - Last updated: 2025-09-10
+> 📝 **Static Type Specification**: Active  
+> ⚠️ **Dynamic Extraction**: Failed - TypeScript compilation or type extraction failed  
+> 🕒 **Last Attempted**: 9/10/2025, 11:45:24 AM
+
+*Using static type specifications. Install @stackframe/stack-ui for automatic synchronization.*
 
 ## Overview
 
@@ -8,61 +12,30 @@ The SignUp component is a Stack Auth UI component that provides user registratio
 
 ## Props
 
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| onSuccess | `function | undefined` | ❌ | Callback function called on successful registration with the new user |
-| onError | `function | undefined` | ❌ | Callback function called when registration fails with error details |
-| redirectTo | `string | undefined` | ❌ | URL to redirect to after successful registration |
-| providers | `array | undefined` | ❌ | Array of authentication providers to display (e.g., ["google", "github"]) |
-| showTerms | `boolean | undefined` | ❌ | Whether to show terms of service and privacy policy links |
-| termsUrl | `string | undefined` | ❌ | URL to terms of service page |
-| privacyUrl | `string | undefined` | ❌ | URL to privacy policy page |
-| style | `object | undefined` | ❌ | Custom CSS styles for the component |
-| className | `string | undefined` | ❌ | CSS class name for custom styling |
-| fullPage | `boolean | undefined` | ❌ | Whether to render as a full-page component or inline |
+| Prop | Type | Required | Description | Source |
+|------|------|----------|-------------|--------|
+| onSuccess | `function | undefined` | ❌ | Callback function called on successful registration with the new user | 📝 Static |
+| onError | `function | undefined` | ❌ | Callback function called when registration fails with error details | 📝 Static |
+| redirectTo | `string | undefined` | ❌ | URL to redirect to after successful registration | 📝 Static |
+| providers | `array | undefined` | ❌ | Array of authentication providers to display (e.g., ["google", "github"]) | 📝 Static |
+| showTerms | `boolean | undefined` | ❌ | Whether to show terms of service and privacy policy links | 📝 Static |
+| termsUrl | `string | undefined` | ❌ | URL to terms of service page | 📝 Static |
+| privacyUrl | `string | undefined` | ❌ | URL to privacy policy page | 📝 Static |
+| style | `object | undefined` | ❌ | Custom CSS styles for the component | 📝 Static |
+| className | `string | undefined` | ❌ | CSS class name for custom styling | 📝 Static |
+| fullPage | `boolean | undefined` | ❌ | Whether to render as a full-page component or inline | 📝 Static |
 
 ## Usage Examples
 
-### Basic Usage
-
 ```astro
----
-// src/pages/auth/signup.astro
----
-<html>
-<body>
-  <SignUp client:load />
-</body>
-</html>
+// Basic usage example not available
 ```
-
-### With Props
-
-```astro
----
-// src/pages/auth/signup.astro
----
-<html>
-<body>
-  <SignUp 
-    client:load
-    redirectTo="/welcome"
-    providers={["google", "github"]}
-    showTerms={true}
-    termsUrl="/terms"
-    privacyUrl="/privacy"
-  />
-</body>
-</html>
-```
-
-
 
 ## Version Compatibility
 
-| Version | Supported Props | Deprecated Props |
-|---------|-----------------|------------------|
-| 2.8.x | className, style, onSuccess, onError, redirectUri | None |
+| Version | Supported Props | Deprecated Props | Source |
+|---------|-----------------|------------------|--------|
+| 2.8.x | className, style, onSuccess, onError, redirectUri | None | 📝 Static |
 
 
 ## TypeScript Integration
@@ -121,6 +94,14 @@ When updating Stack Auth versions, refer to the version compatibility matrix abo
 
 > No deprecated props for this component.
 
+
+## Recommendations
+
+⚠️ **Dynamic type extraction failed, using static fallback**  
+Ensure @stackframe/stack-ui is properly installed and accessible
+
+
+
 ---
 
-*This documentation is automatically generated from the runtime validation schema. For the latest Stack Auth features, refer to the [Stack Auth Documentation](https://docs.stack-auth.com/).*
+*This documentation is generated from static type specifications. For the latest Stack Auth features, refer to the [Stack Auth Documentation](https://docs.stack-auth.com/).*

@@ -1,6 +1,10 @@
 # AccountSettings Component
 
-> Auto-generated documentation from validation schema - Last updated: 2025-09-10
+> 📝 **Static Type Specification**: Active  
+> ⚠️ **Dynamic Extraction**: Failed - TypeScript compilation or type extraction failed  
+> 🕒 **Last Attempted**: 9/10/2025, 11:45:24 AM
+
+*Using static type specifications. Install @stackframe/stack-ui for automatic synchronization.*
 
 ## Overview
 
@@ -8,60 +12,29 @@ The AccountSettings component is a Stack Auth UI component that provides compreh
 
 ## Props
 
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| onUpdateSuccess | `function | undefined` | ❌ | Callback function called when profile update succeeds |
-| onUpdateError | `function | undefined` | ❌ | Callback function called when profile update fails |
-| onDeleteAccount | `function | undefined` | ❌ | Callback function called when user deletes their account |
-| showProfile | `boolean | undefined` | ❌ | Whether to show the profile settings section |
-| showSecurity | `boolean | undefined` | ❌ | Whether to show the security settings section |
-| showPreferences | `boolean | undefined` | ❌ | Whether to show the preferences section |
-| style | `object | undefined` | ❌ | Custom CSS styles for the component |
-| className | `string | undefined` | ❌ | CSS class name for custom styling |
-| fullPage | `boolean | undefined` | ❌ | Whether to render as a full-page component or inline |
+| Prop | Type | Required | Description | Source |
+|------|------|----------|-------------|--------|
+| onUpdateSuccess | `function | undefined` | ❌ | Callback function called when profile update succeeds | 📝 Static |
+| onUpdateError | `function | undefined` | ❌ | Callback function called when profile update fails | 📝 Static |
+| onDeleteAccount | `function | undefined` | ❌ | Callback function called when user deletes their account | 📝 Static |
+| showProfile | `boolean | undefined` | ❌ | Whether to show the profile settings section | 📝 Static |
+| showSecurity | `boolean | undefined` | ❌ | Whether to show the security settings section | 📝 Static |
+| showPreferences | `boolean | undefined` | ❌ | Whether to show the preferences section | 📝 Static |
+| style | `object | undefined` | ❌ | Custom CSS styles for the component | 📝 Static |
+| className | `string | undefined` | ❌ | CSS class name for custom styling | 📝 Static |
+| fullPage | `boolean | undefined` | ❌ | Whether to render as a full-page component or inline | 📝 Static |
 
 ## Usage Examples
 
-### Basic Usage
-
 ```astro
----
-// src/pages/account.astro
----
-<html>
-<body>
-  <AccountSettings client:load />
-</body>
-</html>
+// Basic usage example not available
 ```
-
-### With Props
-
-```astro
----
-// src/pages/account.astro
----
-<html>
-<body>
-  <AccountSettings 
-    client:load
-    showProfile={true}
-    showSecurity={true}
-    onUpdateSuccess={(user) => {
-      console.log('Profile updated for:', user.displayName);
-    }}
-  />
-</body>
-</html>
-```
-
-
 
 ## Version Compatibility
 
-| Version | Supported Props | Deprecated Props |
-|---------|-----------------|------------------|
-| 2.8.x | className, style, sections | None |
+| Version | Supported Props | Deprecated Props | Source |
+|---------|-----------------|------------------|--------|
+| 2.8.x | className, style, sections | None | 📝 Static |
 
 
 ## TypeScript Integration
@@ -120,6 +93,14 @@ When updating Stack Auth versions, refer to the version compatibility matrix abo
 
 > No deprecated props for this component.
 
+
+## Recommendations
+
+⚠️ **Dynamic type extraction failed, using static fallback**  
+Ensure @stackframe/stack-ui is properly installed and accessible
+
+
+
 ---
 
-*This documentation is automatically generated from the runtime validation schema. For the latest Stack Auth features, refer to the [Stack Auth Documentation](https://docs.stack-auth.com/).*
+*This documentation is generated from static type specifications. For the latest Stack Auth features, refer to the [Stack Auth Documentation](https://docs.stack-auth.com/).*

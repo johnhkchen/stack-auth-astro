@@ -1,6 +1,10 @@
 # StackProvider Component
 
-> Auto-generated documentation from validation schema - Last updated: 2025-09-10
+> 📝 **Static Type Specification**: Active  
+> ⚠️ **Dynamic Extraction**: Failed - TypeScript compilation or type extraction failed  
+> 🕒 **Last Attempted**: 9/10/2025, 11:45:24 AM
+
+*Using static type specifications. Install @stackframe/stack-ui for automatic synchronization.*
 
 ## Overview
 
@@ -8,43 +12,26 @@ The StackProvider component is a Stack Auth UI component that provides authentic
 
 ## Props
 
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| projectId | `string` | ✅ | Your Stack Auth project ID from the Stack Auth dashboard |
-| publishableClientKey | `string` | ✅ | Your Stack Auth publishable client key for browser use |
-| children | `ReactNode` | ✅ | React components that need access to Stack Auth context |
-| baseUrl | `string | undefined` | ❌ | Custom base URL for Stack Auth API (defaults to Stack Auth servers) |
-| lang | `string | undefined` | ❌ | Language code for localization (e.g., "en", "es", "fr") |
-| theme | `string | undefined` | ❌ | UI theme preference ("light", "dark", "auto") |
+| Prop | Type | Required | Description | Source |
+|------|------|----------|-------------|--------|
+| projectId | `string` | ✅ | Your Stack Auth project ID from the Stack Auth dashboard | 📝 Static |
+| publishableClientKey | `string` | ✅ | Your Stack Auth publishable client key for browser use | 📝 Static |
+| children | `ReactNode` | ✅ | React components that need access to Stack Auth context | 📝 Static |
+| baseUrl | `string | undefined` | ❌ | Custom base URL for Stack Auth API (defaults to Stack Auth servers) | 📝 Static |
+| lang | `string | undefined` | ❌ | Language code for localization (e.g., "en", "es", "fr") | 📝 Static |
+| theme | `string | undefined` | ❌ | UI theme preference ("light", "dark", "auto") | 📝 Static |
 
 ## Usage Examples
 
-### Basic Usage
-
 ```astro
----
-// src/layouts/Layout.astro
----
-<html>
-<body>
-  <StackProvider 
-    client:load
-    projectId={import.meta.env.PUBLIC_STACK_PROJECT_ID}
-    publishableClientKey={import.meta.env.PUBLIC_STACK_PUBLISHABLE_KEY}
-  >
-    <slot />
-  </StackProvider>
-</body>
-</html>
+// Basic usage example not available
 ```
-
-
 
 ## Version Compatibility
 
-| Version | Supported Props | Deprecated Props |
-|---------|-----------------|------------------|
-| 2.8.x | app, children | None |
+| Version | Supported Props | Deprecated Props | Source |
+|---------|-----------------|------------------|--------|
+| 2.8.x | app, children | None | 📝 Static |
 
 
 ## TypeScript Integration
@@ -103,6 +90,14 @@ When updating Stack Auth versions, refer to the version compatibility matrix abo
 
 > No deprecated props for this component.
 
+
+## Recommendations
+
+⚠️ **Dynamic type extraction failed, using static fallback**  
+Ensure @stackframe/stack-ui is properly installed and accessible
+
+
+
 ---
 
-*This documentation is automatically generated from the runtime validation schema. For the latest Stack Auth features, refer to the [Stack Auth Documentation](https://docs.stack-auth.com/).*
+*This documentation is generated from static type specifications. For the latest Stack Auth features, refer to the [Stack Auth Documentation](https://docs.stack-auth.com/).*

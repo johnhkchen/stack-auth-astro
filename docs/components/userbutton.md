@@ -1,6 +1,10 @@
 # UserButton Component
 
-> Auto-generated documentation from validation schema - Last updated: 2025-09-10
+> 📝 **Static Type Specification**: Active  
+> ⚠️ **Dynamic Extraction**: Failed - TypeScript compilation or type extraction failed  
+> 🕒 **Last Attempted**: 9/10/2025, 11:45:24 AM
+
+*Using static type specifications. Install @stackframe/stack-ui for automatic synchronization.*
 
 ## Overview
 
@@ -8,60 +12,27 @@ The UserButton component is a Stack Auth UI component that provides a user profi
 
 ## Props
 
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| showDisplayName | `boolean | undefined` | ❌ | Whether to display the user's name next to the avatar |
-| showAvatar | `boolean | undefined` | ❌ | Whether to display the user's avatar image |
-| colorModeToggle | `boolean | undefined` | ❌ | Whether to show dark/light mode toggle in dropdown |
-| showSignOutButton | `boolean | undefined` | ❌ | Whether to display sign out button in dropdown menu |
-| onSignOut | `function | undefined` | ❌ | Callback function called when user signs out |
-| style | `object | undefined` | ❌ | Custom CSS styles for the component |
-| className | `string | undefined` | ❌ | CSS class name for custom styling |
+| Prop | Type | Required | Description | Source |
+|------|------|----------|-------------|--------|
+| showDisplayName | `boolean | undefined` | ❌ | Whether to display the user's name next to the avatar | 📝 Static |
+| showAvatar | `boolean | undefined` | ❌ | Whether to display the user's avatar image | 📝 Static |
+| colorModeToggle | `boolean | undefined` | ❌ | Whether to show dark/light mode toggle in dropdown | 📝 Static |
+| showSignOutButton | `boolean | undefined` | ❌ | Whether to display sign out button in dropdown menu | 📝 Static |
+| onSignOut | `function | undefined` | ❌ | Callback function called when user signs out | 📝 Static |
+| style | `object | undefined` | ❌ | Custom CSS styles for the component | 📝 Static |
+| className | `string | undefined` | ❌ | CSS class name for custom styling | 📝 Static |
 
 ## Usage Examples
 
-### Basic Usage
-
 ```astro
----
-// src/components/Header.astro
----
-<header>
-  <nav>
-    <UserButton client:load />
-  </nav>
-</header>
+// Basic usage example not available
 ```
-
-### With Props
-
-```astro
----
-// src/components/Header.astro
----
-<header>
-  <nav>
-    <UserButton 
-      client:load
-      showDisplayName={true}
-      showAvatar={true}
-      colorModeToggle={true}
-      onSignOut={() => {
-        console.log('User signed out');
-        window.location.href = '/';
-      }}
-    />
-  </nav>
-</header>
-```
-
-
 
 ## Version Compatibility
 
-| Version | Supported Props | Deprecated Props |
-|---------|-----------------|------------------|
-| 2.8.x | className, style, showDisplayName, showEmail | None |
+| Version | Supported Props | Deprecated Props | Source |
+|---------|-----------------|------------------|--------|
+| 2.8.x | className, style, showDisplayName, showEmail | None | 📝 Static |
 
 
 ## TypeScript Integration
@@ -120,6 +91,14 @@ When updating Stack Auth versions, refer to the version compatibility matrix abo
 
 > No deprecated props for this component.
 
+
+## Recommendations
+
+⚠️ **Dynamic type extraction failed, using static fallback**  
+Ensure @stackframe/stack-ui is properly installed and accessible
+
+
+
 ---
 
-*This documentation is automatically generated from the runtime validation schema. For the latest Stack Auth features, refer to the [Stack Auth Documentation](https://docs.stack-auth.com/).*
+*This documentation is generated from static type specifications. For the latest Stack Auth features, refer to the [Stack Auth Documentation](https://docs.stack-auth.com/).*
