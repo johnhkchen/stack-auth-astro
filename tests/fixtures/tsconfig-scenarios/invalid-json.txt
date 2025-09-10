@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    // This comment makes it invalid JSON
+    "strict": true,
+  },
+  "include": ["src/**/*"],
+}

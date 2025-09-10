@@ -1,0 +1,6 @@
+{
+  "extends": "./circular-b.json",
+  "compilerOptions": {
+    "strict": true
+  }
+}
