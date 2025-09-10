@@ -1,0 +1,73 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { requireAuth } from 'astro-stack-auth/server';
+import { AccountSettings } from 'astro-stack-auth/components';
+
+const user = await requireAuth(Astro);
+---
+
+<Layout title="Settings - Astro + Stack Auth">
+  <div class="px-4 py-6 sm:px-0">
+    <div class="max-w-4xl mx-auto">
+      <h1 class="text-3xl font-bold text-gray-900 mb-6">Account Settings</h1>
+      
+      <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h2 class="text-xl font-semibold text-gray-900">Manage Your Account</h2>
+          <p class="text-gray-600 text-sm mt-1">
+            Update your account settings and security preferences
+          </p>
+        </div>
+        
+        <div class="px-6 py-4">
+          <AccountSettings client:load />
+        </div>
+      </div>
+      
+      <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white shadow rounded-lg p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            🔒 Security Features
+          </h3>
+          <ul class="space-y-2 text-sm text-gray-600">
+            <li>✅ Secure session management</li>
+            <li>✅ Password security requirements</li>
+            <li>✅ Email verification</li>
+            <li>✅ OAuth provider integration</li>
+            <li>✅ Two-factor authentication (if enabled)</li>
+          </ul>
+        </div>
+        
+        <div class="bg-white shadow rounded-lg p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            ⚙️ Available Actions
+          </h3>
+          <div class="space-y-3">
+            <a 
+              href="/profile" 
+              class="block bg-blue-50 hover:bg-blue-100 p-3 rounded border border-blue-200"
+            >
+              <span class="font-medium text-blue-900">View Profile</span>
+              <p class="text-blue-700 text-sm">See your profile information</p>
+            </a>
+            <a 
+              href="/dashboard" 
+              class="block bg-green-50 hover:bg-green-100 p-3 rounded border border-green-200"
+            >
+              <span class="font-medium text-green-900">Dashboard</span>
+              <p class="text-green-700 text-sm">Return to main dashboard</p>
+            </a>
+          </div>
+        </div>
+      </div>
+      
+      <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h3 class="text-sm font-medium text-blue-800 mb-1">🎛️ Component Integration</h3>
+        <p class="text-blue-700 text-sm">
+          The AccountSettings component above is a React component from Stack Auth that 
+          handles account management with proper Astro hydration using <code>client:load</code>.
+        </p>
+      </div>
+    </div>
+  </div>
+</Layout>

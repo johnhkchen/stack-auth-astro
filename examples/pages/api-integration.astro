@@ -1,0 +1,245 @@
+---
+import { getUser } from 'astro-stack-auth/server';
+
+const user = await getUser(Astro);
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>API Integration Example - Astro + Stack Auth</title>
+    <style>
+      body { font-family: system-ui; max-width: 800px; margin: 0 auto; padding: 2rem; }
+      .info-box { background: #f0f9ff; border: 1px solid #0ea5e9; padding: 1rem; margin: 1rem 0; border-radius: 8px; }
+      .code-block { background: #1f2937; color: #f9fafb; padding: 1rem; border-radius: 8px; overflow-x: auto; margin: 1rem 0; }
+      .api-example { background: #fff; border: 1px solid #ddd; padding: 1rem; margin: 1rem 0; border-radius: 8px; }
+      .button { background: #3b82f6; color: white; padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer; margin: 0.25rem; }
+      .button:hover { background: #2563eb; }
+      .response { background: #f5f5f5; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-family: monospace; white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <h1>API Integration Examples</h1>
+    
+    <div class="info-box">
+      <h3>🔌 Stack Auth API Endpoints</h3>
+      <p>
+        Stack Auth automatically provides API endpoints at <code>/handler/*</code> (or your custom prefix).
+        You can also create custom API routes that integrate with Stack Auth.
+      </p>
+    </div>
+
+    <h2>Built-in Stack Auth Endpoints</h2>
+    
+    <div class="api-example">
+      <h3>Authentication Endpoints</h3>
+      <ul>
+        <li><code>GET /handler/user</code> - Get current user information</li>
+        <li><code>POST /handler/signin</code> - Sign in with credentials</li>
+        <li><code>POST /handler/signout</code> - Sign out current user</li>
+        <li><code>GET /handler/session</code> - Get session information</li>
+        <li><code>GET /handler/providers</code> - List available OAuth providers</li>
+      </ul>
+    </div>
+
+    <h2>Interactive API Testing</h2>
+    
+    {user ? (
+      <div class="api-example">
+        <h3>✅ Authenticated User Testing</h3>
+        <p>You are signed in as: <strong>{user.displayName || user.primaryEmail}</strong></p>
+        
+        <div>
+          <button class="button" onclick="testUserEndpoint()">Test GET /handler/user</button>
+          <button class="button" onclick="testSessionEndpoint()">Test GET /handler/session</button>
+          <button class="button" onclick="testCustomAPI()">Test Custom API</button>
+        </div>
+        
+        <div id="apiResponse" class="response" style="display: none;"></div>
+      </div>
+    ) : (
+      <div class="api-example">
+        <h3>❌ Unauthenticated Testing</h3>
+        <p>Sign in to test authenticated endpoints, or test public endpoints below.</p>
+        
+        <div>
+          <button class="button" onclick="testPublicEndpoint()">Test Public Endpoint</button>
+          <button class="button" onclick="testUnauthenticatedUser()">Test GET /handler/user (should fail)</button>
+        </div>
+        
+        <div id="apiResponse" class="response" style="display: none;"></div>
+      </div>
+    )}
+
+    <h2>Custom API Route Examples</h2>
+
+    <div class="api-example">
+      <h3>Protected API Route</h3>
+      <div class="code-block">
+// src/pages/api/protected.ts
+import type { APIRoute } from 'astro';
+import { getUser } from 'astro-stack-auth/server';
+
+export const GET: APIRoute = async ({ request, ...context }) => {
+  const user = await getUser(context);
+  
+  if (!user) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  return new Response(JSON.stringify({
+    message: 'This is protected data',
+    user: { id: user.id, email: user.primaryEmail }
+  }), {
+    headers: { 'Content-Type': 'application/json' }
+  });
+};
+      </div>
+    </div>
+
+    <div class="api-example">
+      <h3>Public API Route with Optional Auth</h3>
+      <div class="code-block">
+// src/pages/api/public.ts
+import type { APIRoute } from 'astro';
+import { getUser } from 'astro-stack-auth/server';
+
+export const GET: APIRoute = async (context) => {
+  const user = await getUser(context);
+  
+  return new Response(JSON.stringify({
+    message: 'This endpoint works for everyone',
+    authenticated: !!user,
+    userInfo: user ? { id: user.id } : null
+  }), {
+    headers: { 'Content-Type': 'application/json' }
+  });
+};
+      </div>
+    </div>
+
+    <h2>Frontend Integration Patterns</h2>
+
+    <div class="api-example">
+      <h3>Fetch with Authentication</h3>
+      <div class="code-block">
+// Client-side API calls automatically include authentication
+const response = await fetch('/api/protected');
+if (response.ok) {
+  const data = await response.json();
+  console.log(data);
+} else if (response.status === 401) {
+  // Redirect to sign in
+  window.location.href = '/signin';
+}
+      </div>
+    </div>
+
+    <div class="api-example">
+      <h3>React Hook Example</h3>
+      <div class="code-block">
+const useAuthenticatedFetch = (url: string) => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetch(url)
+      .then(res => res.ok ? res.json() : Promise.reject(res))
+      .then(setData)
+      .catch(setError)
+      .finally(() => setLoading(false));
+  }, [url]);
+
+  return { data, loading, error };
+};
+      </div>
+    </div>
+
+    <div class="info-box">
+      <h3>🔒 Security Best Practices</h3>
+      <ul>
+        <li><strong>Always validate authentication</strong> in API routes that need it</li>
+        <li><strong>Use HTTPS</strong> in production for all API calls</li>
+        <li><strong>Handle errors gracefully</strong> and don't expose sensitive information</li>
+        <li><strong>Rate limit</strong> public endpoints to prevent abuse</li>
+      </ul>
+    </div>
+
+    <nav style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #ddd;">
+      <a href="/">← Back to Home</a>
+      | <a href="/middleware-example">Middleware Example</a>
+      {user && (
+        <>
+          | <a href="/dashboard">Dashboard</a>
+        </>
+      )}
+    </nav>
+
+    <script>
+      function showResponse(data) {
+        const responseEl = document.getElementById('apiResponse');
+        responseEl.textContent = JSON.stringify(data, null, 2);
+        responseEl.style.display = 'block';
+      }
+
+      async function testUserEndpoint() {
+        try {
+          const response = await fetch('/handler/user');
+          const data = await response.json();
+          showResponse({ status: response.status, data });
+        } catch (error) {
+          showResponse({ error: error.message });
+        }
+      }
+
+      async function testSessionEndpoint() {
+        try {
+          const response = await fetch('/handler/session');
+          const data = await response.json();
+          showResponse({ status: response.status, data });
+        } catch (error) {
+          showResponse({ error: error.message });
+        }
+      }
+
+      async function testCustomAPI() {
+        try {
+          const response = await fetch('/api/protected');
+          const data = await response.json();
+          showResponse({ status: response.status, data });
+        } catch (error) {
+          showResponse({ error: error.message });
+        }
+      }
+
+      async function testPublicEndpoint() {
+        try {
+          const response = await fetch('/api/public');
+          const data = await response.json();
+          showResponse({ status: response.status, data });
+        } catch (error) {
+          showResponse({ error: error.message });
+        }
+      }
+
+      async function testUnauthenticatedUser() {
+        try {
+          const response = await fetch('/handler/user');
+          if (response.ok) {
+            const data = await response.json();
+            showResponse({ status: response.status, data });
+          } else {
+            showResponse({ status: response.status, message: 'Request failed as expected' });
+          }
+        } catch (error) {
+          showResponse({ error: error.message });
+        }
+      }
+    </script>
+  </body>
+</html>

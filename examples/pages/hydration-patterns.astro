@@ -1,0 +1,253 @@
+---
+import { getUser } from 'astro-stack-auth/server';
+
+const user = await getUser(Astro);
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Hydration Patterns - Astro + Stack Auth</title>
+    <style>
+      body { font-family: system-ui; max-width: 1000px; margin: 0 auto; padding: 2rem; }
+      .pattern-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin: 2rem 0; }
+      .pattern-card { background: #fff; border: 1px solid #ddd; padding: 1.5rem; border-radius: 8px; }
+      .pattern-card h3 { margin-top: 0; color: #1f2937; }
+      .code-example { background: #1f2937; color: #f9fafb; padding: 1rem; border-radius: 4px; font-family: monospace; font-size: 0.9rem; margin: 1rem 0; overflow-x: auto; }
+      .performance-indicator { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: bold; margin-left: 0.5rem; }
+      .fast { background: #dcfce7; color: #166534; }
+      .medium { background: #fef3c7; color: #92400e; }
+      .slow { background: #fee2e2; color: #991b1b; }
+      .demo-area { background: #f8fafc; border: 2px dashed #cbd5e1; padding: 2rem; margin: 1rem 0; border-radius: 8px; text-align: center; }
+      .info-box { background: #f0f9ff; border: 1px solid #0ea5e9; padding: 1rem; margin: 1rem 0; border-radius: 8px; }
+    </style>
+  </head>
+  <body>
+    <h1>React Component Hydration Patterns</h1>
+    
+    <div class="info-box">
+      <h3>🏝️ Astro Islands + Stack Auth</h3>
+      <p>
+        This page demonstrates different hydration strategies for Stack Auth React components.
+        Each pattern has different performance characteristics and use cases.
+      </p>
+    </div>
+
+    <div class="pattern-grid">
+      <div class="pattern-card">
+        <h3>client:load <span class="performance-indicator slow">High Priority</span></h3>
+        <p>Component hydrates immediately when the page loads.</p>
+        <div class="code-example">
+import { SignIn } from 'astro-stack-auth/components';
+
+&lt;SignIn client:load /&gt;
+        </div>
+        <p><strong>Use for:</strong> Critical authentication components, sign-in forms</p>
+        <p><strong>Performance:</strong> Loads immediately, blocks initial page interaction</p>
+        
+        <div class="demo-area">
+          <h4>Demo: Critical Sign-In Button</h4>
+          <p>This would be a sign-in component that needs to work immediately</p>
+          <button style="background: #3b82f6; color: white; padding: 0.5rem 1rem; border: none; border-radius: 4px;">
+            Sign In (client:load)
+          </button>
+        </div>
+      </div>
+
+      <div class="pattern-card">
+        <h3>client:visible <span class="performance-indicator medium">Visible</span></h3>
+        <p>Component hydrates when it becomes visible in the viewport.</p>
+        <div class="code-example">
+import { UserButton } from 'astro-stack-auth/components';
+
+&lt;UserButton client:visible /&gt;
+        </div>
+        <p><strong>Use for:</strong> Navigation components, status indicators</p>
+        <p><strong>Performance:</strong> Deferred until needed, great for performance</p>
+        
+        <div class="demo-area">
+          <h4>Demo: Navigation User Button</h4>
+          <p>This component hydrates when scrolled into view</p>
+          <div style="background: #e5e7eb; padding: 0.5rem 1rem; border-radius: 4px; display: inline-block;">
+            👤 User Menu (client:visible)
+          </div>
+        </div>
+      </div>
+
+      <div class="pattern-card">
+        <h3>client:idle <span class="performance-indicator fast">Low Priority</span></h3>
+        <p>Component hydrates when the browser is idle (requestIdleCallback).</p>
+        <div class="code-example">
+import { AccountSettings } from 'astro-stack-auth/components';
+
+&lt;AccountSettings client:idle /&gt;
+        </div>
+        <p><strong>Use for:</strong> Enhancement components, secondary features</p>
+        <p><strong>Performance:</strong> Lowest impact on page performance</p>
+        
+        <div class="demo-area">
+          <h4>Demo: Secondary Features</h4>
+          <p>Non-critical components that enhance the experience</p>
+          <div style="background: #f3f4f6; padding: 0.5rem; border-radius: 4px; font-size: 0.9rem;">
+            ⚙️ Advanced Settings (client:idle)
+          </div>
+        </div>
+      </div>
+
+      <div class="pattern-card">
+        <h3>client:media <span class="performance-indicator medium">Conditional</span></h3>
+        <p>Component hydrates when a media query matches.</p>
+        <div class="code-example">
+import { AuthStatus } from '../components/AuthStatus';
+
+&lt;AuthStatus client:media="(min-width: 768px)" /&gt;
+        </div>
+        <p><strong>Use for:</strong> Responsive components, desktop-only features</p>
+        <p><strong>Performance:</strong> Conditional loading based on screen size</p>
+        
+        <div class="demo-area">
+          <h4>Demo: Desktop-Only Component</h4>
+          <p>This component only hydrates on larger screens</p>
+          <div style="background: #ddd6fe; padding: 0.5rem; border-radius: 4px; font-size: 0.9rem;">
+            🖥️ Desktop Features (client:media)
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2>Real-World Usage Examples</h2>
+
+    <div class="pattern-card">
+      <h3>🔐 Authentication Flow Page</h3>
+      <div class="code-example">
+---
+// Sign-in page - critical components need immediate hydration
+import { SignIn } from 'astro-stack-auth/components';
+import { AuthStatus } from '../components/AuthStatus';
+---
+
+&lt;!-- Critical: Must work immediately --&gt;
+&lt;SignIn client:load /&gt;
+
+&lt;!-- Secondary: Can wait until visible --&gt;
+&lt;AuthStatus client:visible showDetails={true} /&gt;
+      </div>
+    </div>
+
+    <div class="pattern-card">
+      <h3>🏠 Homepage with Authentication</h3>
+      <div class="code-example">
+---
+// Homepage - progressive enhancement approach
+import { UserButton } from 'astro-stack-auth/components';
+import { ConditionalContent } from '../components/ConditionalContent';
+---
+
+&lt;!-- Navigation: Load when visible --&gt;
+&lt;UserButton client:visible /&gt;
+
+&lt;!-- Content: Enhance when browser is idle --&gt;
+&lt;ConditionalContent client:idle&gt;
+  &lt;WelcomeMessage /&gt;
+&lt;/ConditionalContent&gt;
+      </div>
+    </div>
+
+    <div class="pattern-card">
+      <h3>📱 Responsive Dashboard</h3>
+      <div class="code-example">
+---
+// Dashboard with responsive components
+import { AuthStatus } from '../components/AuthStatus';
+import { QuickActions } from '../components/QuickActions';
+---
+
+&lt;!-- Mobile: Simple status --&gt;
+&lt;AuthStatus client:media="(max-width: 767px)" /&gt;
+
+&lt;!-- Desktop: Full features --&gt;
+&lt;QuickActions client:media="(min-width: 768px)" /&gt;
+      </div>
+    </div>
+
+    <h2>Performance Comparison</h2>
+
+    <div class="info-box">
+      <h3>📊 Hydration Performance Impact</h3>
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background: #f9fafb;">
+            <th style="padding: 0.5rem; border: 1px solid #ddd;">Strategy</th>
+            <th style="padding: 0.5rem; border: 1px solid #ddd;">Initial Load</th>
+            <th style="padding: 0.5rem; border: 1px solid #ddd;">Time to Interactive</th>
+            <th style="padding: 0.5rem; border: 1px solid #ddd;">Bundle Size Impact</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding: 0.5rem; border: 1px solid #ddd;"><strong>client:load</strong></td>
+            <td style="padding: 0.5rem; border: 1px solid #ddd;">🔴 Immediate</td>
+            <td style="padding: 0.5rem; border: 1px solid #ddd;">🔴 Longer</td>
+            <td style="padding: 0.5rem; border: 1px solid #ddd;">🔴 Full</td>
+          </tr>
+          <tr>
+            <td style="padding: 0.5rem; border: 1px solid #ddd;"><strong>client:visible</strong></td>
+            <td style="padding: 0.5rem; border: 1px solid #ddd;">🟡 Deferred</td>
+            <td style="padding: 0.5rem; border: 1px solid #ddd;">🟡 Medium</td>
+            <td style="padding: 0.5rem; border: 1px solid #ddd;">🟡 Partial</td>
+          </tr>
+          <tr>
+            <td style="padding: 0.5rem; border: 1px solid #ddd;"><strong>client:idle</strong></td>
+            <td style="padding: 0.5rem; border: 1px solid #ddd;">🟢 Minimal</td>
+            <td style="padding: 0.5rem; border: 1px solid #ddd;">🟢 Faster</td>
+            <td style="padding: 0.5rem; border: 1px solid #ddd;">🟢 Lazy</td>
+          </tr>
+          <tr>
+            <td style="padding: 0.5rem; border: 1px solid #ddd;"><strong>client:media</strong></td>
+            <td style="padding: 0.5rem; border: 1px solid #ddd;">🟢 Conditional</td>
+            <td style="padding: 0.5rem; border: 1px solid #ddd;">🟢 Variable</td>
+            <td style="padding: 0.5rem; border: 1px solid #ddd;">🟢 Conditional</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Best Practices</h2>
+
+    <div class="pattern-grid">
+      <div class="pattern-card">
+        <h3>✅ Do</h3>
+        <ul>
+          <li>Use <code>client:load</code> sparingly for critical auth components</li>
+          <li>Prefer <code>client:visible</code> for navigation and UI elements</li>
+          <li>Use <code>client:idle</code> for enhancement features</li>
+          <li>Consider <code>client:media</code> for responsive designs</li>
+          <li>Measure performance impact of hydration strategies</li>
+        </ul>
+      </div>
+
+      <div class="pattern-card">
+        <h3>❌ Don't</h3>
+        <ul>
+          <li>Use <code>client:load</code> for all components</li>
+          <li>Forget to consider mobile performance</li>
+          <li>Hydrate components that don't need interactivity</li>
+          <li>Mix hydration strategies randomly without purpose</li>
+          <li>Ignore network conditions and device capabilities</li>
+        </ul>
+      </div>
+    </div>
+
+    <nav style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #ddd;">
+      <a href="/">← Back to Home</a>
+      | <a href="/middleware-example">Middleware Example</a>
+      | <a href="/api-integration">API Integration</a>
+      {user && (
+        <>
+          | <a href="/dashboard">Dashboard</a>
+        </>
+      )}
+    </nav>
+  </body>
+</html>

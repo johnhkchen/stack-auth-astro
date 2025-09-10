@@ -1,0 +1,75 @@
+---
+import { getUser } from 'astro-stack-auth/server';
+
+export interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+const user = await getUser(Astro);
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="Full-featured Astro + Stack Auth example" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+  </head>
+  <body class="bg-gray-50 min-h-screen">
+    <nav class="bg-white shadow-sm border-b">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+          <div class="flex items-center">
+            <a href="/" class="text-xl font-bold text-gray-900">
+              Astro + Stack Auth
+            </a>
+          </div>
+          
+          <div class="flex items-center space-x-4">
+            {user ? (
+              <>
+                <a href="/dashboard" class="text-gray-700 hover:text-gray-900">Dashboard</a>
+                <a href="/profile" class="text-gray-700 hover:text-gray-900">Profile</a>
+                <a href="/settings" class="text-gray-700 hover:text-gray-900">Settings</a>
+                <span class="text-sm text-gray-600">
+                  Welcome, {user.displayName || user.primaryEmail}
+                </span>
+                <form method="post" action="/auth/signout" class="inline">
+                  <button 
+                    type="submit" 
+                    class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
+                  >
+                    Sign Out
+                  </button>
+                </form>
+              </>
+            ) : (
+              <>
+                <a 
+                  href="/signin" 
+                  class="text-gray-700 hover:text-gray-900"
+                >
+                  Sign In
+                </a>
+                <a 
+                  href="/signup" 
+                  class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700"
+                >
+                  Sign Up
+                </a>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </nav>
+    
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <slot />
+    </main>
+  </body>
+</html>

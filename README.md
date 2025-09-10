@@ -410,6 +410,119 @@ For complex issues, see our comprehensive guides:
 5. **Verify environment variables** - Use `npm run stack:validate` to check package installation
 6. **Check Stack Auth Dashboard** - Ensure your project is properly configured
 
+## 📚 Examples and Templates
+
+Get started quickly with our comprehensive examples and templates:
+
+### 🚀 Quick Start Examples
+
+#### Minimal Astro Project
+Perfect for getting started and understanding the basics:
+
+```bash
+# Copy the minimal example
+cp -r examples/minimal-astro my-astro-auth-app
+cd my-astro-auth-app && npm install
+
+# Configure environment variables
+cp .env.example .env
+# Edit .env with your Stack Auth credentials
+
+# Start development
+npm run dev
+```
+
+**Features:** Basic Stack Auth integration, sign-in/sign-up pages, protected routes, server-side authentication
+
+#### Full-Featured Example
+Complete authentication flows with styled UI:
+
+```bash
+# Copy the full-featured example
+cp -r examples/full-featured my-production-app
+cd my-production-app && npm install
+
+# Configure environment and start
+cp .env.example .env && npm run dev
+```
+
+**Features:** Dashboard, user management, Tailwind CSS styling, custom React components, production-ready structure
+
+### 📁 Available Examples
+
+```
+examples/
+├── minimal-astro/          # Basic integration example
+├── full-featured/          # Complete authentication flows
+├── components/             # React component examples
+├── pages/                  # Astro page examples  
+├── configs/                # TypeScript configuration templates
+├── deployments/            # Platform deployment guides
+└── README.md              # Complete examples documentation
+```
+
+### 🧩 Component Examples
+
+Copy and customize React components with proper hydration:
+
+```tsx
+// Authentication components
+import { SignInButton, SignOutButton } from './examples/components';
+
+<SignInButton client:load provider="google" />
+<SignOutButton client:visible redirectTo="/goodbye" />
+
+// Status and conditional content
+import { AuthStatus, ConditionalContent } from './examples/components';
+
+<AuthStatus client:visible showDetails={true} />
+<ConditionalContent client:idle requireAuth={true}>
+  <ProtectedFeature />
+</ConditionalContent>
+```
+
+### ⚙️ Configuration Templates
+
+Choose the TypeScript configuration for your project:
+
+```bash
+# Recommended for most projects  
+cp examples/configs/tsconfig.recommended.json tsconfig.json
+
+# Maximum type safety for production
+cp examples/configs/tsconfig.strict.json tsconfig.json
+
+# Rapid prototyping with minimal type checking
+cp examples/configs/tsconfig.loose.json tsconfig.json
+```
+
+### 🚀 Deployment Guides
+
+Platform-specific deployment instructions:
+
+- **[Netlify](./examples/deployments/netlify.md)** - Serverless with automatic Git deployments
+- **[Vercel](./examples/deployments/vercel.md)** - Edge functions with analytics integration  
+- **[Node.js](./examples/deployments/nodejs.md)** - Self-hosted with Docker, PM2, systemd
+
+### 📄 Page Examples
+
+Learn authentication patterns with example Astro pages:
+
+- `middleware-example.astro` - Comparing `Astro.locals` vs `getUser()`
+- `api-integration.astro` - Custom API routes and Stack Auth endpoints
+- `hydration-patterns.astro` - Complete guide to React component hydration
+
+### 🎯 Use Case Examples
+
+| Project Type | Recommended Examples | Configuration |
+|--------------|---------------------|---------------|
+| **Small Business** | minimal-astro + Netlify | tsconfig.recommended.json |
+| **SaaS Application** | full-featured + Vercel | tsconfig.strict.json |
+| **Enterprise App** | full-featured + Node.js | tsconfig.strict.json + Docker |
+| **Rapid Prototype** | minimal-astro + local dev | tsconfig.loose.json |
+
+**👉 [View Complete Examples Documentation](./examples/README.md)**
+
 ## Stack Auth Compatibility
 
 This integration is compatible with Stack Auth version `^2.8.36`.

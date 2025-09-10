@@ -1,0 +1,88 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { requireAuth } from 'astro-stack-auth/server';
+
+const user = await requireAuth(Astro);
+---
+
+<Layout title="Dashboard - Astro + Stack Auth">
+  <div class="px-4 py-6 sm:px-0">
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
+      <p class="text-gray-600 mt-2">
+        Welcome back, {user.displayName || user.primaryEmail}!
+      </p>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="bg-white p-6 rounded-lg shadow-md">
+        <h3 class="text-lg font-semibold text-gray-900 mb-3">Profile Information</h3>
+        <div class="space-y-2">
+          <p class="text-sm">
+            <span class="font-medium">Display Name:</span> 
+            {user.displayName || 'Not set'}
+          </p>
+          <p class="text-sm">
+            <span class="font-medium">Email:</span> 
+            {user.primaryEmail}
+          </p>
+          <p class="text-sm">
+            <span class="font-medium">User ID:</span> 
+            {user.id}
+          </p>
+        </div>
+        <a 
+          href="/profile" 
+          class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700"
+        >
+          View Profile
+        </a>
+      </div>
+      
+      <div class="bg-white p-6 rounded-lg shadow-md">
+        <h3 class="text-lg font-semibold text-gray-900 mb-3">Account Security</h3>
+        <p class="text-gray-600 text-sm mb-4">
+          Manage your account security settings and authentication methods.
+        </p>
+        <a 
+          href="/settings" 
+          class="inline-block bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700"
+        >
+          Security Settings
+        </a>
+      </div>
+      
+      <div class="bg-white p-6 rounded-lg shadow-md">
+        <h3 class="text-lg font-semibold text-gray-900 mb-3">Quick Actions</h3>
+        <div class="space-y-2">
+          <a 
+            href="/protected" 
+            class="block bg-gray-100 hover:bg-gray-200 p-2 rounded text-sm"
+          >
+            📄 Protected Content
+          </a>
+          <a 
+            href="/api-example" 
+            class="block bg-gray-100 hover:bg-gray-200 p-2 rounded text-sm"
+          >
+            🔌 API Integration
+          </a>
+          <a 
+            href="/middleware-example" 
+            class="block bg-gray-100 hover:bg-gray-200 p-2 rounded text-sm"
+          >
+            ⚙️ Middleware Demo
+          </a>
+        </div>
+      </div>
+    </div>
+    
+    <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <h3 class="text-lg font-semibold text-blue-900 mb-2">🎉 Authentication Success!</h3>
+      <p class="text-blue-800 text-sm">
+        You're successfully authenticated and can access all protected features. 
+        This dashboard demonstrates server-side authentication with <code>requireAuth()</code>.
+      </p>
+    </div>
+  </div>
+</Layout>

@@ -1,0 +1,107 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getUser } from 'astro-stack-auth/server';
+
+const user = await getUser(Astro);
+---
+
+<Layout title="Welcome - Astro + Stack Auth">
+  <div class="px-4 py-6 sm:px-0">
+    <div class="text-center">
+      <h1 class="text-4xl font-bold text-gray-900 mb-4">
+        Welcome to Astro + Stack Auth
+      </h1>
+      <p class="text-xl text-gray-600 mb-8">
+        A full-featured example of authentication with Stack Auth
+      </p>
+      
+      {user ? (
+        <div class="bg-white p-6 rounded-lg shadow-md max-w-md mx-auto">
+          <h2 class="text-2xl font-semibold text-gray-900 mb-4">
+            Hello, {user.displayName || user.primaryEmail}!
+          </h2>
+          <p class="text-gray-600 mb-6">
+            You are successfully authenticated. Explore the features below:
+          </p>
+          
+          <div class="space-y-3">
+            <a 
+              href="/dashboard" 
+              class="block w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
+            >
+              Go to Dashboard
+            </a>
+            <a 
+              href="/profile" 
+              class="block w-full bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700"
+            >
+              View Profile
+            </a>
+            <a 
+              href="/settings" 
+              class="block w-full bg-gray-600 text-white py-2 px-4 rounded hover:bg-gray-700"
+            >
+              Account Settings
+            </a>
+          </div>
+        </div>
+      ) : (
+        <div class="bg-white p-6 rounded-lg shadow-md max-w-md mx-auto">
+          <h2 class="text-2xl font-semibold text-gray-900 mb-4">
+            Get Started
+          </h2>
+          <p class="text-gray-600 mb-6">
+            Sign in to your account or create a new one to access all features.
+          </p>
+          
+          <div class="space-y-3">
+            <a 
+              href="/signin" 
+              class="block w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
+            >
+              Sign In
+            </a>
+            <a 
+              href="/signup" 
+              class="block w-full bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700"
+            >
+              Create Account
+            </a>
+          </div>
+        </div>
+      )}
+    </div>
+    
+    <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-white p-6 rounded-lg shadow-md">
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">
+          🔐 Secure Authentication
+        </h3>
+        <p class="text-gray-600">
+          Built-in security features with Stack Auth including CSRF protection, 
+          secure session management, and OAuth providers.
+        </p>
+      </div>
+      
+      <div class="bg-white p-6 rounded-lg shadow-md">
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">
+          ⚡ Server-Side Ready
+        </h3>
+        <p class="text-gray-600">
+          Server-side authentication checks with <code>getUser()</code> and 
+          <code>requireAuth()</code> for protected routes.
+        </p>
+      </div>
+      
+      <div class="bg-white p-6 rounded-lg shadow-md">
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">
+          🎨 React Components
+        </h3>
+        <p class="text-gray-600">
+          Pre-built React components with proper Astro hydration for 
+          sign-in, sign-up, and account management.
+        </p>
+      </div>
+    </div>
+  </div>
+</Layout>

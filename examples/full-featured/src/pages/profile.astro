@@ -1,0 +1,115 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { requireAuth } from 'astro-stack-auth/server';
+
+const user = await requireAuth(Astro);
+---
+
+<Layout title="Profile - Astro + Stack Auth">
+  <div class="px-4 py-6 sm:px-0">
+    <div class="max-w-3xl mx-auto">
+      <h1 class="text-3xl font-bold text-gray-900 mb-6">User Profile</h1>
+      
+      <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h2 class="text-xl font-semibold text-gray-900">Profile Information</h2>
+          <p class="text-gray-600 text-sm mt-1">
+            View and manage your profile details
+          </p>
+        </div>
+        
+        <div class="px-6 py-4 space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Display Name
+              </label>
+              <div class="bg-gray-50 px-3 py-2 rounded border">
+                {user.displayName || 'Not set'}
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Primary Email
+              </label>
+              <div class="bg-gray-50 px-3 py-2 rounded border">
+                {user.primaryEmail}
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                User ID
+              </label>
+              <div class="bg-gray-50 px-3 py-2 rounded border font-mono text-sm">
+                {user.id}
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Email Verified
+              </label>
+              <div class="bg-gray-50 px-3 py-2 rounded border">
+                {user.primaryEmailVerified ? '✅ Verified' : '❌ Not verified'}
+              </div>
+            </div>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Profile Picture
+            </label>
+            <div class="flex items-center space-x-4">
+              {user.profileImageUrl ? (
+                <img 
+                  src={user.profileImageUrl} 
+                  alt="Profile" 
+                  class="w-16 h-16 rounded-full"
+                />
+              ) : (
+                <div class="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center">
+                  <span class="text-gray-600 text-2xl">
+                    {(user.displayName || user.primaryEmail || 'U').charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
+              <div>
+                <p class="text-sm text-gray-600">
+                  {user.profileImageUrl ? 'Profile image loaded from Stack Auth' : 'No profile image set'}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="border-t pt-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Account Actions</h3>
+            <div class="flex space-x-4">
+              <a 
+                href="/settings" 
+                class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              >
+                Edit Settings
+              </a>
+              <a 
+                href="/dashboard" 
+                class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+              >
+                Back to Dashboard
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <h3 class="text-sm font-medium text-yellow-800 mb-1">📝 Developer Note</h3>
+        <p class="text-yellow-700 text-sm">
+          This profile page demonstrates how to access user data from the Stack Auth user object. 
+          In a real application, you might want to allow users to edit their profile information.
+        </p>
+      </div>
+    </div>
+  </div>
+</Layout>

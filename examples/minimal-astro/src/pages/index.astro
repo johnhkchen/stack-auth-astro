@@ -1,0 +1,35 @@
+---
+import { getUser } from 'astro-stack-auth/server';
+
+const user = await getUser(Astro);
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Minimal Astro + Stack Auth</title>
+  </head>
+  <body>
+    <h1>Welcome to Astro + Stack Auth!</h1>
+    
+    {user ? (
+      <div>
+        <p>Hello, {user.displayName || user.primaryEmail}!</p>
+        <a href="/account">Go to Account</a>
+        <a href="/protected">Protected Page</a>
+        <form method="post" action="/api/auth/signout">
+          <button type="submit">Sign Out</button>
+        </form>
+      </div>
+    ) : (
+      <div>
+        <p>You are not signed in.</p>
+        <a href="/signin">Sign In</a>
+        <a href="/signup">Sign Up</a>
+      </div>
+    )}
+  </body>
+</html>

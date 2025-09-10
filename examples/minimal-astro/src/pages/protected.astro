@@ -1,0 +1,20 @@
+---
+import { requireAuth } from 'astro-stack-auth/server';
+
+// This will redirect to sign-in if user is not authenticated
+const user = await requireAuth(Astro);
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Protected Page - Minimal Astro + Stack Auth</title>
+  </head>
+  <body>
+    <h1>Protected Page</h1>
+    <p>This page is only accessible to authenticated users.</p>
+    <p>Welcome, {user.displayName || user.primaryEmail}!</p>
+    <p><a href="/">← Back to Home</a></p>
+  </body>
+</html>

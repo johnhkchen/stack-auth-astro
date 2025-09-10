@@ -1,0 +1,19 @@
+---
+import { requireAuth } from 'astro-stack-auth/server';
+import { AccountSettings } from 'astro-stack-auth/components';
+
+const user = await requireAuth(Astro);
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Account Settings - Minimal Astro + Stack Auth</title>
+  </head>
+  <body>
+    <h1>Account Settings</h1>
+    <AccountSettings client:load />
+    <p><a href="/">← Back to Home</a></p>
+  </body>
+</html>

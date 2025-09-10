@@ -1,0 +1,33 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { SignUp } from 'astro-stack-auth/components';
+---
+
+<Layout title="Sign Up - Astro + Stack Auth">
+  <div class="px-4 py-6 sm:px-0">
+    <div class="max-w-md mx-auto">
+      <div class="bg-white py-8 px-6 shadow rounded-lg">
+        <h1 class="text-2xl font-bold text-gray-900 text-center mb-6">
+          Create Your Account
+        </h1>
+        
+        <SignUp client:load />
+        
+        <div class="mt-6 text-center">
+          <p class="text-sm text-gray-600">
+            Already have an account?
+            <a href="/signin" class="font-medium text-blue-600 hover:text-blue-500">
+              Sign in here
+            </a>
+          </p>
+        </div>
+      </div>
+      
+      <div class="mt-6 text-center">
+        <a href="/" class="text-sm text-gray-600 hover:text-gray-900">
+          ← Back to Home
+        </a>
+      </div>
+    </div>
+  </div>
+</Layout>
