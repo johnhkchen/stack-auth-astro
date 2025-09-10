@@ -21,6 +21,12 @@ import {
   createErrorWithGuide
 } from './errors.js';
 import { hasValidConfig, getConfigSummary } from './config.js';
+import { 
+  createDevValidationMiddleware, 
+  createErrorOverlayIntegration,
+  createDevExperience,
+  type DevValidationContext 
+} from './dev-tools.js';
 
 export interface StackAuthOptions {
   /**
@@ -45,6 +51,12 @@ export interface StackAuthOptions {
    * @default false
    */
   skipValidation?: boolean;
+
+  /**
+   * Enable development tools integration for component prop validation
+   * @default true in development, false in production
+   */
+  enableDevTools?: boolean;
 }
 
 /**
@@ -59,7 +71,8 @@ export default function astroStackAuth(options: StackAuthOptions = {}): AstroInt
     prefix = '/handler',
     addReactRenderer = true,
     config = {},
-    skipValidation = false
+    skipValidation = false,
+    enableDevTools = process.env.NODE_ENV === 'development'
   } = options;
 
   return {
@@ -149,6 +162,29 @@ export default function astroStackAuth(options: StackAuthOptions = {}): AstroInt
             order: 'pre'
           });
           logger.info('✅ Added Stack Auth middleware');
+
+          // Development tools integration
+          if (enableDevTools && process.env.NODE_ENV === 'development') {
+            const devContext: DevValidationContext = {
+              isDevMode: true,
+              config: {}, // This would be passed from Astro
+              logger
+            };
+
+            // Initialize dev tools
+            const errorOverlay = createErrorOverlayIntegration(devContext);
+            const devExperience = createDevExperience(devContext);
+
+            // Log dev tools initialization
+            logger.info('🛠️  Stack Auth dev tools enabled');
+            
+            const validationSummary = devExperience.createValidationSummary();
+            logger.info(`📊 Validating ${validationSummary.componentCount} components with ${validationSummary.totalProps} total props`);
+            
+            // Generate autocompletion data for IDEs
+            const autocompletionData = devExperience.generatePropAutocompletion();
+            logger.info(`💡 Generated prop autocompletion for ${autocompletionData.length} components`);
+          }
 
           // Development mode debugging info
           if (process.env.NODE_ENV === 'development') {

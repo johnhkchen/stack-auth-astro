@@ -2,13 +2,15 @@
  * React component re-exports from Stack Auth UI
  * 
  * This module re-exports Stack Auth's React components for use in Astro
- * with proper TypeScript support and component hydration.
+ * with proper TypeScript support, component hydration, and development-time
+ * prop validation.
  * 
  * Note: Component exports will be implemented in Sprint 004
  */
 
 import * as React from 'react';
 import type { User, Session, StackClientApp } from '@stackframe/stack';
+import { createValidatedComponents } from './component-wrapper.js';
 
 // TODO: Implement component re-exports in Sprint 004
 // For now, just provide the module structure with React namespace test
@@ -65,7 +67,7 @@ export interface ForwardRefStackComponentProps extends StackAuthComponentProps {
 // TODO: Sprint 004 - Replace these placeholder components with real Stack Auth UI components
 // These are temporary implementations to fix TypeScript compilation in examples
 
-export const UserButton: React.FC<StackAuthComponentProps> = ({ className, children, ...props }) => {
+const UserButtonBase: React.FC<StackAuthComponentProps> = ({ className, children, ...props }) => {
   return React.createElement('div', {
     className: className || 'stack-auth-placeholder',
     style: {
@@ -81,7 +83,7 @@ export const UserButton: React.FC<StackAuthComponentProps> = ({ className, child
   }, 'UserButton - Coming in Sprint 004');
 };
 
-export const SignIn: React.FC<StackAuthComponentProps> = ({ className, children, ...props }) => {
+const SignInBase: React.FC<StackAuthComponentProps> = ({ className, children, ...props }) => {
   return React.createElement('div', {
     className: className || 'stack-auth-placeholder',
     style: {
@@ -98,7 +100,7 @@ export const SignIn: React.FC<StackAuthComponentProps> = ({ className, children,
   }, 'SignIn Component - Coming in Sprint 004');
 };
 
-export const SignUp: React.FC<StackAuthComponentProps> = ({ className, children, ...props }) => {
+const SignUpBase: React.FC<StackAuthComponentProps> = ({ className, children, ...props }) => {
   return React.createElement('div', {
     className: className || 'stack-auth-placeholder',
     style: {
@@ -115,7 +117,7 @@ export const SignUp: React.FC<StackAuthComponentProps> = ({ className, children,
   }, 'SignUp Component - Coming in Sprint 004');
 };
 
-export const AccountSettings: React.FC<StackAuthComponentProps> = ({ className, children, ...props }) => {
+const AccountSettingsBase: React.FC<StackAuthComponentProps> = ({ className, children, ...props }) => {
   return React.createElement('div', {
     className: className || 'stack-auth-placeholder',
     style: {
@@ -132,8 +134,7 @@ export const AccountSettings: React.FC<StackAuthComponentProps> = ({ className, 
   }, 'AccountSettings Component - Coming in Sprint 004');
 };
 
-// TODO: Sprint 004 - Add StackProvider component from @stackframe/stack
-export const StackProvider: React.FC<StackProviderProps> = ({ app, children }) => {
+const StackProviderBase: React.FC<StackProviderProps> = ({ app, children }) => {
   return React.createElement('div', {
     'data-stack-provider': 'placeholder',
     style: {
@@ -148,5 +149,23 @@ export const StackProvider: React.FC<StackProviderProps> = ({ app, children }) =
     React.createElement('div', { key: 'children' }, children)
   ]);
 };
+
+// Create validated components with development-time prop validation
+const validatedComponents = createValidatedComponents({
+  UserButton: UserButtonBase,
+  SignIn: SignInBase,
+  SignUp: SignUpBase,
+  AccountSettings: AccountSettingsBase,
+  StackProvider: StackProviderBase
+}, {
+  enhanced: true // Enable enhanced development features
+});
+
+// Export validated components
+export const UserButton = validatedComponents.UserButton;
+export const SignIn = validatedComponents.SignIn;
+export const SignUp = validatedComponents.SignUp;
+export const AccountSettings = validatedComponents.AccountSettings;
+export const StackProvider = validatedComponents.StackProvider;
 
 export default {};
