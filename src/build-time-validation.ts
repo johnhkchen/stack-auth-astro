@@ -303,6 +303,18 @@ function evaluateExpression(expr: string): any {
   const num = parseFloat(expr);
   if (!isNaN(num) && isFinite(num)) return num;
   
+  // Handle array literals like ['google', 'github']
+  if (expr.startsWith('[') && expr.endsWith(']')) {
+    try {
+      // Convert single-quoted array to JSON format
+      const jsonArrayString = expr.replace(/'/g, '"');
+      return JSON.parse(jsonArrayString);
+    } catch {
+      // If parsing fails, return as string
+      return expr;
+    }
+  }
+  
   // Try to parse as JSON
   try {
     return JSON.parse(expr);
@@ -459,7 +471,7 @@ export async function runBuildTimeValidation(
   const finalConfig = { ...DEFAULT_CONFIG, ...config };
   
   const context: DevValidationContext = {
-    isDevMode: false, // Build time is not dev mode
+    isDevMode: true, // Enable all validations during build time
     config: finalConfig,
     logger: console
   };

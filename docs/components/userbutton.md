@@ -2,7 +2,7 @@
 
 > 📝 **Static Type Specification**: Active  
 > ⚠️ **Dynamic Extraction**: Failed - TypeScript compilation or type extraction failed  
-> 🕒 **Last Attempted**: 9/10/2025, 11:45:24 AM
+> 🕒 **Last Attempted**: 9/10/2025, 12:56:39 PM
 
 *Using static type specifications. Install @stackframe/stack-ui for automatic synchronization.*
 
