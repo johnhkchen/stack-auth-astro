@@ -146,11 +146,11 @@ export function validateStackAuthOptions(options: StackAuthOptions): ValidationR
     errors.push('injectRoutes must be a boolean');
   }
 
-  // Validate nested config if provided
-  if (options.config) {
-    const configValidation = validateConfiguration(options.config);
-    errors.push(...configValidation.errors.map(err => `config.${err}`));
-    warnings.push(...configValidation.warnings.map(warn => `config.${warn}`));
+  // Validate the options as a config-like object
+  if (options.projectId || options.publishableClientKey || options.secretServerKey) {
+    const configValidation = validateConfiguration(options);
+    errors.push(...configValidation.errors);
+    warnings.push(...configValidation.warnings);
   }
 
   return {
@@ -182,7 +182,7 @@ export function validateRuntimeCompatibility(): ValidationResult {
     }
 
     // Check for Astro environment (this is a heuristic check)
-    if (typeof globalThis !== 'undefined' && !globalThis.astro && process.env.NODE_ENV !== 'test') {
+    if (typeof globalThis !== 'undefined' && !(globalThis as any).astro && process.env.NODE_ENV !== 'test') {
       warnings.push('Could not detect Astro environment - ensure this integration is used with Astro');
     }
 
