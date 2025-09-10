@@ -10,18 +10,82 @@ import type { User, Session, StackClientApp } from '@stackframe/stack';
 import type { APIContext } from 'astro';
 import * as React from 'react';
 
+// Detailed prop interface definitions for Stack Auth components
+export interface SignInProps {
+  onSuccess?: (user: User) => void;
+  onError?: (error: Error) => void;
+  redirectTo?: string;
+  providers?: string[];
+  showTerms?: boolean;
+  termsUrl?: string;
+  privacyUrl?: string;
+  style?: React.CSSProperties;
+  className?: string;
+  fullPage?: boolean;
+}
+
+export interface SignUpProps {
+  onSuccess?: (user: User) => void;
+  onError?: (error: Error) => void;
+  redirectTo?: string;
+  providers?: string[];
+  showTerms?: boolean;
+  termsUrl?: string;
+  privacyUrl?: string;
+  style?: React.CSSProperties;
+  className?: string;
+  fullPage?: boolean;
+}
+
+export interface UserButtonProps {
+  showDisplayName?: boolean;
+  showAvatar?: boolean;
+  colorModeToggle?: boolean;
+  showSignOutButton?: boolean;
+  onSignOut?: () => void;
+  style?: React.CSSProperties;
+  className?: string;
+}
+
+export interface AccountSettingsProps {
+  onUpdateSuccess?: (user: User) => void;
+  onUpdateError?: (error: Error) => void;
+  onDeleteAccount?: () => void;
+  showProfile?: boolean;
+  showSecurity?: boolean;
+  showPreferences?: boolean;
+  style?: React.CSSProperties;
+  className?: string;
+  fullPage?: boolean;
+}
+
+export interface StackProviderProps {
+  projectId: string;
+  publishableClientKey: string;
+  children: React.ReactNode;
+  baseUrl?: string;
+  lang?: string;
+  theme?: 'light' | 'dark' | 'auto';
+}
+
 // Mock component exports (astro-stack-auth/components)
 export const mockComponentExports = {
-  // React components
-  SignIn: {} as React.ComponentType<any>,
-  SignUp: {} as React.ComponentType<any>,
-  UserButton: {} as React.ComponentType<any>,
-  AccountSettings: {} as React.ComponentType<any>,
-  StackProvider: {} as React.ComponentType<any>,
+  // React components with typed props
+  SignIn: {} as React.ComponentType<SignInProps>,
+  SignUp: {} as React.ComponentType<SignUpProps>,
+  UserButton: {} as React.ComponentType<UserButtonProps>,
+  AccountSettings: {} as React.ComponentType<AccountSettingsProps>,
+  StackProvider: {} as React.ComponentType<StackProviderProps>,
   
-  // Component prop types
+  // Component prop types (exported for use in applications)
+  SignInProps: {} as SignInProps,
+  SignUpProps: {} as SignUpProps,
+  UserButtonProps: {} as UserButtonProps,
+  AccountSettingsProps: {} as AccountSettingsProps,
+  StackProviderProps: {} as StackProviderProps,
+  
+  // Legacy prop types (for backwards compatibility)
   StackAuthComponentProps: {} as any,
-  StackProviderProps: {} as any,
   StackAuthFC: {} as any,
   ReactFC: {} as any,
   ReactElement: {} as any,

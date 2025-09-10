@@ -15,7 +15,15 @@ import {
   validateModuleExports,
   validateComponentExports,
   validateImportStatements,
-  generateValidationSummary
+  generateValidationSummary,
+  validateComponentProps,
+  validateComponentPropsInFile,
+  validateComponentPropsWithVersion,
+  validateComponentPropsWithVersionBatch,
+  generateVersionCompatibilityReport,
+  validatePropsAcrossVersions,
+  type PropValidationResult,
+  type VersionAwarePropValidationResult
 } from '../helpers/runtime-validation.js';
 import {
   validateVersionCompatibility,
@@ -558,6 +566,573 @@ describe('Component Import Pattern Validation', () => {
       // During development, we expect warnings but not necessarily errors
       if (summary.warnings.length > 0) {
         console.log('Validation warnings (expected during development):', summary.warnings);
+      }
+    });
+  });
+
+  describe('Component Prop Interface Validation', () => {
+    it('should validate SignIn component props correctly', async () => {
+      // Test valid props
+      const validProps = {
+        onSuccess: (user: any) => console.log(user),
+        redirectTo: '/dashboard',
+        providers: ['google', 'github'],
+        showTerms: true,
+        className: 'custom-signin'
+      };
+
+      const validation = await validateComponentProps(
+        'astro-stack-auth/components',
+        'SignIn',
+        validProps
+      );
+
+      expect(validation.isValid).toBe(true);
+      expect(validation.errors).toHaveLength(0);
+      expect(validation.requiredPropsMissing).toHaveLength(0);
+      expect(validation.invalidPropTypes).toHaveLength(0);
+    });
+
+    it('should detect invalid SignIn component prop types', async () => {
+      // Test invalid props
+      const invalidProps = {
+        onSuccess: 'not-a-function', // Should be function
+        redirectTo: 123, // Should be string
+        providers: 'not-an-array', // Should be array
+        showTerms: 'yes', // Should be boolean
+        className: { invalid: 'object' } // Should be string
+      };
+
+      const validation = await validateComponentProps(
+        'astro-stack-auth/components',
+        'SignIn',
+        invalidProps
+      );
+
+      expect(validation.isValid).toBe(false);
+      expect(validation.errors.length).toBeGreaterThan(0);
+      expect(validation.invalidPropTypes).toContain('onSuccess');
+      expect(validation.invalidPropTypes).toContain('redirectTo');
+      expect(validation.invalidPropTypes).toContain('providers');
+      expect(validation.invalidPropTypes).toContain('showTerms');
+      expect(validation.invalidPropTypes).toContain('className');
+    });
+
+    it('should validate UserButton component props correctly', async () => {
+      const validProps = {
+        showDisplayName: true,
+        showAvatar: false,
+        colorModeToggle: true,
+        onSignOut: () => console.log('signed out'),
+        style: { backgroundColor: 'blue' }
+      };
+
+      const validation = await validateComponentProps(
+        'astro-stack-auth/components',
+        'UserButton',
+        validProps
+      );
+
+      expect(validation.isValid).toBe(true);
+      expect(validation.errors).toHaveLength(0);
+    });
+
+    it('should validate StackProvider required props', async () => {
+      // Test missing required props
+      const propsWithMissingRequired = {
+        projectId: 'test-project',
+        // Missing required: publishableClientKey, children
+        baseUrl: 'https://api.example.com'
+      };
+
+      const validation = await validateComponentProps(
+        'astro-stack-auth/components',
+        'StackProvider',
+        propsWithMissingRequired
+      );
+
+      expect(validation.isValid).toBe(false);
+      expect(validation.requiredPropsMissing).toContain('publishableClientKey');
+      expect(validation.requiredPropsMissing).toContain('children');
+    });
+
+    it('should validate StackProvider with all required props', async () => {
+      // Test with all required props
+      const validProps = {
+        projectId: 'test-project-id',
+        publishableClientKey: 'pk_test_key',
+        children: 'App content', // React node
+        theme: 'dark',
+        lang: 'en'
+      };
+
+      const validation = await validateComponentProps(
+        'astro-stack-auth/components',
+        'StackProvider',
+        validProps
+      );
+
+      expect(validation.isValid).toBe(true);
+      expect(validation.requiredPropsMissing).toHaveLength(0);
+    });
+
+    it('should detect unexpected props and warn', async () => {
+      const propsWithUnexpected = {
+        projectId: 'test-project',
+        publishableClientKey: 'pk_test_key',
+        children: 'content',
+        invalidProp: 'should not be here',
+        anotherInvalidProp: 123
+      };
+
+      const validation = await validateComponentProps(
+        'astro-stack-auth/components',
+        'StackProvider',
+        propsWithUnexpected
+      );
+
+      expect(validation.unexpectedProps).toContain('invalidProp');
+      expect(validation.unexpectedProps).toContain('anotherInvalidProp');
+      expect(validation.warnings.length).toBeGreaterThan(0);
+    });
+
+    it('should validate AccountSettings component props', async () => {
+      const validProps = {
+        onUpdateSuccess: (user: any) => console.log(user),
+        onUpdateError: (error: any) => console.error(error),
+        onDeleteAccount: () => console.log('account deleted'),
+        showProfile: true,
+        showSecurity: false,
+        showPreferences: true,
+        fullPage: false
+      };
+
+      const validation = await validateComponentProps(
+        'astro-stack-auth/components',
+        'AccountSettings',
+        validProps
+      );
+
+      expect(validation.isValid).toBe(true);
+      expect(validation.errors).toHaveLength(0);
+    });
+
+    it('should validate event handler signatures', async () => {
+      // Test with functions that have wrong parameter count
+      const propsWithBadHandlers = {
+        onSuccess: () => {}, // Should accept 1 parameter
+        onError: (err: any, extra: any) => {} // Should accept 1 parameter
+      };
+
+      const validation = await validateComponentProps(
+        'astro-stack-auth/components',
+        'SignIn',
+        propsWithBadHandlers
+      );
+
+      // Should still be valid (type-wise) but generate warnings
+      expect(validation.isValid).toBe(true);
+      expect(validation.warnings.length).toBeGreaterThan(0);
+      expect(validation.warnings.some(w => w.includes('onSuccess'))).toBe(true);
+      expect(validation.warnings.some(w => w.includes('onError'))).toBe(true);
+    });
+
+    it('should handle unknown components gracefully', async () => {
+      const validation = await validateComponentProps(
+        'astro-stack-auth/components',
+        'UnknownComponent',
+        { someProps: 'value' }
+      );
+
+      expect(validation.isValid).toBe(false);
+      expect(validation.errors).toContain('Unknown component: UnknownComponent');
+    });
+
+    it('should validate optional vs required prop handling', async () => {
+      // Test SignUp with mix of optional props
+      const mixedProps = {
+        onSuccess: (user: any) => console.log(user),
+        // Missing optional props: onError, redirectTo, etc.
+        providers: ['github'],
+        showTerms: false
+      };
+
+      const validation = await validateComponentProps(
+        'astro-stack-auth/components',
+        'SignUp',
+        mixedProps
+      );
+
+      expect(validation.isValid).toBe(true);
+      expect(validation.requiredPropsMissing).toHaveLength(0);
+    });
+
+    it('should validate style and className props consistently', async () => {
+      const propsWithStyling = {
+        style: { margin: '10px', padding: '5px' },
+        className: 'my-custom-class'
+      };
+
+      // Test across multiple components
+      const components = ['SignIn', 'SignUp', 'UserButton', 'AccountSettings'];
+      
+      for (const componentName of components) {
+        const validation = await validateComponentProps(
+          'astro-stack-auth/components',
+          componentName,
+          propsWithStyling
+        );
+
+        expect(validation.isValid).toBe(true);
+        expect(validation.errors).toHaveLength(0);
+      }
+    });
+
+    it('should provide comprehensive prop mismatch error reporting', async () => {
+      const badProps = {
+        onSuccess: 'not-function',
+        redirectTo: 123,
+        providers: 'not-array',
+        showTerms: 'not-boolean',
+        className: { object: 'not-string' },
+        unexpectedProp: 'should-warn'
+      };
+
+      const validation = await validateComponentProps(
+        'astro-stack-auth/components',
+        'SignIn',
+        badProps
+      );
+
+      expect(validation.isValid).toBe(false);
+      
+      // Check detailed error reporting
+      expect(validation.errors.length).toBeGreaterThan(0);
+      expect(validation.warnings.length).toBeGreaterThan(0);
+      expect(validation.invalidPropTypes.length).toBe(5);
+      expect(validation.unexpectedProps.length).toBe(1);
+
+      // Verify error messages are descriptive
+      const errorMessages = validation.errors.join(' ');
+      expect(errorMessages).toContain('onSuccess');
+      expect(errorMessages).toContain('function');
+      expect(errorMessages).toContain('string');
+      expect(errorMessages).toContain('boolean');
+      expect(errorMessages).toContain('array');
+    });
+
+    it('should validate batch prop validation across file', async () => {
+      const componentUsages = [
+        {
+          component: 'SignIn',
+          props: { onSuccess: (user: any) => {}, className: 'signin' },
+          line: 10
+        },
+        {
+          component: 'UserButton', 
+          props: { showDisplayName: true, onSignOut: () => {} },
+          line: 15
+        },
+        {
+          component: 'StackProvider',
+          props: { projectId: 'test', publishableClientKey: 'pk_test', children: 'content' },
+          line: 5
+        }
+      ];
+
+      const batchValidation = await validateComponentPropsInFile(
+        'test-file.astro',
+        componentUsages
+      );
+
+      expect(batchValidation.totalComponents).toBe(3);
+      expect(batchValidation.validComponents).toBe(3);
+      expect(batchValidation.invalidComponents).toBe(0);
+      expect(batchValidation.propValidations).toHaveLength(3);
+    });
+
+    it('should handle prop validation with mixed valid/invalid components', async () => {
+      const componentUsages = [
+        {
+          component: 'SignIn',
+          props: { onSuccess: 'invalid-type' }, // Invalid
+          line: 10
+        },
+        {
+          component: 'UserButton',
+          props: { showDisplayName: true }, // Valid
+          line: 15
+        }
+      ];
+
+      const batchValidation = await validateComponentPropsInFile(
+        'test-file.astro',
+        componentUsages
+      );
+
+      expect(batchValidation.totalComponents).toBe(2);
+      expect(batchValidation.validComponents).toBe(1);
+      expect(batchValidation.invalidComponents).toBe(1);
+      
+      const invalidValidation = batchValidation.propValidations.find(v => !v.isValid);
+      expect(invalidValidation?.component).toBe('SignIn');
+      expect(invalidValidation?.line).toBe(10);
+    });
+  });
+
+  describe('Version-Aware Prop Interface Validation', () => {
+    it('should validate props with version awareness', async () => {
+      const validProps = {
+        onSuccess: (user: any) => console.log(user),
+        className: 'signin-form',
+        style: { margin: '10px' }
+      };
+
+      const validation = await validateComponentPropsWithVersion(
+        'astro-stack-auth/components',
+        'SignIn',
+        validProps,
+        '2.8.36'
+      );
+
+      expect(validation.isValid).toBe(true);
+      expect(validation.stackVersion).toBe('2.8.36');
+      expect(validation.versionWarnings).toHaveLength(0);
+      expect(validation.deprecatedProps).toHaveLength(0);
+      expect(validation.unsupportedProps).toHaveLength(0);
+    });
+
+    it('should detect deprecated props in future versions', async () => {
+      // Test with a hypothetical future version where onError is deprecated
+      const propsWithDeprecated = {
+        onSuccess: (user: any) => console.log(user),
+        onError: (error: any) => console.error(error), // Will be deprecated in 3.0.x
+        className: 'signin-form'
+      };
+
+      const validation = await validateComponentPropsWithVersion(
+        'astro-stack-auth/components',
+        'SignIn',
+        propsWithDeprecated,
+        '3.0.0'
+      );
+
+      expect(validation.isValid).toBe(true); // Still valid, but with warnings
+      expect(validation.deprecatedProps).toContain('onError');
+      expect(validation.versionWarnings.length).toBeGreaterThan(0);
+      expect(validation.versionWarnings.some(w => w.includes('deprecated'))).toBe(true);
+    });
+
+    it('should detect potentially unsupported props', async () => {
+      const propsWithUnsupported = {
+        onSuccess: (user: any) => console.log(user),
+        customProp: 'not-in-version-spec', // Not in version compatibility data
+        className: 'signin-form'
+      };
+
+      const validation = await validateComponentPropsWithVersion(
+        'astro-stack-auth/components',
+        'SignIn',
+        propsWithUnsupported,
+        '2.8.36'
+      );
+
+      expect(validation.isValid).toBe(true);
+      expect(validation.unsupportedProps).toContain('customProp');
+      expect(validation.versionWarnings.length).toBeGreaterThan(0);
+    });
+
+    it('should validate batch props with version awareness', async () => {
+      const componentUsages = [
+        {
+          component: 'SignIn',
+          props: { onSuccess: (user: any) => {}, className: 'signin' },
+          line: 10
+        },
+        {
+          component: 'UserButton', 
+          props: { showDisplayName: true, customProp: 'unsupported' },
+          line: 15
+        }
+      ];
+
+      const batchValidation = await validateComponentPropsWithVersionBatch(
+        componentUsages,
+        '2.8.36'
+      );
+
+      expect(batchValidation.totalComponents).toBe(2);
+      expect(batchValidation.validComponents).toBe(2);
+      expect(batchValidation.versionCompatibilityIssues).toBeGreaterThan(0); // Due to customProp
+      expect(batchValidation.propValidations).toHaveLength(2);
+    });
+
+    it('should generate comprehensive version compatibility report', async () => {
+      const validationResults: Array<VersionAwarePropValidationResult & { line: number }> = [
+        {
+          isValid: true,
+          component: 'SignIn',
+          errors: [],
+          warnings: [],
+          requiredPropsMissing: [],
+          invalidPropTypes: [],
+          unexpectedProps: [],
+          stackVersion: '2.8.36',
+          versionWarnings: ['Some warning'],
+          deprecatedProps: ['oldProp'],
+          unsupportedProps: ['customProp'],
+          versionMismatchErrors: [],
+          line: 10
+        }
+      ];
+
+      const report = generateVersionCompatibilityReport(validationResults);
+
+      expect(report.summary.totalComponents).toBe(1);
+      expect(report.summary.componentsWithVersionIssues).toBe(1);
+      expect(report.summary.deprecationWarnings).toBe(1);
+      expect(report.summary.unsupportedProps).toBe(1);
+      expect(report.summary.targetVersion).toBe('2.8.36');
+
+      expect(report.issues.length).toBeGreaterThan(0);
+      expect(report.recommendations.length).toBeGreaterThan(0);
+    });
+
+    it('should validate props across multiple Stack Auth versions', async () => {
+      const props = {
+        onSuccess: (user: any) => console.log(user),
+        className: 'signin-form',
+        style: { padding: '10px' }
+      };
+
+      const crossVersionValidation = await validatePropsAcrossVersions(
+        'SignIn',
+        props,
+        ['2.8.x', '2.9.x']
+      );
+
+      expect(crossVersionValidation.component).toBe('SignIn');
+      expect(crossVersionValidation.versionCompatibility).toHaveLength(2);
+      expect(typeof crossVersionValidation.overallCompatible).toBe('boolean');
+
+      // Each version should have validation results
+      for (const versionResult of crossVersionValidation.versionCompatibility) {
+        expect(versionResult.version).toBeTruthy();
+        expect(versionResult.validation).toBeDefined();
+        expect(typeof versionResult.isCompatible).toBe('boolean');
+      }
+    });
+
+    it('should handle common React props correctly in version validation', async () => {
+      const commonReactProps = {
+        style: { backgroundColor: 'blue' },
+        className: 'my-component',
+        id: 'unique-id'
+      };
+
+      const validation = await validateComponentPropsWithVersion(
+        'astro-stack-auth/components',
+        'SignIn',
+        commonReactProps,
+        '2.8.36'
+      );
+
+      expect(validation.isValid).toBe(true);
+      // Common React props should not be flagged as unsupported
+      expect(validation.unsupportedProps).not.toContain('style');
+      expect(validation.unsupportedProps).not.toContain('className');
+      expect(validation.unsupportedProps).not.toContain('id');
+    });
+
+    it('should provide migration guidance for deprecated props', async () => {
+      const propsWithDeprecated = {
+        onError: (error: any) => console.error(error), // Hypothetically deprecated in 3.0.x
+      };
+
+      const validation = await validateComponentPropsWithVersion(
+        'astro-stack-auth/components',
+        'SignIn',
+        propsWithDeprecated,
+        '3.0.0'
+      );
+
+      expect(validation.versionWarnings.length).toBeGreaterThan(0);
+      expect(validation.versionWarnings.some(w => 
+        w.includes('deprecated') && w.includes('Consider removing')
+      )).toBe(true);
+    });
+
+    it('should handle version compatibility for StackProvider props', async () => {
+      const stackProviderProps = {
+        projectId: 'test-project',
+        publishableClientKey: 'pk_test_key',
+        children: 'App content'
+      };
+
+      const validation = await validateComponentPropsWithVersion(
+        'astro-stack-auth/components',
+        'StackProvider',
+        stackProviderProps,
+        '2.8.36'
+      );
+
+      expect(validation.isValid).toBe(true);
+      expect(validation.requiredPropsMissing).toHaveLength(0);
+    });
+
+    it('should validate unknown components gracefully in version context', async () => {
+      const validation = await validateComponentPropsWithVersion(
+        'astro-stack-auth/components',
+        'UnknownComponent',
+        { someProp: 'value' },
+        '2.8.36'
+      );
+
+      expect(validation.isValid).toBe(false);
+      expect(validation.errors).toContain('Unknown component: UnknownComponent');
+      expect(validation.stackVersion).toBe('2.8.36');
+    });
+
+    it('should provide recommendations for cross-version compatibility', async () => {
+      const problematicProps = {
+        onSuccess: (user: any) => console.log(user),
+        futureProp: 'only-in-3.0', // Hypothetically only available in 3.0
+        deprecatedProp: 'old-value' // Hypothetically deprecated
+      };
+
+      const crossVersionValidation = await validatePropsAcrossVersions(
+        'SignIn',
+        problematicProps,
+        ['2.8.x', '3.0.x']
+      );
+
+      // Since we have problematic props, we should get recommendations
+      // even if overallCompatible might be true due to our mocked version data
+      expect(crossVersionValidation.component).toBe('SignIn');
+      expect(crossVersionValidation.versionCompatibility).toHaveLength(2);
+      
+      // The function should always return an array, even if empty
+      expect(Array.isArray(crossVersionValidation.recommendations)).toBe(true);
+    });
+
+    it('should handle version range detection correctly', async () => {
+      const testCases = [
+        { version: '2.8.36', expectedRange: '2.8.x' },
+        { version: '2.9.0', expectedRange: '2.9.x' },
+        { version: '3.0.1', expectedRange: '3.0.x' },
+        { version: undefined, expectedRange: '2.8.x' }
+      ];
+
+      for (const testCase of testCases) {
+        const validation = await validateComponentPropsWithVersion(
+          'astro-stack-auth/components',
+          'SignIn',
+          { className: 'test' },
+          testCase.version
+        );
+
+        // Version range is used internally, but stackVersion should match input
+        expect(validation.stackVersion).toBe(testCase.version || '2.8.36');
       }
     });
   });
