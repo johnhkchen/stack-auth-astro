@@ -18,6 +18,10 @@ import {
   validateDependencies,
   setVerboseMode 
 } from './enhanced-diagnostics.js';
+import { 
+  EnhancedModuleResolver, 
+  ResolutionError 
+} from './package-resolution-diagnostics.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -367,7 +371,7 @@ function getJSDocComment(symbol) {
 /**
  * Extract component props from @stackframe/stack
  */
-function extractComponentProps() {
+async function extractComponentProps() {
   console.log('🔍 Extracting component props from @stackframe/stack...');
   
   // Check for verbose mode
@@ -399,8 +403,8 @@ function extractComponentProps() {
       return null;
     }
     
-    // Check if @stackframe/stack is available
-    const stackPath = resolveModulePath('@stackframe/stack');
+    // Check if @stackframe/stack is available with enhanced diagnostics
+    const stackPath = await resolveModulePath('@stackframe/stack');
     if (!stackPath) {
       const error = new Error('@stackframe/stack not found');
       const report = generateDiagnosticReport(error, { 
@@ -535,66 +539,87 @@ function extractComponentProps() {
 }
 
 /**
- * Resolve module path in node_modules
+ * Resolve module path in node_modules with enhanced diagnostics
  */
-function resolveModulePath(moduleName) {
+async function resolveModulePath(moduleName) {
+  const verboseMode = process.env.STACK_AUTH_VERBOSE === 'true' || process.argv.includes('--verbose');
+  
   try {
-    // First try standard Node.js resolution
-    return require.resolve(moduleName);
+    // Use the enhanced resolver with diagnostics
+    const resolver = new EnhancedModuleResolver({
+      debug: verboseMode || process.env.STACK_AUTH_DEBUG === 'true',
+      cache: true
+    });
+    
+    const result = await resolver.resolveModule(moduleName);
+    
+    if (verboseMode) {
+      console.log(`✅ Module resolved using strategy: ${result.strategy}`);
+      console.log(`   Path: ${result.path}`);
+      console.log(`   Time: ${result.timing.toFixed(2)}ms`);
+      console.log(`   Cached: ${result.cached || false}`);
+    }
+    
+    return result.path;
   } catch (error) {
-    // Try alternative resolution paths for packages with complex exports
+    if (error instanceof ResolutionError) {
+      if (verboseMode) {
+        console.error('📊 Resolution Diagnostic Report:');
+        console.error(error.toString());
+        console.error('\nDetailed attempts:');
+        error.report.attemptDetails.forEach((attempt, i) => {
+          const status = attempt.success ? '✅' : '❌';
+          console.error(`   ${i + 1}. ${status} ${attempt.strategy} (${attempt.timing?.toFixed(2)}ms)`);
+          if (attempt.error) {
+            console.error(`      Error: ${attempt.error}`);
+          }
+        });
+      } else {
+        console.warn(`⚠️ Failed to resolve ${moduleName}. Run with --verbose for diagnostics.`);
+        if (error.report.recommendations.length > 0) {
+          console.warn('💡 Quick fix:');
+          console.warn(`   ${error.report.recommendations[0].suggestion}`);
+          if (error.report.recommendations[0].command) {
+            console.warn(`   Run: ${error.report.recommendations[0].command}`);
+          }
+        }
+      }
+    } else {
+      console.error(`❌ Unexpected error resolving ${moduleName}: ${error.message}`);
+    }
+    
+    return null;
+  }
+}
+
+/**
+ * Synchronous wrapper for backward compatibility
+ */
+function resolveModulePathSync(moduleName) {
+  // For synchronous usage, fall back to simple resolution
+  try {
+    return require.resolve(moduleName);
+  } catch {
+    // Try basic fallback paths
     const possiblePaths = [
-      // Direct package paths
       join(process.cwd(), 'node_modules', moduleName),
       join(process.cwd(), 'node_modules', moduleName, 'package.json'),
-      join(process.cwd(), 'node_modules', moduleName, 'index.js'),
-      join(process.cwd(), 'node_modules', moduleName, 'dist', 'index.js'),
-      join(process.cwd(), 'node_modules', moduleName, 'lib', 'index.js'),
-      
-      // From script location
-      join(__dirname, '..', 'node_modules', moduleName),
-      join(__dirname, '..', 'node_modules', moduleName, 'package.json'),
-      
-      // Handle @stackframe packages specifically
-      ...(moduleName.startsWith('@stackframe/') ? [
-        join(process.cwd(), 'node_modules', moduleName, 'dist', 'index.mjs'),
-        join(process.cwd(), 'node_modules', moduleName, 'dist', 'index.cjs'),
-        join(process.cwd(), 'node_modules', moduleName, 'dist', 'index.d.ts')
-      ] : [])
+      join(__dirname, '..', 'node_modules', moduleName)
     ];
     
     for (const path of possiblePaths) {
       if (existsSync(path)) {
-        // If we found a package.json, try to resolve the main entry
         if (path.endsWith('package.json')) {
           try {
             const pkg = JSON.parse(readFileSync(path, 'utf-8'));
+            const baseDir = dirname(path);
             
-            // Handle exports field (modern module resolution)
-            if (pkg.exports) {
-              const exportPath = resolvePackageExports(pkg.exports, dirname(path));
-              if (exportPath) return exportPath;
-            }
-            
-            // Try main field
             if (pkg.main) {
-              const mainPath = join(dirname(path), pkg.main);
+              const mainPath = join(baseDir, pkg.main);
               if (existsSync(mainPath)) return mainPath;
             }
-            
-            // Try module field (ESM)
-            if (pkg.module) {
-              const modulePath = join(dirname(path), pkg.module);
-              if (existsSync(modulePath)) return modulePath;
-            }
-            
-            // Try types field for TypeScript
-            if (pkg.types || pkg.typings) {
-              const typesPath = join(dirname(path), pkg.types || pkg.typings);
-              if (existsSync(typesPath)) return typesPath;
-            }
-          } catch (readError) {
-            // Continue to next path
+          } catch {
+            // Continue
           }
         }
         return path;
@@ -636,10 +661,23 @@ function resolvePackageExports(exports, packageDir) {
 /**
  * Get Stack Auth SDK version information
  */
-function getSDKVersion() {
+async function getSDKVersion() {
   try {
-    const packagePath = resolveModulePath('@stackframe/stack/package.json');
+    const packagePath = await resolveModulePath('@stackframe/stack/package.json');
     if (!packagePath) {
+      // Try to resolve just the package and then find package.json
+      const basePath = await resolveModulePath('@stackframe/stack');
+      if (basePath) {
+        const pkgJsonPath = join(dirname(basePath), 'package.json');
+        if (existsSync(pkgJsonPath)) {
+          const packageJson = JSON.parse(readFileSync(pkgJsonPath, 'utf-8'));
+          return {
+            version: packageJson.version,
+            name: packageJson.name,
+            description: packageJson.description
+          };
+        }
+      }
       return null;
     }
     
