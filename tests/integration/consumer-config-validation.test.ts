@@ -101,8 +101,8 @@ describe('Consumer Configuration Validation', () => {
       declare const signIn: typeof import('astro-stack-auth/client').signIn;
       declare const signOut: typeof import('astro-stack-auth/client').signOut;
       
-      // Test component imports (React types)
-      declare const SignIn: typeof import('astro-stack-auth/components').SignIn;
+      // Test component types import (available in Sprint 001)
+      import type { StackAuthFC } from 'astro-stack-auth/components';
       
       // Test configuration
       const config: StackAuthConfig = {
@@ -122,9 +122,19 @@ describe('Consumer Configuration Validation', () => {
     const testFilePath = path.join(process.cwd(), 'temp-consumer-test.ts');
     require('fs').writeFileSync(testFilePath, testCode);
 
+    // Create a temporary tsconfig that extends the recommended config and includes our test file
+    const tempConfigPath = path.join(process.cwd(), 'temp-tsconfig.json');
+    const tempConfig = {
+      extends: './test-configs/tsconfig.recommended.json',
+      include: [
+        './temp-consumer-test.ts'
+      ]
+    };
+    require('fs').writeFileSync(tempConfigPath, JSON.stringify(tempConfig, null, 2));
+
     try {
-      // Test with recommended config
-      execSync(`npx tsc --noEmit --project test-configs/tsconfig.recommended.json temp-consumer-test.ts`, {
+      // Test with temporary config that includes our test file
+      execSync(`npx tsc --noEmit --project ${tempConfigPath}`, {
         stdio: 'pipe',
         timeout: 30000
       });
@@ -132,9 +142,14 @@ describe('Consumer Configuration Validation', () => {
       // If we reach here, the test passed
       expect(true).toBe(true);
     } finally {
-      // Clean up test file
+      // Clean up test files
       try {
         require('fs').unlinkSync(testFilePath);
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+      try {
+        require('fs').unlinkSync(tempConfigPath);
       } catch (e) {
         // Ignore cleanup errors
       }
