@@ -169,7 +169,41 @@ declare namespace App {
 }
 ```
 
-**TypeScript version requirement:** TypeScript 5.0+
+#### TypeScript Configuration Requirements
+
+**Minimum Requirements:**
+- **TypeScript 5.0+** is required
+- **`moduleResolution`: `"bundler"` or `"node"`** (recommended: `"bundler"`)
+- **`target`: `"ES2020"` or higher** (recommended: `"ES2022"`)
+
+#### Recommended TypeScript Configuration
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext", 
+    "moduleResolution": "bundler",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "lib": ["ES2022", "DOM"],
+    "types": ["node", "react", "react-dom"],
+    "resolveJsonModule": true,
+    "isolatedModules": true
+  }
+}
+```
+
+#### Module Resolution Compatibility
+
+| moduleResolution | Status | Import Style | Notes |
+|------------------|---------|--------------|-------|
+| `bundler` | ✅ **Recommended** | `'astro-stack-auth/server'` | Best compatibility |
+| `node` | ✅ Compatible | `'astro-stack-auth/server'` | Standard Node.js |
+| `node16` | ⚠️ Requires Extensions | `'astro-stack-auth/server.js'` | Must use .js |
+| `classic` | ❌ Not Compatible | N/A | Conflicts with JSON modules |
 
 ### React Requirements
 
@@ -178,6 +212,7 @@ React components are available but optional:
 ```bash
 # Peer dependencies (install if using React components)
 npm install react react-dom
+npm install --save-dev @types/react @types/react-dom
 ```
 
 **React version requirements:**
@@ -191,6 +226,12 @@ npm install react react-dom
 - **Astro 5.0+** is required
 - Compatible with all Astro adapters (static, Node.js, Vercel, Netlify, etc.)
 - Works with SSR and SSG modes
+
+### Browser & Environment Support
+
+- **Node.js 18+** for development and server-side rendering
+- **Modern browsers** with ES2020+ support
+- **All major bundlers:** Vite, Webpack, Rollup, esbuild
 
 ## Troubleshooting
 
@@ -211,6 +252,63 @@ npm install react react-dom
    ```
 3. Restart your development server after adding environment variables
 4. Verify credentials are correct in your [Stack Auth Dashboard](https://app.stack-auth.com/dashboard)
+
+#### Module Resolution Issues
+
+**Error:** `Cannot resolve module 'astro-stack-auth/server'`
+
+**Solution:**
+1. Check your `moduleResolution` setting in `tsconfig.json`:
+   ```json
+   {
+     "compilerOptions": {
+       "moduleResolution": "bundler"  // ✅ Recommended
+     }
+   }
+   ```
+
+2. For `node16`/`nodenext`, use explicit file extensions:
+   ```typescript
+   // ✅ Correct for node16/nodenext
+   import { getUser } from 'astro-stack-auth/server.js';
+   
+   // ❌ Wrong for node16/nodenext  
+   import { getUser } from 'astro-stack-auth/server';
+   ```
+
+3. Avoid `classic` module resolution (not compatible):
+   ```json
+   {
+     "compilerOptions": {
+       "moduleResolution": "classic"  // ❌ Will fail
+     }
+   }
+   ```
+
+#### TypeScript Strict Mode Issues
+
+**Error:** `Type 'undefined' is not assignable to type 'string'` (with `exactOptionalPropertyTypes`)
+
+**Solution:**
+1. **Recommended:** Disable `exactOptionalPropertyTypes`:
+   ```json
+   {
+     "compilerOptions": {
+       "strict": true
+       // Remove: "exactOptionalPropertyTypes": true
+     }
+   }
+   ```
+
+2. **Alternative:** Use type assertions:
+   ```typescript
+   const config: StackAuthConfig = {
+     projectId: 'test',
+     publishableClientKey: 'key', 
+     secretServerKey: 'secret',
+     baseUrl: process.env.STACK_BASE_URL
+   } as StackAuthConfig;
+   ```
 
 #### Invalid Credentials
 
@@ -237,7 +335,11 @@ npm install react react-dom
    ```
 3. Check that peer dependencies are installed if using React components:
    ```bash
-   npm install react react-dom
+   npm install react react-dom @types/react @types/react-dom
+   ```
+4. Validate your TypeScript configuration:
+   ```bash
+   npx tsc --noEmit --showConfig
    ```
 
 #### Import Errors with Stack Auth Packages
@@ -259,6 +361,34 @@ npm install react react-dom
    npm ci
    ```
 
+### Quick Diagnostics
+
+Run these commands to diagnose issues:
+
+```bash
+# Check versions
+npx astro --version
+npx tsc --version
+npm list astro-stack-auth react typescript
+
+# Validate TypeScript config
+npx tsc --noEmit --showConfig
+
+# Test basic imports
+npm run type:check
+
+# Validate Stack Auth packages
+npm run stack:validate
+```
+
+### Advanced Troubleshooting
+
+For complex issues, see our comprehensive guides:
+
+- **[Consumer Compatibility Guide](./docs/consumer-compatibility.md)** - Detailed TypeScript configurations
+- **[Compatibility Matrix](./docs/compatibility-matrix.md)** - Version compatibility charts  
+- **[Troubleshooting Guide](./docs/troubleshooting-guide.md)** - In-depth problem solving
+
 #### Development vs Production Issues
 
 **Development:**
@@ -274,9 +404,11 @@ npm install react react-dom
 ### Getting Help
 
 1. **Check the error message** - Development mode provides detailed guidance
-2. **Verify environment variables** - Use `npm run stack:validate` to check package installation
-3. **Check Stack Auth Dashboard** - Ensure your project is properly configured
-4. **Update dependencies** - Ensure you're using compatible versions
+2. **Run diagnostics** - Use the commands above to gather information
+3. **Check compatibility** - Verify your versions against our compatibility matrix
+4. **Review documentation** - Check our detailed guides for specific issues
+5. **Verify environment variables** - Use `npm run stack:validate` to check package installation
+6. **Check Stack Auth Dashboard** - Ensure your project is properly configured
 
 ## Stack Auth Compatibility
 
