@@ -228,11 +228,13 @@ function createTypeScriptProgram(entry) {
     export type StackProviderProps = React.ComponentProps<typeof StackProviderComponent>;
   `;
 
+  const baseHost = ts.createCompilerHost(compilerOptions);
+  
   const program = ts.createProgram({
     rootNames: [entry],
     options: compilerOptions,
     host: {
-      ...ts.createCompilerHost(compilerOptions),
+      ...baseHost,
       readFile: (fileName) => {
         if (fileName === entry) {
           return virtualEntry;
@@ -244,6 +246,12 @@ function createTypeScriptProgram(entry) {
           return true;
         }
         return ts.sys.fileExists(fileName);
+      },
+      getSourceFile: (fileName, languageVersion, onError, shouldCreateNewSourceFile) => {
+        if (fileName === entry) {
+          return ts.createSourceFile(fileName, virtualEntry, languageVersion);
+        }
+        return baseHost.getSourceFile(fileName, languageVersion, onError, shouldCreateNewSourceFile);
       }
     }
   });
@@ -369,10 +377,42 @@ function extractComponentProps() {
     const program = createTypeScriptProgram(virtualEntry);
     const checker = program.getTypeChecker();
     
-    // Get the source file
+    // Get the source file with enhanced diagnostics
     const sourceFile = program.getSourceFile(virtualEntry);
     if (!sourceFile) {
-      throw new Error('Could not create virtual source file');
+      console.error('❌ Failed to create virtual source file');
+      console.error(`   Virtual entry path: ${virtualEntry}`);
+      console.error(`   Program root names: ${program.getRootFileNames().join(', ')}`);
+      
+      // Check for compilation errors
+      const syntacticDiagnostics = program.getSyntacticDiagnostics();
+      const semanticDiagnostics = program.getSemanticDiagnostics();
+      
+      if (syntacticDiagnostics.length > 0) {
+        console.error('❌ Syntactic diagnostics:');
+        syntacticDiagnostics.forEach(diagnostic => {
+          const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
+          console.error(`   ${message}`);
+        });
+      }
+      
+      if (semanticDiagnostics.length > 0) {
+        console.error('❌ Semantic diagnostics:');
+        semanticDiagnostics.forEach(diagnostic => {
+          const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
+          console.error(`   ${message}`);
+        });
+      }
+      
+      // Check if @stackframe/stack-ui types are available
+      try {
+        const stackUIPath = require.resolve('@stackframe/stack-ui');
+        console.error(`   @stackframe/stack-ui resolved to: ${stackUIPath}`);
+      } catch (error) {
+        console.error(`   @stackframe/stack-ui resolution failed: ${error.message}`);
+      }
+      
+      throw new Error('Could not create virtual source file - check diagnostics above');
     }
     
     const extractedProps = {};
