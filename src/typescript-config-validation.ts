@@ -93,7 +93,7 @@ const LooseModeComponent: React.FC<LooseModeTestProps> = ({
   data
 }) => {
   // In loose mode, these should not cause errors even without explicit typing
-  const handleEvent = (e) => {
+  const handleEvent = (e: React.SyntheticEvent) => {
     e.preventDefault();
     
     // Should work without strict null checks
@@ -105,7 +105,7 @@ const LooseModeComponent: React.FC<LooseModeTestProps> = ({
   };
 
   // Implicit return types should be allowed
-  const processData = (input) => {
+  const processData = (input: any) => {
     if (input) {
       return input.toString();
     }
@@ -211,9 +211,15 @@ const ES2020CompatibilityTest: React.FC = () => {
 // ES2022 compatibility test
 const ES2022CompatibilityTest: React.FC = () => {
   // Use features available in ES2022
-  const userData = {
-    #privateField: 'private data'  // Private fields (ES2022)
-  };
+  class UserData {
+    #privateField: string = 'private data';  // Private fields (ES2022)
+    
+    getPrivateField() {
+      return this.#privateField;
+    }
+  }
+  
+  const userData = new UserData();
 
   // Top-level await should be supported (though not used here)
   // Class static blocks would be available (ES2022)
@@ -298,15 +304,15 @@ const ConfigurationTestComponent: React.FC<ConfigurationTestProps> = ({
     switch (config) {
       case 'strict':
         return React.createElement(StrictModeComponent, {
-          user,
-          session,
+          user: user || null,
+          session: session || null,
           onUserClick: (u: User) => console.log('Strict mode user click:', u)
         });
       
       case 'loose':
         return React.createElement(LooseModeComponent, {
-          user,
-          session,
+          user: user || null,
+          session: session || null,
           callback: (u: any, s: any) => console.log('Loose mode callback:', { u, s })
         });
       

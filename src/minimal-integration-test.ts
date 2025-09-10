@@ -182,8 +182,8 @@ const validateSessionType = (session: Session): boolean => {
 
 const validateComponentProps = (props: StackAuthComponentProps): boolean => {
   return (
-    (props.user === null || validateUserType(props.user)) &&
-    (props.session === null || validateSessionType(props.session))
+    (props.user === null || props.user === undefined || validateUserType(props.user)) &&
+    (props.session === null || props.session === undefined || validateSessionType(props.session))
   );
 };
 

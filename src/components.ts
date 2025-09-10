@@ -27,11 +27,11 @@ export interface StackProviderProps {
   children: React.ReactNode;
 }
 
-// Test React.FC compatibility with Stack Auth types
-export type StackAuthFC<P = {}> = React.FC<P & StackAuthComponentProps>;
+// Test React component compatibility with Stack Auth types
+export type StackAuthFC<P = {}> = React.ComponentType<P & StackAuthComponentProps>;
 
 // Test React component types
-export type ReactFC<P = {}> = React.FC<P>;
+export type ReactFC<P = {}> = React.ComponentType<P>;
 export type ReactElement = React.ReactElement;
 export type ReactComponent<P = {}> = React.ComponentType<P>;
 

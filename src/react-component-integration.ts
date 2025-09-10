@@ -102,7 +102,7 @@ const UseEffectIntegrationTest: React.FC<{ app: StackClientApp }> = ({ app }) =>
   return React.createElement('div', null, [
     React.createElement('h3', { key: 'title' }, 'useEffect Integration Test'),
     React.createElement('p', { key: 'user' }, `User: ${user?.displayName || 'None'}`),
-    React.createElement('p', { key: 'session' }, `Session: ${session?.id || 'None'}`)
+    React.createElement('p', { key: 'session' }, `Session: ${session ? 'Active' : 'None'}`)
   ]);
 };
 
@@ -496,8 +496,10 @@ interface ComprehensiveReactTestProps {
 }
 
 const ComprehensiveReactIntegrationTest: React.FC<ComprehensiveReactTestProps> = ({ app }) => {
-  return React.createElement(StackAuthContextProvider, { app }, [
-    React.createElement('div', { key: 'container', className: 'comprehensive-react-test' }, [
+  return React.createElement(StackAuthContextProvider, { 
+    app,
+    children: [
+      React.createElement('div', { key: 'container', className: 'comprehensive-react-test' }, [
       React.createElement('h2', { key: 'title' }, 'Comprehensive React Integration Test'),
       
       React.createElement(UseStateIntegrationTest, { key: 'useState' }),
@@ -541,8 +543,14 @@ const ComprehensiveReactIntegrationTest: React.FC<ComprehensiveReactTestProps> =
       }),
       
       React.createElement(RenderPropsTest, {
-        key: 'renderProps'
-      }, ({ user, session, isLoading, signIn, signOut }) =>
+        key: 'renderProps',
+        children: ({ user, session, isLoading, signIn, signOut }: {
+          user: User | null;
+          session: Session | null;
+          isLoading: boolean;
+          signIn: (email: string, password: string) => Promise<void>;
+          signOut: () => Promise<void>;
+        }) =>
         React.createElement('div', null, [
           React.createElement('h4', { key: 'title' }, 'Render Props Test'),
           React.createElement('p', { key: 'user' }, `Render Props User: ${user?.displayName || 'None'}`),
@@ -558,9 +566,10 @@ const ComprehensiveReactIntegrationTest: React.FC<ComprehensiveReactTestProps> =
             disabled: isLoading
           }, 'Sign Out')
         ])
-      )
-    ])
-  ]);
+      })
+      ])
+    ]
+  });
 };
 
 // =============================================================================

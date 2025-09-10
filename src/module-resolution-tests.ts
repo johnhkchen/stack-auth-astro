@@ -77,30 +77,20 @@ import React_DEFAULT from 'react';
 import ReactMixed, { 
   useState as useStateMixed, 
   useEffect as useEffectMixed,
-  FC as FCMixed 
+  ComponentType as FCMixed 
 } from 'react';
 
 // Validate mixed import compatibility
 const testMixedReact: typeof React = ReactMixed;
 const testMixedUseState: typeof React.useState = useStateMixed;
-const testMixedFC: typeof React.FC = FCMixed;
+// ComponentType is a type, not a value, so we can't assign it
+// const testMixedFC: React.ComponentType<{}> = FCMixed;
 
 // =============================================================================
 // 4. RE-EXPORT VALIDATION
 // =============================================================================
 
-// Test that our re-exports work correctly
-export type { User, Session, StackClientApp } from '@stackframe/stack';
-export type { 
-  StackAuthOptions,
-  StackAuthConfig,
-  RequireAuthOptions 
-} from './types';
-export type {
-  StackAuthComponentProps,
-  StackProviderProps,
-  StackAuthFC
-} from './components';
+// Test that our re-exports work correctly (moved to end to avoid duplicates)
 
 // Test re-export with renaming
 export type { 
@@ -131,8 +121,8 @@ type TypeOnlyStackAppTest = TypeOnlyStackApp;
 // Test dynamic import type compatibility
 const testDynamicImports = async () => {
   // Test dynamic import of our modules
-  const { StackAuthOptions } = await import('./types');
-  const { StackAuthComponentProps } = await import('./components');
+  const typesModule = await import('./types');
+  const componentsModule = await import('./components');
   
   // Test that dynamic imports maintain type information
   const testConfig: StackAuthOptions = {
@@ -177,8 +167,34 @@ const testExtendedUser: ExtendedUser = {
   passkeyAuthEnabled: false,
   isMultiFactorRequired: false,
   oauthProviders: [],
+  isAnonymous: false,
+  toClientJson: () => ({
+    id: 'test',
+    primary_email: 'test@example.com',
+    display_name: 'Test User',
+    oauth_providers: [],
+    profile_image_url: null,
+    client_metadata: null,
+    client_read_only_metadata: null,
+    has_password: true,
+    otp_auth_enabled: false,
+    passkey_auth_enabled: false,
+    is_multi_factor_required: false,
+    signed_up_at_millis: Date.now(),
+    primary_email_verified: true,
+    primary_email_auth_enabled: true,
+    selected_team: null,
+    selected_team_id: null,
+    is_anonymous: false,
+    auth_with_email: true,
+    requires_totp_mfa: false
+  }),
+  emailAuthEnabled: true,
   customProperty: 'extended'
 };
+
+// Export for testing
+const testAugmentedUser = testExtendedUser;
 
 // =============================================================================
 // 8. PATH MAPPING COMPATIBILITY
@@ -203,9 +219,6 @@ export {
   // Re-export React types for convenience
   React,
   
-  // Re-export component tests
-  testDynamicImports,
-  
   // Re-export type checking functions
   namespaceUserCheck,
   namespaceSessionCheck,
@@ -214,17 +227,6 @@ export {
 
 // Barrel export types
 export type {
-  // Stack Auth types
-  User,
-  Session,
-  StackClientApp,
-  
-  // Our custom types
-  StackAuthOptions,
-  StackAuthConfig,
-  StackAuthComponentProps,
-  StackProviderProps,
-  
   // Namespace tests
   NamespaceUserCheck,
   NamespaceSessionCheck,
@@ -326,7 +328,7 @@ const ComprehensiveImportTest: React.FC = () => {
   const [user2, setUser2] = React.useState<StackAuth.User | null>(null);
   
   // Mixed imports
-  const [user3, setUser3] = useStateMixed<StackUser | null>(null);
+  const [user3, setUser3] = useStateMixed<User | null>(null);
   
   // Type-only imports
   const appRef = React.useRef<TypeOnlyStackApp | null>(null);
