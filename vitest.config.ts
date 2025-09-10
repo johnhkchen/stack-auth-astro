@@ -82,6 +82,16 @@ export default defineConfig({
           'astro'
         ]
       }
+    },
+    
+    // Enhanced module resolution for better dependency handling
+    define: {
+      'import.meta.vitest': 'undefined',
+    },
+    
+    // ESM/CJS compatibility settings
+    esbuild: {
+      target: 'node18'
     }
   },
   
@@ -89,7 +99,16 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
-      '~': resolve(__dirname, './tests')
-    }
+      '~': resolve(__dirname, './tests'),
+      // Add alias for astro-stack-auth package during testing
+      'astro-stack-auth': resolve(__dirname, './src/index.ts'),
+      'astro-stack-auth/server': resolve(__dirname, './src/server.ts'),
+      'astro-stack-auth/client': resolve(__dirname, './src/client.ts'),
+      'astro-stack-auth/components': resolve(__dirname, './src/components.ts'),
+      'astro-stack-auth/middleware': resolve(__dirname, './src/middleware.ts')
+    },
+    // Better module resolution for dependencies
+    conditions: ['import', 'module', 'browser', 'default'],
+    mainFields: ['module', 'main']
   }
 });

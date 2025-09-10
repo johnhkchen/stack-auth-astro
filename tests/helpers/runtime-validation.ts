@@ -13,6 +13,13 @@ import {
   type ComponentExportValidationResult
 } from '../mocks/package-exports.js';
 import * as React from 'react';
+import { 
+  safeImport, 
+  importWithBuildFallback, 
+  debugImport,
+  createMockModule,
+  isTestEnvironment
+} from '../utils/dependency-helpers.js';
 
 /**
  * Validates that a module path and export name combination is valid
@@ -30,25 +37,53 @@ export async function validateRuntimeExport(
       };
     }
 
-    // Try to dynamically import the actual module if available
-    try {
-      // For development/testing, we try to import from the src directory
-      const actualModulePath = modulePath.replace('astro-stack-auth', '../..');
-      const module = await import(actualModulePath);
+    // Try to import the actual module with enhanced error handling
+    if (modulePath.startsWith('astro-stack-auth/')) {
+      const exportName = modulePath.replace('astro-stack-auth/', '');
+      const importResult = await importWithBuildFallback(exportName);
       
-      if (!(exportName in module)) {
+      if (importResult.success) {
+        const module = importResult.module;
+        if (!(exportName in module)) {
+          return {
+            isValid: false,
+            error: `Export '${exportName}' does not exist in actual module '${modulePath}' (source: ${importResult.source})`
+          };
+        }
+        return { isValid: true };
+      } else if (isTestEnvironment()) {
+        // In test environment, it's ok if modules aren't built yet
+        console.warn(`Could not import actual module ${modulePath} (${importResult.error}), using mock validation only`);
+        return { isValid: true };
+      } else {
         return {
           isValid: false,
-          error: `Export '${exportName}' does not exist in actual module '${modulePath}'`
+          error: `Failed to import module '${modulePath}': ${importResult.error}`
         };
       }
-      
-      return { isValid: true };
-    } catch (importError) {
-      // If actual module import fails, validate against mock only
-      // This is expected during development before the package is built
-      console.warn(`Could not import actual module ${modulePath}, using mock validation only`);
-      return { isValid: true };
+    } else {
+      // Fallback to old behavior for non-astro-stack-auth modules
+      try {
+        const actualModulePath = modulePath.replace('astro-stack-auth', '../..');
+        const importResult = await safeImport(actualModulePath);
+        
+        if (!importResult.success) {
+          console.warn(`Could not import actual module ${modulePath}, using mock validation only`);
+          return { isValid: true };
+        }
+        
+        if (!(exportName in importResult.module)) {
+          return {
+            isValid: false,
+            error: `Export '${exportName}' does not exist in actual module '${modulePath}'`
+          };
+        }
+        
+        return { isValid: true };
+      } catch (importError) {
+        console.warn(`Could not import actual module ${modulePath}, using mock validation only`);
+        return { isValid: true };
+      }
     }
   } catch (error) {
     return {
@@ -73,36 +108,75 @@ export async function validateReactComponent(
     }
 
     // Try to import and check if it's a React component
-    try {
-      const actualModulePath = modulePath.replace('astro-stack-auth', '../..');
-      const module = await import(actualModulePath);
-      const component = module[componentName];
+    if (modulePath.startsWith('astro-stack-auth/')) {
+      const exportName = modulePath.replace('astro-stack-auth/', '');
+      const importResult = await importWithBuildFallback(exportName);
       
-      if (component) {
-        // Check if it's a React component
-        const componentType = typeof component;
-        const isReactComponent = 
-          componentType === 'function' || 
-          (componentType === 'object' && component.$$typeof) || // React.forwardRef
-          React.isValidElement(component);
+      if (importResult.success) {
+        const module = importResult.module;
+        const component = module[componentName];
         
-        if (!isReactComponent) {
-          return {
-            isValid: false,
-            error: `Export '${componentName}' is not a valid React component`,
-            componentType
+        if (component) {
+          // Check if it's a React component
+          const componentType = typeof component;
+          const isReactComponent = 
+            componentType === 'function' || 
+            (componentType === 'object' && component.$$typeof) || // React.forwardRef
+            React.isValidElement(component);
+          
+          if (!isReactComponent) {
+            return {
+              isValid: false,
+              error: `Export '${componentName}' is not a valid React component`,
+              componentType
+            };
+          }
+          
+          return { 
+            isValid: true, 
+            componentType: isReactComponent ? 'react-component' : componentType 
           };
         }
-        
-        return { 
-          isValid: true, 
-          componentType: isReactComponent ? 'react-component' : componentType 
-        };
+      } else if (isTestEnvironment()) {
+        // Module not available in test environment, use mock validation
+        console.warn(`Could not import ${modulePath}/${componentName} for React validation`);
+        return { isValid: true, componentType: 'mock' };
       }
-    } catch (importError) {
-      // Module not available, use mock validation
-      console.warn(`Could not import ${modulePath}/${componentName} for React validation`);
-      return { isValid: true, componentType: 'mock' };
+    } else {
+      // Fallback for non-astro-stack-auth modules
+      try {
+        const actualModulePath = modulePath.replace('astro-stack-auth', '../..');
+        const importResult = await safeImport(actualModulePath);
+        
+        if (importResult.success) {
+          const component = importResult.module[componentName];
+          
+          if (component) {
+            const componentType = typeof component;
+            const isReactComponent = 
+              componentType === 'function' || 
+              (componentType === 'object' && component.$$typeof) || 
+              React.isValidElement(component);
+            
+            if (!isReactComponent) {
+              return {
+                isValid: false,
+                error: `Export '${componentName}' is not a valid React component`,
+                componentType
+              };
+            }
+            
+            return { 
+              isValid: true, 
+              componentType: isReactComponent ? 'react-component' : componentType 
+            };
+          }
+        }
+      } catch (importError) {
+        // Module not available, use mock validation
+        console.warn(`Could not import ${modulePath}/${componentName} for React validation`);
+        return { isValid: true, componentType: 'mock' };
+      }
     }
     
     return { isValid: true, componentType: 'unknown' };
@@ -134,33 +208,52 @@ export async function validateModuleExports(modulePath: string): Promise<Package
     };
   }
 
-  try {
-    // Try to import actual module
-    const actualModulePath = modulePath.replace('astro-stack-auth', '../..');
-    const module = await import(actualModulePath);
+  // Try to import actual module with enhanced error handling
+  if (modulePath.startsWith('astro-stack-auth/')) {
+    const exportName = modulePath.replace('astro-stack-auth/', '');
+    const importResult = await importWithBuildFallback(exportName);
     
-    const expectedExportNames = Object.keys(expectedExports);
-    const actualExportNames = Object.keys(module);
-    
-    // Check for missing exports
-    for (const expectedExport of expectedExportNames) {
-      if (!(expectedExport in module)) {
-        result.missingExports.push(expectedExport);
-        result.isValid = false;
+    if (importResult.success) {
+      const module = importResult.module;
+      const expectedExportNames = Object.keys(expectedExports);
+      
+      // Check for missing exports
+      for (const expectedExport of expectedExportNames) {
+        if (!(expectedExport in module)) {
+          result.missingExports.push(expectedExport);
+          result.isValid = false;
+        }
       }
+    } else if (!isTestEnvironment()) {
+      // Only fail if not in test environment
+      result.isValid = false;
+      result.missingExports.push(`Failed to import module: ${importResult.error}`);
+    } else {
+      console.warn(`Could not import module ${modulePath} for validation:`, importResult.error);
     }
-    
-    // Check for unexpected exports (optional - might be too strict)
-    // for (const actualExport of actualExportNames) {
-    //   if (!expectedExportNames.includes(actualExport)) {
-    //     result.unexpectedExports.push(actualExport);
-    //   }
-    // }
-    
-  } catch (importError) {
-    // If we can't import the actual module, validation passes by default
-    // (the module might not be built yet)
-    console.warn(`Could not import module ${modulePath} for validation:`, importError);
+  } else {
+    // Fallback for non-astro-stack-auth modules
+    try {
+      const actualModulePath = modulePath.replace('astro-stack-auth', '../..');
+      const importResult = await safeImport(actualModulePath);
+      
+      if (importResult.success) {
+        const module = importResult.module;
+        const expectedExportNames = Object.keys(expectedExports);
+        
+        // Check for missing exports
+        for (const expectedExport of expectedExportNames) {
+          if (!(expectedExport in module)) {
+            result.missingExports.push(expectedExport);
+            result.isValid = false;
+          }
+        }
+      } else {
+        console.warn(`Could not import module ${modulePath} for validation:`, importResult.error);
+      }
+    } catch (importError) {
+      console.warn(`Could not import module ${modulePath} for validation:`, importError);
+    }
   }
 
   return result;

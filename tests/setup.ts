@@ -7,6 +7,8 @@
 
 import { vi } from 'vitest';
 import type { AstroIntegration } from 'astro';
+import { validateTestEnvironment } from './utils/dependency-helpers.js';
+import { cleanupTempFiles } from './utils/file-helpers.js';
 
 // Global test utilities available in all tests
 declare global {
@@ -192,6 +194,17 @@ export const astroTestUtils = {
 // Global setup
 globalThis.__TEST_UTILS__ = testUtils;
 
+// Validate test environment on startup
+const envValidation = validateTestEnvironment();
+if (envValidation.warnings.length > 0) {
+  console.warn('⚠️  Test environment warnings:');
+  envValidation.warnings.forEach(warning => console.warn(`  • ${warning}`));
+}
+if (envValidation.errors.length > 0) {
+  console.error('❌ Test environment errors:');
+  envValidation.errors.forEach(error => console.error(`  • ${error}`));
+}
+
 // Mock Stack Auth modules by default
 vi.mock('@stackframe/stack', () => stackAuthMocks.createStackMock());
 vi.mock('@stackframe/stack-ui', () => stackAuthMocks.createStackUIMocks());
@@ -206,6 +219,7 @@ beforeEach(() => {
 afterEach(() => {
   // Clean up after each test
   vi.restoreAllMocks();
+  cleanupTempFiles();
 });
 
 // Export default test utilities
