@@ -533,27 +533,40 @@ export class PerformanceBaselineManager {
     return baseline;
   }
 
+  /**
+   * Calculate percentile using the nearest-rank method with interpolation
+   * This method ensures that common percentiles return intuitive values:
+   * - For P50 of [10,20,30,40,50,60,70,80,90,100], returns 50
+   * - For P90 of [10,20,30,40,50,60,70,80,90,100], returns 90
+   * Uses the formula: index = (percentile/100) * n, then takes the value at that index (1-based)
+   */
   private calculatePercentile(sortedValues: number[], percentile: number): number {
     if (sortedValues.length === 0) return 0;
+    if (sortedValues.length === 1) return sortedValues[0];
     
-    const index = Math.ceil((percentile / 100) * sortedValues.length) - 1;
-    const actualIndex = Math.max(0, Math.min(index, sortedValues.length - 1));
+    // Calculate the rank (1-based position)
+    const rank = (percentile / 100) * sortedValues.length;
     
-    // For small arrays, use interpolation for more accurate percentiles
-    if (sortedValues.length < 20 && percentile > 50) {
-      const position = (percentile / 100) * (sortedValues.length - 1);
-      const lower = Math.floor(position);
-      const upper = Math.ceil(position);
-      const weight = position - lower;
-      
-      if (lower === upper) {
-        return sortedValues[lower];
-      }
-      
-      return sortedValues[lower] * (1 - weight) + sortedValues[upper] * weight;
+    // If rank is exactly an integer, use that value
+    if (Number.isInteger(rank)) {
+      return sortedValues[rank - 1]; // Convert to 0-based index
     }
     
-    return sortedValues[actualIndex];
+    // Otherwise, interpolate between floor and ceiling
+    const lower = Math.floor(rank) - 1; // Convert to 0-based index
+    const upper = Math.ceil(rank) - 1;  // Convert to 0-based index
+    
+    // Ensure indices are within bounds
+    const lowerIndex = Math.max(0, Math.min(lower, sortedValues.length - 1));
+    const upperIndex = Math.max(0, Math.min(upper, sortedValues.length - 1));
+    
+    if (lowerIndex === upperIndex) {
+      return sortedValues[lowerIndex];
+    }
+    
+    // Linear interpolation
+    const weight = rank - Math.floor(rank);
+    return sortedValues[lowerIndex] * (1 - weight) + sortedValues[upperIndex] * weight;
   }
 
   private calculateStandardDeviation(values: number[]): number {
