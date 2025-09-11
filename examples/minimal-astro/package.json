@@ -10,11 +10,12 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/node": "^9.4.3",
+    "@astrojs/react": "^4.3.1",
     "astro": "^5.13.7",
     "astro-stack-auth": "file:../../",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "@astrojs/react": "^4.3.1"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",

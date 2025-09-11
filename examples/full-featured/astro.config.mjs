@@ -1,6 +1,7 @@
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
 import tailwind from '@astrojs/tailwind';
+import node from '@astrojs/node';
 import stackAuth from 'astro-stack-auth';
 
 // https://astro.build/config
@@ -20,5 +21,8 @@ export default defineConfig({
       // See Stack Auth documentation for available options
     })
   ],
-  output: 'server' // Required for authentication
+  output: 'server', // Required for authentication
+  adapter: node({
+    mode: 'standalone'
+  })
 });
