@@ -78,7 +78,7 @@ export interface StackAuthOptions {
  */
 export default function astroStackAuth(options: StackAuthOptions = {}): AstroIntegration {
   const {
-    prefix = '/handler',
+    prefix = process.env.STACK_AUTH_PREFIX || '/handler',
     addReactRenderer = true,
     injectRoutes = true,
     addMiddleware: enableMiddleware = true,
