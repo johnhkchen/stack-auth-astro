@@ -1,0 +1,26 @@
+[
+  {
+    "testFile": "comprehensive-test.ts",
+    "averageDuration": 8.118202999999994,
+    "dependencyResolutionTime": 0.7446949999999504,
+    "fileOperationTime": 0.1661099999999749,
+    "timestamp": 1757632226412,
+    "runs": 2
+  },
+  {
+    "testFile": "regression-test.ts",
+    "averageDuration": 0.5521924999999896,
+    "dependencyResolutionTime": 0.18027399999999716,
+    "fileOperationTime": 0.047791999999986956,
+    "timestamp": 1757632226415,
+    "runs": 2
+  },
+  {
+    "testFile": "unified-reporting-test.ts",
+    "averageDuration": 0.5092829999999822,
+    "dependencyResolutionTime": 0.22790850000001228,
+    "fileOperationTime": 0.05577650000003587,
+    "timestamp": 1757632226416,
+    "runs": 2
+  }
+]

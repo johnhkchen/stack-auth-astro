@@ -17,6 +17,12 @@ import {
   getFileOperationMetrics, 
   clearFileOperationMetrics 
 } from './file-helpers.js';
+import {
+  getAstroPerformanceResults,
+  getAstroPerformanceSummary,
+  clearAstroPerformanceData,
+  type AstroPerformanceMetrics
+} from './astro-performance-monitoring.js';
 
 interface PerformanceTestResult {
   testFile: string;
@@ -24,6 +30,7 @@ interface PerformanceTestResult {
   duration: number;
   dependencyMetrics: ReturnType<typeof getDependencyMetrics>;
   fileMetrics: ReturnType<typeof getFileOperationMetrics>;
+  astroMetrics?: AstroPerformanceMetrics;
   timestamp: number;
 }
 
@@ -105,6 +112,7 @@ class TestPerformanceCollector {
     // Clear metrics at the start of each test to isolate measurements
     clearDependencyCaches();
     clearFileOperationMetrics();
+    clearAstroPerformanceData();
   }
 
   endTest(testFile: string, testName: string): void {
@@ -122,6 +130,7 @@ class TestPerformanceCollector {
         duration,
         dependencyMetrics: getDependencyMetrics(),
         fileMetrics: getFileOperationMetrics(),
+        astroMetrics: getAstroPerformanceResults(),
         timestamp: Date.now()
       };
       
@@ -179,6 +188,7 @@ class TestPerformanceCollector {
     totalDuration: number;
     averageTestDuration: number;
     dependencyPerformance: ReturnType<typeof generateDependencyPerformanceReport>;
+    astroPerformance: ReturnType<typeof getAstroPerformanceSummary>;
     regressions: Array<{
       testFile: string;
       testName: string;
@@ -190,6 +200,7 @@ class TestPerformanceCollector {
   } {
     const regressions = this.detectRegressions();
     const dependencyPerformance = generateDependencyPerformanceReport();
+    const astroPerformance = getAstroPerformanceSummary();
     const ciMetrics = exportPerformanceMetricsForCI();
     
     return {
@@ -199,6 +210,7 @@ class TestPerformanceCollector {
         ? this.testResults.reduce((sum, r) => sum + r.duration, 0) / this.testResults.length 
         : 0,
       dependencyPerformance,
+      astroPerformance,
       regressions,
       ciMetrics
     };
@@ -321,6 +333,31 @@ export const performanceHooks = {
       console.log(`  • Total Operations: ${summary.dependencyPerformance.summary.totalOperations}`);
       console.log(`  • Success Rate: ${(summary.dependencyPerformance.summary.successRate * 100).toFixed(1)}%`);
       console.log(`  • Cache Hit Rate: ${(summary.dependencyPerformance.summary.cacheHitRate * 100).toFixed(1)}%`);
+      
+      console.log('\n🚀 Astro Performance:');
+      console.log(`  • Integration Setup: ${summary.astroPerformance.summary.integrationSetupTime.toFixed(2)}ms`);
+      console.log(`  • Middleware: ${summary.astroPerformance.summary.middlewareEfficiency}`);
+      console.log(`  • Route Injections: ${summary.astroPerformance.summary.routeInjectionCount}`);
+      console.log(`  • Render Operations: ${summary.astroPerformance.summary.renderOperationCount}`);
+      console.log(`  • Avg Render Time: ${summary.astroPerformance.summary.averageRenderTime.toFixed(2)}ms`);
+      
+      if (summary.astroPerformance.regressions.integrationRegressions.length > 0 ||
+          summary.astroPerformance.regressions.middlewareRegressions.length > 0 ||
+          summary.astroPerformance.regressions.renderingRegressions.length > 0) {
+        console.log('\n⚠️  Astro Performance Issues:');
+        [...summary.astroPerformance.regressions.integrationRegressions,
+         ...summary.astroPerformance.regressions.middlewareRegressions,
+         ...summary.astroPerformance.regressions.renderingRegressions].forEach(issue => {
+          console.log(`  • ${issue.issue}: ${issue.currentValue.toFixed(2)}ms (baseline: ${issue.baselineValue.toFixed(2)}ms)`);
+        });
+      }
+      
+      if (summary.astroPerformance.recommendations.length > 0) {
+        console.log('\n💡 Astro Performance Recommendations:');
+        summary.astroPerformance.recommendations.forEach(rec => {
+          console.log(`  • ${rec}`);
+        });
+      }
       
       console.log('\n🎯 CI Status:', summary.ciMetrics.status.toUpperCase());
       if (summary.ciMetrics.issues.length > 0) {
