@@ -27,21 +27,38 @@ export default defineConfig((options) => ({
   // Configure Rollup output options to suppress mixed exports warnings
   rollupOptions: {
     output: {
-      exports: 'named'
-    }
+      exports: 'named',
+      // Improve tree-shaking by ensuring consistent format
+      interop: 'compat',
+      // Optimize chunk generation for better tree-shaking
+      manualChunks: {
+        'vendor': ['@stackframe/stack', '@stackframe/stack-ui'],
+        'react': ['react', 'react-dom']
+      }
+    },
   },
   // Performance optimizations
   esbuildOptions(options) {
     options.chunkNames = 'chunks/[name]-[hash]';
     // Optimize for better tree shaking
     options.treeShaking = true;
+    // Preserve module structure for better tree-shaking
+    options.format = 'esm';
+    // Enable advanced optimizations
+    options.keepNames = process.env.NODE_ENV === 'development';
+    options.minifyIdentifiers = process.env.NODE_ENV === 'production';
+    options.minifySyntax = process.env.NODE_ENV === 'production';
+    options.minifyWhitespace = process.env.NODE_ENV === 'production';
     // Use faster target for development
     if (process.env.NODE_ENV !== 'production') {
       options.target = 'es2022';
+    } else {
+      options.target = 'es2020'; // Broader compatibility for production
     }
   },
   // Configure TypeScript to be more permissive for external dependencies
   tsconfig: './tsconfig.build.json',
+  // Mark externals for proper tree-shaking
   external: [
     'astro',
     'astro:middleware',

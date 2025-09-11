@@ -9,39 +9,71 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "development": {
+        "import": "./dist/index.mjs",
+        "require": "./dist/index.cjs"
+      },
       "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.mjs"
     },
     "./server": {
       "types": "./dist/server.d.ts",
+      "development": {
+        "import": "./dist/server.mjs",
+        "require": "./dist/server.cjs"
+      },
       "import": "./dist/server.mjs",
-      "require": "./dist/server.cjs"
+      "require": "./dist/server.cjs",
+      "default": "./dist/server.mjs"
     },
     "./client": {
       "types": "./dist/client.d.ts",
+      "development": {
+        "import": "./dist/client.mjs",
+        "require": "./dist/client.cjs"
+      },
       "import": "./dist/client.mjs",
-      "require": "./dist/client.cjs"
+      "require": "./dist/client.cjs",
+      "default": "./dist/client.mjs"
     },
     "./components": {
       "types": "./dist/components.d.ts",
+      "development": {
+        "import": "./dist/components.mjs",
+        "require": "./dist/components.cjs"
+      },
       "import": "./dist/components.mjs",
-      "require": "./dist/components.cjs"
+      "require": "./dist/components.cjs",
+      "default": "./dist/components.mjs"
     },
     "./middleware": {
       "types": "./dist/middleware.d.ts",
+      "development": {
+        "import": "./dist/middleware.mjs",
+        "require": "./dist/middleware.cjs"
+      },
       "import": "./dist/middleware.mjs",
-      "require": "./dist/middleware.cjs"
+      "require": "./dist/middleware.cjs",
+      "default": "./dist/middleware.mjs"
     },
     "./api/handler": {
       "types": "./dist/api/handler.d.ts",
+      "development": {
+        "import": "./dist/api/handler.mjs",
+        "require": "./dist/api/handler.cjs"
+      },
       "import": "./dist/api/handler.mjs",
-      "require": "./dist/api/handler.cjs"
-    }
+      "require": "./dist/api/handler.cjs",
+      "default": "./dist/api/handler.mjs"
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist",
     "README.md"
   ],
+  "sideEffects": false,
   "scripts": {
     "build": "NODE_ENV=production tsup",
     "build:dev": "NODE_ENV=development tsup",
