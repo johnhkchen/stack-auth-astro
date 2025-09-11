@@ -588,9 +588,10 @@ describe('PerformanceBaselineManager', () => {
       loadSpy.mockImplementation((env: string) => {
         if (env === 'env1') return env1Baselines;
         
-        // Return env2 baselines with different metrics
+        // Return env2 baselines with different metrics - deep clone to avoid reference issues
         const env2Baselines = new Map();
-        const baseline = { ...env1Baselines.get('test.spec.ts::test-1') };
+        const originalBaseline = env1Baselines.get('test.spec.ts::test-1');
+        const baseline = JSON.parse(JSON.stringify(originalBaseline)); // Deep clone
         baseline.metrics.averageDuration = 150; // 50% slower
         baseline.qualityMetrics.successRate = 0.9;
         env2Baselines.set('test.spec.ts::test-1', baseline);
@@ -600,10 +601,80 @@ describe('PerformanceBaselineManager', () => {
       const comparisons = manager.compareEnvironments('env1', 'env2');
       expect(comparisons).toHaveLength(1);
       expect(comparisons[0].performanceDiff).toBe(50); // 50% slower
-      expect(comparisons[0].qualityDiff.successRate).toBe(-0.05);
+      expect(comparisons[0].qualityDiff.successRate).toBeCloseTo(-0.05, 10); // Use toBeCloseTo for floating point comparison
       expect(comparisons[0].recommendation).toContain('slower');
 
       loadSpy.mockRestore();
+    });
+
+    it('should handle real baseline comparison across environments with actual data', () => {
+      // Create baseline in local environment
+      const localManager = new PerformanceBaselineManager({
+        baselineDir: testDir,
+        archiveDir: archiveDir,
+        environmentSeparation: true
+      });
+
+      // Add baseline data for local environment
+      for (let i = 0; i < 10; i++) {
+        localManager.updateBaseline('api.spec.ts', 'auth-test', {
+          duration: 80 + Math.random() * 20, // 80-100ms range
+          dependencyTime: 10 + Math.random() * 5,
+          fileOperationTime: 5 + Math.random() * 2,
+          success: i !== 3, // One failure
+          cacheHit: i % 2 === 0
+        });
+      }
+
+      // Simulate CI environment
+      const originalCI = process.env.CI;
+      process.env.CI = 'true';
+      
+      const ciManager = new PerformanceBaselineManager({
+        baselineDir: testDir,
+        archiveDir: archiveDir,
+        environmentSeparation: true
+      });
+
+      // Add baseline data for CI environment (typically slower)
+      for (let i = 0; i < 10; i++) {
+        ciManager.updateBaseline('api.spec.ts', 'auth-test', {
+          duration: 120 + Math.random() * 30, // 120-150ms range (slower in CI)
+          dependencyTime: 15 + Math.random() * 8,
+          fileOperationTime: 8 + Math.random() * 3,
+          success: i !== 5 && i !== 7, // Two failures
+          cacheHit: i % 3 === 0 // Lower cache hit rate
+        });
+      }
+
+      // Restore environment
+      if (originalCI) {
+        process.env.CI = originalCI;
+      } else {
+        delete process.env.CI;
+      }
+
+      // Compare the two environments
+      const localEnv = localManager['currentEnvironment'];
+      const ciEnv = ciManager['currentEnvironment'];
+      
+      const comparisons = localManager.compareEnvironments(localEnv, ciEnv);
+      
+      expect(comparisons).toHaveLength(1);
+      expect(comparisons[0].testKey).toBe('api.spec.ts::auth-test');
+      
+      // CI should be significantly slower (approximately 40-60% slower)
+      expect(comparisons[0].performanceDiff).toBeGreaterThan(30);
+      expect(comparisons[0].performanceDiff).toBeLessThan(70);
+      
+      // CI should have lower success rate (80% vs 90%)
+      expect(comparisons[0].qualityDiff.successRate).toBeLessThan(0);
+      
+      // CI should have lower cache hit rate
+      expect(comparisons[0].qualityDiff.cacheHitRate).toBeLessThan(0);
+      
+      // Recommendation should reflect the performance difference
+      expect(comparisons[0].recommendation).toContain('slower');
     });
   });
 
