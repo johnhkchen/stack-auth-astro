@@ -161,11 +161,11 @@ const validatedComponents = createValidatedComponents({
   enhanced: true // Enable enhanced development features
 });
 
-// Export validated components
-export const UserButton = validatedComponents.UserButton;
-export const SignIn = validatedComponents.SignIn;
-export const SignUp = validatedComponents.SignUp;
-export const AccountSettings = validatedComponents.AccountSettings;
-export const StackProvider = validatedComponents.StackProvider;
+// Export validated components with explicit React.FC typing for examples validation
+export const UserButton: React.FC<StackAuthComponentProps> = validatedComponents.UserButton;
+export const SignIn: React.FC<StackAuthComponentProps> = validatedComponents.SignIn;
+export const SignUp: React.FC<StackAuthComponentProps> = validatedComponents.SignUp;
+export const AccountSettings: React.FC<StackAuthComponentProps> = validatedComponents.AccountSettings;
+export const StackProvider: React.FC<StackProviderProps> = validatedComponents.StackProvider;
 
 export default {};
