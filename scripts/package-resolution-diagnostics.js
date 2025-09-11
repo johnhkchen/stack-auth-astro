@@ -12,6 +12,7 @@ import { join, dirname, resolve, isAbsolute } from 'path';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { performance } from 'perf_hooks';
+import { SmartDependencyDetector } from './smart-dependency-detector.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -196,6 +197,12 @@ export class EnhancedModuleResolver {
     const startTime = performance.now();
     this.logger.info(`Starting resolution for: ${moduleName}`);
     
+    // Check if this is an optional dependency first
+    const isOptional = await this.checkIfOptionalDependency(moduleName);
+    if (isOptional) {
+      this.logger.info(`${moduleName} is an optional dependency - checking if actually needed`);
+    }
+    
     // Check cache first
     if (this.enableCache) {
       const cached = this.getCachedPath(moduleName);
@@ -246,7 +253,10 @@ export class EnhancedModuleResolver {
     const timing = performance.now() - startTime;
     const report = this.logger.generateReport();
     
-    throw new ResolutionError(moduleName, report, timing);
+    // Run smart detection for optional dependencies
+    const smartDetection = await this.runSmartDetection(moduleName);
+    
+    throw new ResolutionError(moduleName, report, timing, smartDetection);
   }
 
   /**
@@ -768,13 +778,53 @@ export class EnhancedModuleResolver {
   getDiagnosticSummary() {
     return this.logger.generateReport();
   }
+
+  /**
+   * Check if a module is an optional dependency
+   */
+  async checkIfOptionalDependency(moduleName) {
+    const optionalDeps = ['react', 'react-dom', '@types/react', '@types/react-dom'];
+    return optionalDeps.includes(moduleName);
+  }
+
+  /**
+   * Run smart dependency detection for optional dependencies
+   */
+  async runSmartDetection(moduleName) {
+    if (!await this.checkIfOptionalDependency(moduleName)) {
+      return null;
+    }
+
+    try {
+      const detector = new SmartDependencyDetector(process.cwd(), {
+        verbose: this.logger.enabled
+      });
+      
+      const report = await detector.detect();
+      
+      // Check if this specific dependency is needed
+      const depInfo = report.detectedDependencies[moduleName];
+      if (depInfo) {
+        return {
+          needed: depInfo.required,
+          confidence: depInfo.confidence,
+          reasons: depInfo.reasons,
+          suggestions: depInfo.suggestions
+        };
+      }
+    } catch (error) {
+      this.logger.debug(`Smart detection failed: ${error.message}`);
+    }
+    
+    return null;
+  }
 }
 
 /**
  * Custom error class for resolution failures
  */
 export class ResolutionError extends Error {
-  constructor(moduleName, report, timing) {
+  constructor(moduleName, report, timing, smartDetection = null) {
     const message = `Failed to resolve module: ${moduleName}`;
     super(message);
     
@@ -782,6 +832,7 @@ export class ResolutionError extends Error {
     this.moduleName = moduleName;
     this.report = report;
     this.timing = timing;
+    this.smartDetection = smartDetection;
     
     // Generate detailed error message
     this.detailedMessage = this.generateDetailedMessage();
@@ -793,9 +844,34 @@ export class ResolutionError extends Error {
       `Resolution took: ${this.timing.toFixed(2)}ms`,
       `Strategies attempted: ${this.report.strategiesUsed.join(', ')}`,
       `Total attempts: ${this.report.totalAttempts}`,
-      '',
-      'Recommendations:'
     ];
+    
+    // Add smart detection information for optional dependencies
+    if (this.smartDetection) {
+      lines.push('');
+      lines.push('📊 Smart Dependency Analysis:');
+      
+      if (!this.smartDetection.needed) {
+        lines.push(`  ✅ ${this.moduleName} is optional and NOT needed for your project`);
+        lines.push('  This dependency is not required based on your usage patterns.');
+        lines.push('  You can safely ignore this resolution failure.');
+      } else {
+        lines.push(`  ⚠️  ${this.moduleName} is needed (confidence: ${this.smartDetection.confidence})`);
+        lines.push('  Reasons:');
+        for (const reason of this.smartDetection.reasons.slice(0, 3)) {
+          lines.push(`    • ${reason}`);
+        }
+        if (this.smartDetection.suggestions.length > 0) {
+          lines.push('  Suggestions:');
+          for (const suggestion of this.smartDetection.suggestions) {
+            lines.push(`    💡 ${suggestion}`);
+          }
+        }
+      }
+    }
+    
+    lines.push('');
+    lines.push('Recommendations:');
     
     for (const rec of this.report.recommendations) {
       lines.push(`  - ${rec.suggestion}`);

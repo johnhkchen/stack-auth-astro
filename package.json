@@ -81,6 +81,10 @@
     "prepare": "npm run docs:generate",
     "stack:validate": "npm list @stackframe/stack @stackframe/stack-ui",
     "stack:reinstall": "npm uninstall @stackframe/stack @stackframe/stack-ui && npm install @stackframe/stack @stackframe/stack-ui",
+    "deps:check": "node scripts/check-optional-deps.js",
+    "deps:check:verbose": "node scripts/check-optional-deps.js --verbose",
+    "deps:detect": "node scripts/smart-dependency-detector.js",
+    "deps:detect:verbose": "STACK_AUTH_DEBUG=true node scripts/smart-dependency-detector.js",
     "postinstall": "npm run stack:validate"
   },
   "keywords": [
