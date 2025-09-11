@@ -1315,6 +1315,7 @@ export {
   generateMultiVersionMigrationPath,
   generateCompatibilityMatrix,
   analyzeVersionPatterns,
+  calculateChangeFrequency,
   loadHistoricalCache,
   displayHistoricalTrends,
   CHANGE_SEVERITY,
