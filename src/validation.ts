@@ -307,6 +307,167 @@ function isValidPrefix(prefix: string): boolean {
 }
 
 /**
+ * Dependency validation options
+ */
+export interface DependencyValidationOptions {
+  /** Skip validation for development/testing */
+  skipValidation?: boolean;
+  /** Whether route injection is enabled */
+  injectRoutes?: boolean;
+  /** Whether middleware registration is enabled */
+  addMiddleware?: boolean;
+}
+
+/**
+ * Critical dependency validation
+ */
+export function validateCriticalDependencies(options: DependencyValidationOptions = {}): ValidationResult {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  if (options.skipValidation) {
+    return {
+      isValid: true,
+      errors: [],
+      warnings: ['⚠️  Dependency validation skipped - ensure all required files exist']
+    };
+  }
+
+  // Check API handler when route injection is enabled
+  if (options.injectRoutes !== false) { // Default is true
+    try {
+      const path = require('path');
+      const fs = require('fs');
+      
+      // Try multiple possible paths for the handler
+      const possiblePaths = [
+        path.resolve(__dirname, './api/handler.js'),
+        path.resolve(__dirname, './api/handler.ts'),
+        path.resolve(process.cwd(), 'src/api/handler.ts'),
+        path.resolve(process.cwd(), 'src/api/handler.js')
+      ];
+      
+      let handlerContent = '';
+      let foundHandler = false;
+      
+      for (const handlerPath of possiblePaths) {
+        try {
+          if (fs.existsSync(handlerPath)) {
+            handlerContent = fs.readFileSync(handlerPath, 'utf8');
+            foundHandler = true;
+            break;
+          }
+        } catch {}
+      }
+      
+      if (!foundHandler) {
+        errors.push(ERROR_MESSAGES.MISSING_API_HANDLER);
+      } else {
+        // Check if it's just a stub implementation
+        if (handlerContent.includes('stub implementation') || handlerContent.includes('Not Implemented')) {
+          warnings.push(ERROR_MESSAGES.STUB_IMPLEMENTATION_WARNING);
+        }
+      }
+    } catch (error) {
+      errors.push(ERROR_MESSAGES.MISSING_API_HANDLER);
+    }
+  }
+
+  // Check middleware when middleware registration is enabled  
+  if (options.addMiddleware !== false) { // Default is true
+    try {
+      const path = require('path');
+      const fs = require('fs');
+      
+      // Try multiple possible paths for the middleware
+      const possiblePaths = [
+        path.resolve(__dirname, './middleware.js'),
+        path.resolve(__dirname, './middleware.ts'),
+        path.resolve(process.cwd(), 'src/middleware.ts'),
+        path.resolve(process.cwd(), 'src/middleware.js')
+      ];
+      
+      let middlewareContent = '';
+      let foundMiddleware = false;
+      
+      for (const middlewarePath of possiblePaths) {
+        try {
+          if (fs.existsSync(middlewarePath)) {
+            middlewareContent = fs.readFileSync(middlewarePath, 'utf8');
+            foundMiddleware = true;
+            break;
+          }
+        } catch {}
+      }
+      
+      if (!foundMiddleware) {
+        errors.push(ERROR_MESSAGES.MISSING_MIDDLEWARE);
+      } else {
+        // Check if middleware is empty or stub
+        if (middlewareContent.includes('export default {}') || middlewareContent.length < 100) {
+          warnings.push(ERROR_MESSAGES.STUB_IMPLEMENTATION_WARNING);
+        }
+      }
+    } catch (error) {
+      errors.push(ERROR_MESSAGES.MISSING_MIDDLEWARE);
+    }
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    warnings
+  };
+}
+
+/**
+ * Enhanced complete validation that includes dependency validation
+ */
+export function validateCompleteWithDependencies(options?: StackAuthOptions): ValidationResult {
+  const baseValidation = validateComplete(options);
+  
+  const dependencyValidation = validateCriticalDependencies({
+    skipValidation: options?.skipValidation,
+    injectRoutes: options?.injectRoutes !== false,
+    addMiddleware: true // Middleware is always enabled in integration
+  });
+
+  const allErrors = [
+    ...baseValidation.errors,
+    ...dependencyValidation.errors
+  ];
+
+  const allWarnings = [
+    ...baseValidation.warnings,
+    ...dependencyValidation.warnings
+  ];
+
+  return {
+    isValid: allErrors.length === 0,
+    errors: allErrors,
+    warnings: allWarnings
+  };
+}
+
+/**
+ * Throws detailed error with helpful guidance if validation fails including dependencies
+ */
+export function validateAndThrowWithDependencies(options?: StackAuthOptions): void {
+  const validation = validateCompleteWithDependencies(options);
+  
+  if (!validation.isValid) {
+    const summary = createValidationSummary(validation.errors);
+    throw new StackAuthConfigurationError(summary);
+  }
+
+  // Log warnings in development
+  if (validation.warnings.length > 0 && process.env.NODE_ENV === 'development') {
+    console.warn('⚠️  Stack Auth warnings:');
+    validation.warnings.forEach(warning => console.warn(`  • ${warning}`));
+  }
+}
+
+/**
  * Development mode helpers
  */
 export function createSetupGuide(): string {

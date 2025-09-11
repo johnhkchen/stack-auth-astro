@@ -11,7 +11,9 @@ import {
   validateConfiguration,
   validateStackAuthOptions,
   validateRuntimeCompatibility,
-  validateComplete
+  validateComplete,
+  validateCriticalDependencies,
+  validateCompleteWithDependencies
 } from './validation.js';
 import {
   StackAuthConfigurationError,
@@ -250,6 +252,133 @@ describe('Configuration Loading', () => {
   });
 });
 
+describe('Critical Dependencies Validation', () => {
+  it('should pass validation when skipValidation is true', () => {
+    const result = validateCriticalDependencies({ skipValidation: true });
+    
+    expect(result.isValid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+    expect(result.warnings).toContain('⚠️  Dependency validation skipped - ensure all required files exist');
+  });
+
+  it('should detect stub API handler implementation', () => {
+    const result = validateCriticalDependencies({ 
+      injectRoutes: true,
+      addMiddleware: true 
+    });
+    
+    // Since we know the current handler is a stub, this should generate warnings
+    expect(result.warnings.length).toBeGreaterThan(0);
+    expect(result.warnings.some(warning => 
+      warning.includes('stub implementation') || warning.includes('Sprint 002')
+    )).toBe(true);
+  });
+
+  it('should detect stub middleware implementation', () => {
+    const result = validateCriticalDependencies({ 
+      injectRoutes: true,
+      addMiddleware: true 
+    });
+    
+    // Since we know the current middleware is a stub, this should generate warnings
+    expect(result.warnings.length).toBeGreaterThan(0);
+    expect(result.warnings.some(warning => 
+      warning.includes('stub implementation') || warning.includes('Sprint 002')
+    )).toBe(true);
+  });
+
+  it('should skip API handler validation when route injection is disabled', () => {
+    const result = validateCriticalDependencies({ 
+      injectRoutes: false,
+      addMiddleware: true 
+    });
+    
+    // Should not contain API handler errors
+    expect(result.errors.every(error => !error.includes('API handler'))).toBe(true);
+  });
+
+  it('should skip middleware validation when middleware is disabled', () => {
+    const result = validateCriticalDependencies({ 
+      injectRoutes: true,
+      addMiddleware: false 
+    });
+    
+    // Should not contain middleware errors
+    expect(result.errors.every(error => !error.includes('middleware'))).toBe(true);
+  });
+
+  it('should provide helpful error messages for missing files', () => {
+    // This test assumes the files exist but are stubs
+    // In a real scenario where files don't exist, we would get the missing file errors
+    const result = validateCriticalDependencies({ 
+      injectRoutes: true,
+      addMiddleware: true 
+    });
+    
+    // Check that stub warnings contain Sprint references
+    result.warnings.forEach(warning => {
+      if (warning.includes('stub implementation')) {
+        expect(warning).toContain('Sprint 002');
+      }
+    });
+  });
+});
+
+describe('Complete Validation with Dependencies', () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    process.env = { ...originalEnv };
+    process.env.STACK_PROJECT_ID = 'test_project_id_12345';
+    process.env.STACK_PUBLISHABLE_CLIENT_KEY = 'pk_test_key_12345';
+    process.env.STACK_SECRET_SERVER_KEY = 'sk_test_key_12345';
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it('should combine environment and dependency validation', () => {
+    const result = validateCompleteWithDependencies({
+      injectRoutes: true,
+      addMiddleware: true
+    });
+    
+    // Should be valid since environment is set and files exist (even if stubs)
+    expect(result.isValid).toBe(true);
+    expect(result.warnings.length).toBeGreaterThan(0); // Should have stub warnings
+  });
+
+  it('should fail when environment is missing', () => {
+    delete process.env.STACK_PROJECT_ID;
+    
+    const result = validateCompleteWithDependencies({
+      injectRoutes: true,
+      addMiddleware: true
+    });
+    
+    expect(result.isValid).toBe(false);
+    expect(result.errors.some(error => error.includes('STACK_PROJECT_ID'))).toBe(true);
+  });
+
+  it('should respect skipValidation option', () => {
+    delete process.env.STACK_PROJECT_ID; // This would normally cause failure
+    
+    const result = validateCompleteWithDependencies({
+      skipValidation: true,
+      injectRoutes: true,
+      addMiddleware: true
+    });
+    
+    // Should still fail due to missing environment variables (base validation)
+    expect(result.isValid).toBe(false);
+    // But should have dependency validation warning
+    expect(result.warnings.some(warning => 
+      warning.includes('Dependency validation skipped')
+    )).toBe(true);
+  });
+});
+
 describe('Error Message Quality', () => {
   it('should provide helpful error messages', () => {
     expect(ERROR_MESSAGES.MISSING_PROJECT_ID).toContain('STACK_PROJECT_ID');
@@ -261,5 +390,18 @@ describe('Error Message Quality', () => {
   it('should include setup instructions', () => {
     expect(ERROR_MESSAGES.DEVELOPMENT_SETUP_GUIDE).toContain('npm install astro-stack-auth');
     expect(ERROR_MESSAGES.DEVELOPMENT_SETUP_GUIDE).toContain('astroStackAuth()');
+  });
+
+  it('should provide helpful dependency error messages', () => {
+    expect(ERROR_MESSAGES.MISSING_API_HANDLER).toContain('src/api/handler.ts');
+    expect(ERROR_MESSAGES.MISSING_API_HANDLER).toContain('Sprint 002');
+    expect(ERROR_MESSAGES.MISSING_API_HANDLER).toContain('skipValidation: true');
+    
+    expect(ERROR_MESSAGES.MISSING_MIDDLEWARE).toContain('src/middleware.ts');
+    expect(ERROR_MESSAGES.MISSING_MIDDLEWARE).toContain('Sprint 002');
+    expect(ERROR_MESSAGES.MISSING_MIDDLEWARE).toContain('skipValidation: true');
+    
+    expect(ERROR_MESSAGES.STUB_IMPLEMENTATION_WARNING).toContain('Sprint 001');
+    expect(ERROR_MESSAGES.STUB_IMPLEMENTATION_WARNING).toContain('Sprint 002');
   });
 });

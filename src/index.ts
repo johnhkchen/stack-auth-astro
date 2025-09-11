@@ -10,6 +10,7 @@ import type { AstroIntegration } from 'astro';
 import type { StackAuthConfig } from './types.js';
 import { 
   validateAndThrow,
+  validateAndThrowWithDependencies,
   validateRuntimeCompatibility,
   validateStackAuthOptions,
   createSetupGuide
@@ -42,6 +43,12 @@ export interface StackAuthOptions {
   addReactRenderer?: boolean;
 
   /**
+   * Whether to inject API routes
+   * @default true
+   */
+  injectRoutes?: boolean;
+
+  /**
    * Stack Auth configuration
    */
   config?: Partial<StackAuthConfig>;
@@ -70,6 +77,7 @@ export default function astroStackAuth(options: StackAuthOptions = {}): AstroInt
   const {
     prefix = '/handler',
     addReactRenderer = true,
+    injectRoutes = true,
     config = {},
     skipValidation = false,
     enableDevTools = process.env.NODE_ENV === 'development'
@@ -115,9 +123,9 @@ export default function astroStackAuth(options: StackAuthOptions = {}): AstroInt
               );
             }
 
-            // Validate complete setup
+            // Validate complete setup including dependencies
             try {
-              validateAndThrow(options);
+              validateAndThrowWithDependencies(options);
             } catch (error) {
               if (error instanceof Error) {
                 throw new StackAuthIntegrationError(
@@ -148,13 +156,17 @@ export default function astroStackAuth(options: StackAuthOptions = {}): AstroInt
           }
 
           // Inject Stack Auth API route handler
-          const routePattern = `${prefix}/[...stack]`;
-          injectRoute({
-            pattern: routePattern,
-            entrypoint: 'astro-stack-auth/api/handler',
-            prerender: false
-          });
-          logger.info(`✅ Injected Stack Auth routes at ${routePattern}`);
+          if (injectRoutes) {
+            const routePattern = `${prefix}/[...stack]`;
+            injectRoute({
+              pattern: routePattern,
+              entrypoint: 'astro-stack-auth/api/handler',
+              prerender: false
+            });
+            logger.info(`✅ Injected Stack Auth routes at ${routePattern}`);
+          } else {
+            logger.info('ℹ️  Route injection disabled - Stack Auth API endpoints will not be available');
+          }
 
           // Add authentication middleware
           addMiddleware({

@@ -142,6 +142,77 @@ To fix this:
 Learn more: https://docs.astro.build/en/guides/integrations-guide/react/
 `,
 
+  MISSING_API_HANDLER: `
+🔗 Stack Auth API handler is required
+
+Missing implementation: src/api/handler.ts
+
+The integration is configured to inject Stack Auth API routes, but the handler implementation is missing or incomplete.
+
+To fix this:
+1. This is likely because you're using an early version of the integration
+2. The full API handler will be implemented in Sprint 002 (Task 2.3)
+3. For now, you can:
+   - Set skipValidation: true in your integration options to bypass this check
+   - Or set injectRoutes: false to disable route injection
+
+Temporary workaround:
+// astro.config.mjs
+export default defineConfig({
+  integrations: [
+    astroStackAuth({ 
+      skipValidation: true // Skip until Sprint 002 is complete
+    })
+  ]
+});
+
+Coming in Sprint 002: Full Stack Auth API handler with signin, callback, and session endpoints.
+`,
+
+  MISSING_MIDDLEWARE: `
+🛡️  Stack Auth middleware is required
+
+Missing implementation: src/middleware.ts
+
+The integration is configured to register authentication middleware, but the middleware implementation is missing or incomplete.
+
+To fix this:
+1. This is likely because you're using an early version of the integration
+2. The full middleware will be implemented in Sprint 002 (Task 2.2)
+3. For now, you can set skipValidation: true in your integration options
+
+Temporary workaround:
+// astro.config.mjs
+export default defineConfig({
+  integrations: [
+    astroStackAuth({ 
+      skipValidation: true // Skip until Sprint 002 is complete
+    })
+  ]
+});
+
+Coming in Sprint 002: Full middleware that populates Astro.locals.user and Astro.locals.session.
+`,
+
+  STUB_IMPLEMENTATION_WARNING: `
+⚠️  Stack Auth components are using stub implementations
+
+The Stack Auth integration is working, but core functionality is not yet implemented:
+- API handler exists but returns "Not Implemented" errors
+- Middleware exists but doesn't populate authentication data
+
+This is expected during development phases:
+- Sprint 001: Core integration setup (current)
+- Sprint 002: API handler and middleware implementation
+- Sprint 003: Server-side authentication
+- Sprint 004: Client-side and React components
+
+For development:
+- Tests and integration validation will work
+- Authentication flows will return stub responses
+- Full functionality available after Sprint 002 completion
+`,
+
   DEVELOPMENT_SETUP_GUIDE: `
 🚀 Setting up Stack Auth with Astro
 
