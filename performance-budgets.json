@@ -1,0 +1,118 @@
+{
+  "$schema": "./schemas/performance-budgets.schema.json",
+  "version": "1.0.0",
+  "description": "Performance budgets and thresholds for astro-stack-auth package",
+  
+  "environments": {
+    "production": {
+      "description": "Production build performance budgets",
+      "budgets": {
+        "total": {
+          "maxSize": "500kb",
+          "warningSize": "400kb",
+          "description": "Total package size budget"
+        },
+        "javascript": {
+          "maxSize": "200kb",
+          "warningSize": "150kb",
+          "maxGzipSize": "50kb",
+          "warningGzipSize": "40kb",
+          "description": "Combined JS bundle size (all .mjs/.cjs files)"
+        },
+        "typescript": {
+          "maxSize": "100kb",
+          "warningSize": "80kb",
+          "description": "TypeScript declaration files (.d.ts)"
+        },
+        "sourcemaps": {
+          "maxSize": "400kb",
+          "warningSize": "300kb",
+          "description": "Source map files (.map files)"
+        },
+        "chunks": {
+          "maxSize": "150kb",
+          "warningSize": "120kb",
+          "description": "Code splitting chunks"
+        }
+      },
+      "thresholds": {
+        "sizeIncrease": {
+          "maxPercent": 10,
+          "warningPercent": 5,
+          "description": "Maximum allowed size increase from baseline"
+        },
+        "buildTime": {
+          "maxSeconds": 30,
+          "warningSeconds": 20,
+          "description": "Maximum build time in seconds"
+        },
+        "compressionRatio": {
+          "minRatio": 0.3,
+          "warningRatio": 0.4,
+          "description": "Minimum gzip compression ratio (compressed/original)"
+        }
+      }
+    },
+    
+    "development": {
+      "description": "Development build performance budgets (more lenient)",
+      "budgets": {
+        "total": {
+          "maxSize": "1mb",
+          "warningSize": "800kb",
+          "description": "Total package size budget for dev builds"
+        },
+        "javascript": {
+          "maxSize": "400kb",
+          "warningSize": "300kb",
+          "description": "Combined JS bundle size for dev builds"
+        },
+        "typescript": {
+          "maxSize": "200kb",
+          "warningSize": "150kb",
+          "description": "TypeScript declaration files"
+        },
+        "sourcemaps": {
+          "maxSize": "2mb",
+          "warningSize": "1.5mb",
+          "description": "Source map files (larger in dev)"
+        }
+      },
+      "thresholds": {
+        "sizeIncrease": {
+          "maxPercent": 25,
+          "warningPercent": 15,
+          "description": "More lenient size increase thresholds for dev"
+        },
+        "buildTime": {
+          "maxSeconds": 60,
+          "warningSeconds": 45,
+          "description": "Longer build times acceptable in dev"
+        }
+      }
+    }
+  },
+  
+  "defaultEnvironment": "production",
+  
+  "reporting": {
+    "failOnBudgetExceeded": true,
+    "warnOnBudgetWarning": true,
+    "showDifferenceFromBaseline": true,
+    "includeRecommendations": true,
+    "outputFormat": "console",
+    "ciIntegration": {
+      "exitOnFailure": true,
+      "createAnnotations": true,
+      "generateReport": true,
+      "reportPath": "build-performance-report.json"
+    }
+  },
+  
+  "baseline": {
+    "enabled": true,
+    "baselineFile": "performance-baseline.json",
+    "updateBaseline": false,
+    "compareAgainstBranch": "main"
+  }
+}

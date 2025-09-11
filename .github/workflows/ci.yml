@@ -82,8 +82,8 @@ jobs:
       
     - name: Analyze build performance
       run: |
-        echo "🔍 Running build analysis..."
-        OUTPUT_JSON=true npm run build:analyze
+        echo "🔍 Running build analysis with budget checking..."
+        OUTPUT_JSON=true npm run build:budget
         
     - name: Download previous performance baselines
       uses: actions/download-artifact@v4
@@ -309,8 +309,8 @@ jobs:
       
     - name: Integration test build analysis
       run: |
-        echo "🔍 Running build analysis after integration tests..."
-        OUTPUT_JSON=true npm run build:analyze
+        echo "🔍 Running build analysis with budget checking after integration tests..."
+        OUTPUT_JSON=true npm run build:budget
       
     - name: Test package can be installed
       run: |
