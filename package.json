@@ -31,6 +31,11 @@
       "types": "./dist/middleware.d.ts",
       "import": "./dist/middleware.mjs",
       "require": "./dist/middleware.cjs"
+    },
+    "./api/handler": {
+      "types": "./dist/api/handler.d.ts",
+      "import": "./dist/api/handler.mjs",
+      "require": "./dist/api/handler.cjs"
     }
   },
   "files": [

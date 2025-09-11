@@ -8,7 +8,9 @@ export default defineConfig({
     client: 'src/client.ts',
     components: 'src/components.ts',
     middleware: 'src/middleware.ts',
-    'build-time-validation': 'src/build-time-validation.ts'
+    'build-time-validation': 'src/build-time-validation.ts',
+    // API handler for Stack Auth route integration
+    'api/handler': 'src/api/handler.ts'
   },
   format: ['cjs', 'esm'],
   dts: true,
