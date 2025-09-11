@@ -2,14 +2,14 @@
 
 > 🔄 **Dynamic Type Extraction**: ✅ Active  
 > 📊 **SDK Version**: 2.8.36  
-> 🕒 **Last Updated**: 9/11/2025, 10:43:29 AM  
+> 🕒 **Last Updated**: 9/11/2025, 10:55:30 AM  
 > 📈 **Components**: 5 components with live type data
 
 *This documentation is automatically synchronized with your installed Stack Auth SDK version.*
 
 > ✅ **Interface Change Detection**: No changes detected  
 > 📊 **Version**: 2.8.36 → 2.8.36  
-> 🕒 **Last Checked**: 9/11/2025, 10:43:29 AM
+> 🕒 **Last Checked**: 9/11/2025, 10:55:30 AM
 
 *No interface changes detected since last update.*
 
@@ -106,7 +106,7 @@ The SignIn component is a Stack Auth UI component that provides user authenticat
 | 3.0.x | className, style, onSuccess, onError, redirectUri, theme, customization | onError | 📝 Static |
 
 > 📊 **Current SDK Version**: 2.8.36
-> 🕒 **Last Updated**: 9/11/2025, 10:43:29 AM
+> 🕒 **Last Updated**: 9/11/2025, 10:55:30 AM
 
 
 ## TypeScript Integration
