@@ -370,6 +370,93 @@ function canAutomate(change) {
 }
 
 /**
+ * Analyze version changes to detect potentially breaking changes
+ */
+function analyzeVersionChange(previousVersion, currentVersion) {
+  if (!previousVersion || !currentVersion || previousVersion === 'unknown' || currentVersion === 'unknown') {
+    return {
+      potentiallyBreaking: false,
+      changeType: 'unknown',
+      description: 'Version information unavailable'
+    };
+  }
+  
+  if (previousVersion === currentVersion) {
+    return {
+      potentiallyBreaking: false,
+      changeType: 'none',
+      description: 'No version change detected'
+    };
+  }
+  
+  // Parse semantic versions
+  const parsePrevious = parseVersion(previousVersion);
+  const parseCurrent = parseVersion(currentVersion);
+  
+  if (!parsePrevious || !parseCurrent) {
+    return {
+      potentiallyBreaking: true,
+      changeType: 'unparseable',
+      description: `Version change detected but cannot parse versions: ${previousVersion} → ${currentVersion}`
+    };
+  }
+  
+  // Check for major version changes
+  if (parseCurrent.major > parsePrevious.major) {
+    return {
+      potentiallyBreaking: true,
+      changeType: 'major',
+      description: `Major version upgrade detected: ${previousVersion} → ${currentVersion}`,
+      severity: 'high'
+    };
+  }
+  
+  // Check for minor version changes  
+  if (parseCurrent.minor > parsePrevious.minor) {
+    return {
+      potentiallyBreaking: false,
+      changeType: 'minor',
+      description: `Minor version upgrade detected: ${previousVersion} → ${currentVersion}`,
+      severity: 'medium'
+    };
+  }
+  
+  // Check for patch version changes
+  if (parseCurrent.patch > parsePrevious.patch) {
+    return {
+      potentiallyBreaking: false,
+      changeType: 'patch',
+      description: `Patch version upgrade detected: ${previousVersion} → ${currentVersion}`,
+      severity: 'low'
+    };
+  }
+  
+  // Version downgrade detected
+  return {
+    potentiallyBreaking: true,
+    changeType: 'downgrade',
+    description: `Version downgrade detected: ${previousVersion} → ${currentVersion}`,
+    severity: 'high'
+  };
+}
+
+/**
+ * Parse semantic version string
+ */
+function parseVersion(versionString) {
+  const match = versionString.match(/^(\d+)\.(\d+)\.(\d+)/);
+  if (!match) {
+    return null;
+  }
+  
+  return {
+    major: parseInt(match[1], 10),
+    minor: parseInt(match[2], 10),
+    patch: parseInt(match[3], 10)
+  };
+}
+
+/**
  * Generate code examples for migration
  */
 function generateCodeExample(componentName, change) {
@@ -420,7 +507,7 @@ async function detectInterfaceChanges() {
     // Step 2: Extract current interface specifications
     console.log('🔧 Extracting current interface specifications...');
     const currentInterfaces = await extractComponentProps();
-    const sdkVersion = getSDKVersion();
+    const sdkVersion = await getSDKVersion();
     
     if (!currentInterfaces) {
       console.warn('⚠️ Could not extract current interfaces, change detection unavailable');
@@ -436,7 +523,11 @@ async function detectInterfaceChanges() {
     // Step 3: Compare interfaces if we have cached data
     let changes = null;
     if (cachedData?.interfaces) {
+      const previousVersion = cachedData.sdkVersion || 'unknown';
+      const currentVersion = sdkVersion?.version || 'unknown';
+      
       console.log('🔄 Comparing interfaces with previous version...');
+      console.log(`📊 **Version**: ${previousVersion} → ${currentVersion}`);
       
       changes = compareInterfaces(cachedData.interfaces, currentInterfaces);
       
@@ -451,10 +542,15 @@ async function detectInterfaceChanges() {
       changes.warnings = generateMigrationWarnings(changes);
       changes.suggestions = generateMigrationSuggestions(changes);
       
+      // Check for potential breaking changes based on version changes
+      const versionChangeInfo = analyzeVersionChange(previousVersion, currentVersion);
+      
       if (changes.summary.breakingChanges > 0) {
         console.log('⚠️ BREAKING CHANGES DETECTED - Review migration guidance');
       } else if (changes.summary.totalChanges > 0) {
         console.log('ℹ️ Non-breaking changes detected - Update when convenient');
+      } else if (versionChangeInfo.potentiallyBreaking) {
+        console.log(`⚠️ Major version change detected (${previousVersion} → ${currentVersion}) - Interface validation recommended`);
       } else {
         console.log('✅ No interface changes detected');
       }

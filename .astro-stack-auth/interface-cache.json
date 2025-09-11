@@ -1,6 +1,6 @@
 {
-  "timestamp": "2025-09-11T17:33:52.855Z",
-  "sdkVersion": "unknown",
+  "timestamp": "2025-09-11T17:43:28.640Z",
+  "sdkVersion": "2.8.36",
   "interfaces": {
     "SignIn": {
       "fullPage": {
