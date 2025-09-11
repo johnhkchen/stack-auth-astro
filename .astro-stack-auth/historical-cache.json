@@ -1,7 +1,7 @@
 {
   "versions": [
     {
-      "timestamp": "2025-09-11T21:00:21.627Z",
+      "timestamp": "2025-09-11T21:13:13.742Z",
       "sdkVersion": "2.8.36",
       "interfaces": {
         "SignIn": {
@@ -141,7 +141,7 @@
   "analytics": {
     "totalVersions": 1,
     "firstVersion": "2.8.36",
-    "lastUpdate": "2025-09-11T21:00:21.627Z",
+    "lastUpdate": "2025-09-11T21:13:13.742Z",
     "changeFrequency": {
       "averageTimeBetweenVersions": null,
       "totalChanges": 0,

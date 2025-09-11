@@ -183,7 +183,7 @@ describe('Performance Monitoring Configuration', () => {
     process.env.STACK_AUTH_PERF_DEBUG = 'true';
     checkDependency('path');
     
-    let report = generateDependencyPerformanceReport();
+    const report = generateDependencyPerformanceReport();
     expect(report.summary.totalOperations).toBeGreaterThan(0);
     
     // Clean up

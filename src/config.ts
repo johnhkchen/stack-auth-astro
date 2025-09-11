@@ -10,7 +10,6 @@ import type { StackAuthConfig } from './types.js';
 import {
   StackAuthEnvironmentError,
   StackAuthConfigurationError,
-  ERROR_MESSAGES,
   createValidationSummary
 } from './errors.js';
 import { 

@@ -15,8 +15,6 @@ import type {
   StackProviderProps,
   StackAuthFC,
   ReactFC,
-  ReactElement,
-  ReactComponent,
   UseStackAuthHook,
   StackAuthContextType,
   StackAuthRef,
@@ -32,7 +30,7 @@ import type { User, Session, StackClientApp } from '@stackframe/stack';
 // =============================================================================
 
 // Test basic React.FC usage
-const BasicReactFC: ReactFC<{ title: string }> = ({ title }) => {
+const _BasicReactFC: ReactFC<{ title: string }> = ({ title }) => {
   return React.createElement('div', null, title);
 };
 

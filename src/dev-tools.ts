@@ -9,7 +9,7 @@
  * Task: 1.2.27 - Add Component Prop Validation Integration with Astro Dev Tools
  */
 
-import type { AstroIntegration } from 'astro';
+// Core types are imported in specific functions that need them
 
 // Component prop validation schema from generate-prop-docs.js
 export const COMPONENT_PROP_SPECS = {
@@ -389,7 +389,7 @@ function checkDeprecatedProps(componentName: string, props: Record<string, any>)
  * Development middleware for real-time prop validation
  */
 export function createDevValidationMiddleware(context: DevValidationContext) {
-  return async (req: Request, next: Function) => {
+  return async (req: Request, next: () => Promise<Response>) => {
     // Only run in development mode
     if (!context.isDevMode) {
       return next();
@@ -513,7 +513,7 @@ export function createBuildValidation(context: DevValidationContext) {
 /**
  * Development experience enhancements
  */
-export function createDevExperience(context: DevValidationContext) {
+export function createDevExperience(_context: DevValidationContext) {
   return {
     generatePropAutocompletion() {
       // Generate autocompletion data for IDEs

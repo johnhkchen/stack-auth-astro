@@ -296,7 +296,7 @@ describe('Examples Validation', () => {
         });
         
         // The resolved path should point to our built package
-        expect(stdout.trim()).toMatch(/dist[\/\\]index\.(js|cjs)$/);
+        expect(stdout.trim()).toMatch(/dist[/\\]index\.(js|cjs)$/);
         
       } catch (error) {
         console.error('Package resolution test failed:', error.message);

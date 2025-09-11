@@ -8,10 +8,7 @@
 import type { StackAuthConfig, StackAuthOptions } from './types.js';
 import {
   StackAuthConfigurationError,
-  StackAuthEnvironmentError,
-  StackAuthCompatibilityError,
   ERROR_MESSAGES,
-  createErrorWithGuide,
   createValidationSummary
 } from './errors.js';
 
@@ -340,7 +337,9 @@ export function validateCriticalDependencies(options: DependencyValidationOption
   // Check API handler when route injection is enabled
   if (options.injectRoutes !== false) { // Default is true
     try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const path = require('path');
+      // eslint-disable-next-line @typescript-eslint/no-var-requires  
       const fs = require('fs');
       
       // Try multiple possible paths for the handler
@@ -361,7 +360,9 @@ export function validateCriticalDependencies(options: DependencyValidationOption
             foundHandler = true;
             break;
           }
-        } catch {}
+        } catch {
+          // File doesn't exist, continue to next path
+        }
       }
       
       if (!foundHandler) {
@@ -380,7 +381,9 @@ export function validateCriticalDependencies(options: DependencyValidationOption
   // Check middleware when middleware registration is enabled  
   if (options.addMiddleware !== false) { // Default is true
     try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const path = require('path');
+      // eslint-disable-next-line @typescript-eslint/no-var-requires  
       const fs = require('fs');
       
       // Try multiple possible paths for the middleware
@@ -401,7 +404,9 @@ export function validateCriticalDependencies(options: DependencyValidationOption
             foundMiddleware = true;
             break;
           }
-        } catch {}
+        } catch {
+          // File doesn't exist, continue to next path
+        }
       }
       
       if (!foundMiddleware) {
