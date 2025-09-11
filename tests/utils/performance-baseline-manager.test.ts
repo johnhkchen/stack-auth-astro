@@ -333,11 +333,11 @@ describe('PerformanceBaselineManager', () => {
     it('should auto-cleanup old baselines', () => {
       vi.useFakeTimers();
       
-      // Create manager with short archive period
+      // Create manager with 7 day archive period
       const cleanupManager = new PerformanceBaselineManager({
         baselineDir: testDir,
         archiveDir: archiveDir,
-        autoArchiveAfterDays: 0.00001 // Archive immediately
+        autoArchiveAfterDays: 7 // 7 days
       });
 
       // Create baseline
@@ -347,20 +347,25 @@ describe('PerformanceBaselineManager', () => {
         cacheHit: true
       });
 
-      // Wait a bit
-      vi.advanceTimersByTime(100);
+      // Advance time by more than 7 days
+      vi.advanceTimersByTime(8 * 24 * 60 * 60 * 1000); // 8 days in milliseconds
 
       // Create new manager to trigger cleanup
       const newManager = new PerformanceBaselineManager({
         baselineDir: testDir,
         archiveDir: archiveDir,
-        autoArchiveAfterDays: 0.00001
+        autoArchiveAfterDays: 7
       });
 
       // Old baseline should be archived
       const baselines = newManager.getAllBaselines();
       const oldBaseline = baselines.find(b => b.testName === 'old-test');
       expect(oldBaseline).toBeUndefined();
+      
+      // Verify baseline was actually archived
+      const files = require('fs').readdirSync(archiveDir);
+      const archiveFiles = files.filter((f: string) => f.startsWith('archive-'));
+      expect(archiveFiles.length).toBeGreaterThan(0);
       
       vi.useRealTimers();
     });
