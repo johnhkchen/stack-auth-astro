@@ -1,26 +1,26 @@
 [
   {
     "testFile": "comprehensive-test.ts",
-    "averageDuration": 8.118202999999994,
-    "dependencyResolutionTime": 0.7446949999999504,
-    "fileOperationTime": 0.1661099999999749,
-    "timestamp": 1757632226412,
-    "runs": 2
+    "averageDuration": 9.200887666665949,
+    "dependencyResolutionTime": 0.8628406666652116,
+    "fileOperationTime": 0.20509566666675028,
+    "timestamp": 1757634534721,
+    "runs": 3
   },
   {
     "testFile": "regression-test.ts",
-    "averageDuration": 0.5521924999999896,
-    "dependencyResolutionTime": 0.18027399999999716,
-    "fileOperationTime": 0.047791999999986956,
-    "timestamp": 1757632226415,
-    "runs": 2
+    "averageDuration": 0.6299700000009807,
+    "dependencyResolutionTime": 0.2060653333329583,
+    "fileOperationTime": 0.05377033333367839,
+    "timestamp": 1757634534724,
+    "runs": 3
   },
   {
     "testFile": "unified-reporting-test.ts",
-    "averageDuration": 0.5092829999999822,
-    "dependencyResolutionTime": 0.22790850000001228,
-    "fileOperationTime": 0.05577650000003587,
-    "timestamp": 1757632226416,
-    "runs": 2
+    "averageDuration": 0.5616523333341471,
+    "dependencyResolutionTime": 0.2548416666668345,
+    "fileOperationTime": 0.06210400000096191,
+    "timestamp": 1757634534726,
+    "runs": 3
   }
 ]
