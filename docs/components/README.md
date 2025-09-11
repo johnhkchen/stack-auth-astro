@@ -1,12 +1,16 @@
 # Stack Auth Components Documentation
 
 > 📝 **Static Type Specification**: Active  
-> ⚠️ **Dynamic Extraction**: Failed - TypeScript compilation or type extraction failed  
-> 🕒 **Last Attempted**: 9/10/2025, 2:18:06 PM
+> ⚠️ **Dynamic Extraction**: Failed - Extracted types failed validation  
+> 🕒 **Last Attempted**: 9/11/2025, 6:46:11 AM
 
 *Using static type specifications. Install @stackframe/stack-ui for automatic synchronization.*
 
+> ✅ **Interface Change Detection**: No changes detected  
+> 📊 **Version**: unknown → unknown  
+> 🕒 **Last Checked**: 9/11/2025, 6:46:11 AM
 
+*No interface changes detected since last update.*
 
 This directory contains automatically generated documentation for all Stack Auth components available in the `astro-stack-auth` integration.
 
@@ -79,4 +83,4 @@ When adding new components or updating existing ones:
 
 ---
 
-*Generated from static specifications on 2025-09-10*
+*Generated from static specifications on 2025-09-11*
