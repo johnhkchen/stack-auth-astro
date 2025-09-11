@@ -316,7 +316,7 @@ function suggestSimilarProp(propName: string, validProps: string[]): string {
   );
   
   if (suggestions.length > 0) {
-    return suggestions[0];
+    return suggestions[0] || 'valid prop';
   }
   
   return validProps[0] || 'valid prop';

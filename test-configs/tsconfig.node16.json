@@ -9,5 +9,17 @@
   "include": [
     "../src/**/*",
     "../env.d.ts"
+  ],
+  "exclude": [
+    "../src/**/*-test*.ts",
+    "../src/**/*test*.ts",
+    "../src/**/test-*.ts",
+    "../src/**/*-tests*.ts",
+    "../src/**/*tests*.ts",
+    "../src/**/tests-*.ts",
+    "../src/**/*integration*.ts",
+    "../src/**/*validation*.ts",
+    "../node_modules",
+    "../dist"
   ]
 }

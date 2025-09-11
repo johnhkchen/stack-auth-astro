@@ -131,8 +131,8 @@ export async function extractAstroComponentUsages(
     const lines = content.split('\n');
     
     while ((match = componentRegex.exec(content)) !== null) {
-      const componentName = match[1];
-      const propsString = match[2];
+      const componentName = match[1] || '';
+      const propsString = match[2] || '';
       
       // Find line number
       const beforeMatch = content.substring(0, match.index);
@@ -248,6 +248,8 @@ function parsePropsFromString(propsString: string): Record<string, any> {
     const stringValue = match[2];
     const expressionValue = match[3];
     const bareValue = match[4];
+    
+    if (!propName) continue; // Skip if propName is undefined
     
     if (stringValue !== undefined) {
       props[propName] = stringValue;

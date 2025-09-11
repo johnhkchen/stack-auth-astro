@@ -431,7 +431,7 @@ export function validateCompleteWithDependencies(options?: StackAuthOptions): Va
   const baseValidation = validateComplete(options);
   
   const dependencyValidation = validateCriticalDependencies({
-    skipValidation: options?.skipValidation,
+    skipValidation: options?.skipValidation ?? false,
     injectRoutes: options?.injectRoutes !== false,
     addMiddleware: options?.addMiddleware !== false // Middleware defaults to enabled but can be disabled
   });
