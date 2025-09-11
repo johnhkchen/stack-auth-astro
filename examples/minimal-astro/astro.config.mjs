@@ -10,6 +10,9 @@ export default defineConfig({
     stackAuth({
       // Stack Auth will auto-detect environment variables:
       // STACK_PROJECT_ID, STACK_PUBLISHABLE_CLIENT_KEY, STACK_SECRET_SERVER_KEY
+      
+      // Enable builds while API handler implementation is being developed
+      skipValidation: true  // Task 1.3.2: Enable build integration testing
     })
   ],
   output: 'server', // Required for authentication

@@ -563,8 +563,7 @@ describe('TypeScript Compilation Validation', () => {
         } else if (errorMessage.includes('Cannot resolve dependency') || errorMessage.includes('Module not found')) {
           throw new Error(`Dependency resolution failed: ${errorMessage}`);
         } else if (errorMessage.includes('api/handler')) {
-          // Expected failure in Sprint 001 - API handler not implemented yet
-          console.log('Build test skipped - API handler not yet implemented (expected in Sprint 001)');
+          throw new Error(`API handler integration failed: ${errorMessage}`);
         } else if (errorMessage.includes('ENOENT') && errorMessage.includes('node_modules')) {
           throw new Error(`Missing dependencies: ${errorMessage}`);
         } else if (errorMessage.includes('timeout')) {
@@ -630,8 +629,7 @@ describe('TypeScript Compilation Validation', () => {
         } else if (errorMessage.includes('PostCSS') || errorMessage.includes('Tailwind')) {
           throw new Error(`CSS/Tailwind processing failed: ${errorMessage}`);
         } else if (errorMessage.includes('api/handler')) {
-          // Expected failure in Sprint 001 - API handler not implemented yet
-          console.log('Build test skipped - API handler not yet implemented (expected in Sprint 001)');
+          throw new Error(`API handler integration failed: ${errorMessage}`);
         } else {
           throw new Error(`Build failed: ${errorMessage}`);
         }
@@ -672,7 +670,7 @@ describe('TypeScript Compilation Validation', () => {
         // CI builds should fail fast on any issues
         const errorMessage = error.stderr || error.message || '';
         if (errorMessage.includes('api/handler')) {
-          console.log('CI build test skipped - API handler not yet implemented (expected in Sprint 001)');
+          throw new Error(`CI API handler integration failed: ${errorMessage}`);
         } else {
           throw new Error(`CI build failed: ${errorMessage}`);
         }
@@ -719,7 +717,7 @@ describe('TypeScript Compilation Validation', () => {
       } catch (error) {
         const errorMessage = error.stderr || error.message || '';
         if (errorMessage.includes('api/handler')) {
-          console.log('Caching test skipped - API handler not yet implemented (expected in Sprint 001)');
+          throw new Error(`Caching test API handler integration failed: ${errorMessage}`);
         } else {
           throw new Error(`Caching test failed: ${error.message}`);
         }
