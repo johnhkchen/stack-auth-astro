@@ -1,54 +1,97 @@
 /**
- * Stack Auth API Handler
+ * Stack Auth API Handler Stub
  * 
- * This is a minimal working implementation for the Stack Auth API handler.
- * The full implementation will be completed in Sprint 002.
+ * This is a stub implementation that provides helpful setup guidance and prevents 
+ * 404 errors when Stack Auth routes are accessed before full implementation.
  * 
- * This handler provides the basic structure expected by Astro's route injection
- * and allows build integration tests to pass successfully.
+ * Returns 501 Not Implemented for all methods with guidance on setting up 
+ * the complete Stack Auth integration.
  */
 
 import type { APIContext } from 'astro';
 
 /**
- * Generic API handler for all Stack Auth endpoints
- * 
- * This handler will eventually process all Stack Auth API routes including:
- * - /handler/signin
- * - /handler/callback  
- * - /handler/signout
- * - /handler/user
- * - /handler/session
- * - etc.
+ * Creates a consistent 501 Not Implemented response for all HTTP methods
  */
-export const ALL = async (context: APIContext) => {
+const createStubResponse = (context: APIContext) => {
   const { request, url } = context;
-  
-  // Extract the Stack Auth specific path from the catch-all route
   const stackPath = url.pathname.replace(/^.*\/handler\//, '');
-  
-  // TODO: Sprint 002 - Implement actual Stack Auth SDK integration
-  // This should delegate to Stack Auth's request handler
-  
-  // Return a basic successful response for build validation
-  // This allows integration tests to pass while the full implementation is developed
+  const method = request.method;
+
   return new Response(
     JSON.stringify({
-      status: 'ok',
-      message: 'Stack Auth API handler - basic functionality working',
-      path: stackPath,
-      method: request.method,
-      timestamp: new Date().toISOString(),
-      note: 'Full Stack Auth integration coming in Sprint 002'
+      error: 'Not Implemented',
+      message: `Stack Auth integration is not yet fully implemented`,
+      details: {
+        path: stackPath,
+        method: method,
+        timestamp: new Date().toISOString(),
+        status: 'stub_implementation'
+      },
+      setup_guidance: {
+        description: 'This is a stub handler preventing 404 errors during development',
+        next_steps: [
+          'Complete Sprint 002 Task 2.3 for full API handler implementation',
+          'Configure Stack Auth environment variables',
+          'Set up your Stack Auth project dashboard'
+        ],
+        documentation: 'https://docs.stackauth.com/',
+        progress_tracking: 'https://github.com/johnhkchen/stack-auth-astro/issues/53',
+        expected_endpoints: [
+          '/handler/signin',
+          '/handler/callback',
+          '/handler/signout', 
+          '/handler/user',
+          '/handler/session'
+        ]
+      },
+      environment_check: {
+        required_variables: [
+          'STACK_PROJECT_ID',
+          'STACK_PUBLISHABLE_CLIENT_KEY', 
+          'STACK_SECRET_SERVER_KEY'
+        ],
+        note: 'These will be validated in the full implementation'
+      }
     }),
     {
-      status: 200, // OK - allows builds to succeed
+      status: 501, // Not Implemented
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache'
+        'Cache-Control': 'no-cache, no-store, must-revalidate'
       }
     }
   );
 };
 
-// Only named exports to avoid mixed exports warning
+/**
+ * Handle GET requests to Stack Auth endpoints
+ * Used for: signin pages, user info, session checks
+ */
+export const GET = async (context: APIContext) => {
+  return createStubResponse(context);
+};
+
+/**
+ * Handle POST requests to Stack Auth endpoints  
+ * Used for: authentication submissions, user updates
+ */
+export const POST = async (context: APIContext) => {
+  return createStubResponse(context);
+};
+
+/**
+ * Handle PUT requests to Stack Auth endpoints
+ * Used for: user profile updates, settings changes
+ */
+export const PUT = async (context: APIContext) => {
+  return createStubResponse(context);
+};
+
+/**
+ * Handle DELETE requests to Stack Auth endpoints
+ * Used for: account deletion, session termination
+ */
+export const DELETE = async (context: APIContext) => {
+  return createStubResponse(context);
+};
