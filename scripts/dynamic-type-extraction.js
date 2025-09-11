@@ -63,7 +63,8 @@ async function extractDynamicTypes() {
         extractedTypes: null,
         report,
         tsConfigResult,
-        reason: 'Type extraction not supported or SDK validation failed'
+        reason: 'Type extraction not supported or SDK validation failed',
+        sdkVersion: compatibility.detectedVersion || 'Unknown'
       };
     }
     
@@ -71,7 +72,7 @@ async function extractDynamicTypes() {
     console.log('🔧 Extracting component props from @stackframe/stack-ui...');
     console.log(`   Using TypeScript config from: ${tsConfigResult.source}`);
     
-    const extractedProps = extractComponentProps();
+    const extractedProps = await extractComponentProps();
     
     if (!extractedProps) {
       const error = new Error('TypeScript compilation or type extraction failed');
@@ -106,7 +107,8 @@ async function extractDynamicTypes() {
         report,
         tsConfigResult,
         reason: 'TypeScript compilation or type extraction failed',
-        diagnosticReport: verboseMode ? diagnosticReport : null
+        diagnosticReport: verboseMode ? diagnosticReport : null,
+        sdkVersion: compatibility.detectedVersion || 'Unknown'
       };
     }
     
@@ -120,7 +122,8 @@ async function extractDynamicTypes() {
         extractedTypes: null,
         report,
         tsConfigResult,
-        reason: 'Extracted types failed validation'
+        reason: 'Extracted types failed validation',
+        sdkVersion: compatibility.detectedVersion || 'Unknown'
       };
     }
     
@@ -181,7 +184,8 @@ async function extractDynamicTypes() {
       tsConfigResult,
       error: error.message,
       reason: 'Unexpected error during type extraction',
-      diagnosticReport: verboseMode ? diagnosticReport : null
+      diagnosticReport: verboseMode ? diagnosticReport : null,
+      sdkVersion: 'Unknown'
     };
   }
 }

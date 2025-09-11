@@ -1,14 +1,15 @@
 # SignIn Component
 
-> 📝 **Static Type Specification**: Active  
-> ⚠️ **Dynamic Extraction**: Failed - Extracted types failed validation  
-> 🕒 **Last Attempted**: 9/11/2025, 9:30:47 AM
+> 🔄 **Dynamic Type Extraction**: ✅ Active  
+> 📊 **SDK Version**: 2.8.36  
+> 🕒 **Last Updated**: 9/11/2025, 9:40:40 AM  
+> 📈 **Components**: 5 components with live type data
 
-*Using static type specifications. Install @stackframe/stack-ui for automatic synchronization.*
+*This documentation is automatically synchronized with your installed Stack Auth SDK version.*
 
 > ✅ **Interface Change Detection**: No changes detected  
 > 📊 **Version**: unknown → unknown  
-> 🕒 **Last Checked**: 9/11/2025, 9:30:47 AM
+> 🕒 **Last Checked**: 9/11/2025, 9:40:40 AM
 
 *No interface changes detected since last update.*
 
@@ -31,7 +32,11 @@ The SignIn component is a Stack Auth UI component that provides user authenticat
 | privacyUrl | `string | undefined` | ❌ | URL to privacy policy page | 📝 Static |
 | style | `object | undefined` | ❌ | Custom CSS styles for the component | 📝 Static |
 | className | `string | undefined` | ❌ | CSS class name for custom styling | 📝 Static |
-| fullPage | `boolean | undefined` | ❌ | Whether to render as a full-page component or inline | 📝 Static |
+| fullPage | `boolean | undefined` | ❌ | fullPage property | 🔄 Dynamic |
+| automaticRedirect | `boolean | undefined` | ❌ | automaticRedirect property | 🔄 Dynamic |
+| extraInfo | `ReactNode | undefined` | ❌ | extraInfo property | 🔄 Dynamic |
+| firstTab | `"magic-link" | "password" | undefined` | ❌ | firstTab property | 🔄 Dynamic |
+| mockProject | `{ config: { signupenabled: boolean; credentialenabled: boolean; passkeyenabled: boolean; magiclinkenabled: boolean; oauthproviders: { id: string; }[]; }; } | undefined` | ❌ | mockProject property | 🔄 Dynamic |
 
 ## Usage Examples
 
@@ -100,6 +105,9 @@ The SignIn component is a Stack Auth UI component that provides user authenticat
 | 2.9.x | className, style, onSuccess, onError, redirectUri, theme | None | 📝 Static |
 | 3.0.x | className, style, onSuccess, onError, redirectUri, theme, customization | onError | 📝 Static |
 
+> 📊 **Current SDK Version**: 2.8.36
+> 🕒 **Last Updated**: 9/11/2025, 9:40:40 AM
+
 
 ## TypeScript Integration
 
@@ -160,11 +168,11 @@ When updating Stack Auth versions, refer to the version compatibility matrix abo
 
 ## Recommendations
 
-⚠️ **Dynamic type extraction failed, using static fallback**  
-Ensure @stackframe/stack-ui is properly installed and accessible
+✅ **Successfully extracted types for 5 components**  
+Documentation will automatically reflect the exact SDK types you have installed
 
 
 
 ---
 
-*This documentation is generated from static type specifications. For the latest Stack Auth features, refer to the [Stack Auth Documentation](https://docs.stack-auth.com/).*
+*This documentation is automatically generated from your installed Stack Auth SDK types. For the latest Stack Auth features, refer to the [Stack Auth Documentation](https://docs.stack-auth.com/).*
