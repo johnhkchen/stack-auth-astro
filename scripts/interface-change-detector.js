@@ -419,7 +419,7 @@ async function detectInterfaceChanges() {
     
     // Step 2: Extract current interface specifications
     console.log('🔧 Extracting current interface specifications...');
-    const currentInterfaces = extractComponentProps();
+    const currentInterfaces = await extractComponentProps();
     const sdkVersion = getSDKVersion();
     
     if (!currentInterfaces) {
