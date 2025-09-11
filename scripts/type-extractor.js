@@ -663,33 +663,51 @@ function resolvePackageExports(exports, packageDir) {
  */
 async function getSDKVersion() {
   try {
-    const packagePath = await resolveModulePath('@stackframe/stack/package.json');
-    if (!packagePath) {
-      // Try to resolve just the package and then find package.json
-      const basePath = await resolveModulePath('@stackframe/stack');
-      if (basePath) {
-        const pkgJsonPath = join(dirname(basePath), 'package.json');
-        if (existsSync(pkgJsonPath)) {
-          const packageJson = JSON.parse(readFileSync(pkgJsonPath, 'utf-8'));
-          return {
-            version: packageJson.version,
-            name: packageJson.name,
-            description: packageJson.description
-          };
-        }
-      }
+    // Instead of trying to access package.json directly, resolve the main entry point
+    const basePath = await resolveModulePath('@stackframe/stack');
+    if (!basePath) {
       return null;
     }
     
-    const packageJson = JSON.parse(readFileSync(packagePath, 'utf-8'));
+    // Walk up the directory tree from the resolved module to find package.json
+    let currentDir = dirname(basePath);
+    let packageJsonPath = null;
+    
+    // Safety limit to prevent infinite loops
+    for (let i = 0; i < 10; i++) {
+      const candidatePath = join(currentDir, 'package.json');
+      if (existsSync(candidatePath)) {
+        packageJsonPath = candidatePath;
+        break;
+      }
+      const parentDir = dirname(currentDir);
+      if (parentDir === currentDir) break; // Reached filesystem root
+      currentDir = parentDir;
+    }
+    
+    if (packageJsonPath) {
+      const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+      return {
+        version: packageJson.version || 'unknown',
+        name: packageJson.name || '@stackframe/stack',
+        description: packageJson.description || 'Stack Auth SDK'
+      };
+    }
+    
+    // Fallback: return basic info without version if package.json can't be found
     return {
-      version: packageJson.version,
-      name: packageJson.name,
-      description: packageJson.description
+      version: 'unknown',
+      name: '@stackframe/stack',
+      description: 'Stack Auth SDK'
     };
   } catch (error) {
     console.warn(`⚠️ Could not read Stack Auth SDK version: ${error.message}`);
-    return null;
+    // Return fallback info instead of null to avoid breaking the system
+    return {
+      version: 'unknown',
+      name: '@stackframe/stack',
+      description: 'Stack Auth SDK'
+    };
   }
 }
 

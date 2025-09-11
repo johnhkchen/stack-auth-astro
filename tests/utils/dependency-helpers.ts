@@ -293,12 +293,42 @@ export function checkDependency(packageName: string): DependencyCheckResult {
 
   return perfTracker.time(`checkDependency:${packageName}`, () => {
     try {
-      const packageJsonPath = require.resolve(`${packageName}/package.json`);
-      const packageJson = JSON.parse(readFileContent(packageJsonPath) || '{}');
+      // Try to resolve the main entry point first to check if package exists
+      const mainEntryPath = require.resolve(packageName);
+      
+      // For packages that don't export package.json, try to get version via alternative methods
+      let version = 'unknown';
+      
+      try {
+        // Method 1: Try to access package.json via traditional path resolution
+        const packageDir = path.dirname(mainEntryPath);
+        let packageJsonPath = null;
+        
+        // Walk up directory tree to find package.json
+        let currentDir = packageDir;
+        for (let i = 0; i < 5; i++) { // Safety limit
+          const candidatePath = path.join(currentDir, 'package.json');
+          if (fileExists(candidatePath)) {
+            packageJsonPath = candidatePath;
+            break;
+          }
+          const parentDir = path.dirname(currentDir);
+          if (parentDir === currentDir) break; // Reached root
+          currentDir = parentDir;
+        }
+        
+        if (packageJsonPath) {
+          const packageJson = JSON.parse(readFileContent(packageJsonPath) || '{}');
+          version = packageJson.version || 'unknown';
+        }
+      } catch (versionError) {
+        // If version detection fails, package is still available but version is unknown
+        console.warn(`Could not detect version for ${packageName}: ${versionError instanceof Error ? versionError.message : String(versionError)}`);
+      }
       
       const result: DependencyCheckResult = {
         isAvailable: true,
-        version: packageJson.version
+        version: version
       };
       
       dependencyCheckCache.set(cacheKey, result);
