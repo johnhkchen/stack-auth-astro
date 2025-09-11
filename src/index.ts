@@ -9,7 +9,6 @@
 import type { AstroIntegration } from 'astro';
 import type { StackAuthConfig } from './types.js';
 import { 
-  validateAndThrow,
   validateAndThrowWithDependencies,
   validateRuntimeCompatibility,
   validateStackAuthOptions,
@@ -18,12 +17,10 @@ import {
 import {
   StackAuthIntegrationError,
   StackAuthCompatibilityError,
-  ERROR_MESSAGES,
   createErrorWithGuide
 } from './errors.js';
 import { hasValidConfig, getConfigSummary } from './config.js';
 import { 
-  createDevValidationMiddleware, 
   createErrorOverlayIntegration,
   createDevExperience,
   type DevValidationContext 
@@ -85,7 +82,7 @@ export default function astroStackAuth(options: StackAuthOptions = {}): AstroInt
     addReactRenderer = true,
     injectRoutes = true,
     addMiddleware: enableMiddleware = true,
-    config = {},
+    config = {}, // eslint-disable-line @typescript-eslint/no-unused-vars
     skipValidation = false,
     enableDevTools = process.env.NODE_ENV === 'development'
   } = options;
@@ -195,7 +192,7 @@ export default function astroStackAuth(options: StackAuthOptions = {}): AstroInt
             };
 
             // Initialize dev tools
-            const errorOverlay = createErrorOverlayIntegration(devContext);
+            const _errorOverlay = createErrorOverlayIntegration(devContext);
             const devExperience = createDevExperience(devContext);
 
             // Log dev tools initialization

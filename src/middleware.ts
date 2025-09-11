@@ -27,7 +27,7 @@ import {
 export async function onRequest(context: APIContext, next: any) {
   try {
     // Validate Stack Auth configuration
-    const { config, validation } = tryGetConfig();
+    const { config, validation } = tryGetConfig(); // eslint-disable-line @typescript-eslint/no-unused-vars
     
     if (!validation.isValid) {
       // In development, provide detailed error guidance

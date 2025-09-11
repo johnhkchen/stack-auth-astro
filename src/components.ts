@@ -30,12 +30,12 @@ export interface StackProviderProps {
 }
 
 // Test React component compatibility with Stack Auth types
-export type StackAuthFC<P = {}> = React.ComponentType<P & StackAuthComponentProps>;
+export type StackAuthFC<P = Record<string, never>> = React.ComponentType<P & StackAuthComponentProps>;
 
 // Test React component types
-export type ReactFC<P = {}> = React.ComponentType<P>;
+export type ReactFC<P = Record<string, never>> = React.ComponentType<P>;
 export type ReactElement = React.ReactElement;
-export type ReactComponent<P = {}> = React.ComponentType<P>;
+export type ReactComponent<P = Record<string, never>> = React.ComponentType<P>;
 
 // Test React hooks compatibility
 export type UseStackAuthHook = () => {
@@ -67,7 +67,7 @@ export interface ForwardRefStackComponentProps extends StackAuthComponentProps {
 // TODO: Sprint 004 - Replace these placeholder components with real Stack Auth UI components
 // These are temporary implementations to fix TypeScript compilation in examples
 
-const UserButtonBase: React.FC<StackAuthComponentProps> = ({ className, children, ...props }) => {
+const UserButtonBase: React.FC<StackAuthComponentProps> = ({ className, children, ...props }) => { // eslint-disable-line @typescript-eslint/no-unused-vars
   return React.createElement('div', {
     className: className || 'stack-auth-placeholder',
     style: {
@@ -83,7 +83,7 @@ const UserButtonBase: React.FC<StackAuthComponentProps> = ({ className, children
   }, 'UserButton - Coming in Sprint 004');
 };
 
-const SignInBase: React.FC<StackAuthComponentProps> = ({ className, children, ...props }) => {
+const SignInBase: React.FC<StackAuthComponentProps> = ({ className, children, ...props }) => { // eslint-disable-line @typescript-eslint/no-unused-vars
   return React.createElement('div', {
     className: className || 'stack-auth-placeholder',
     style: {
@@ -100,7 +100,7 @@ const SignInBase: React.FC<StackAuthComponentProps> = ({ className, children, ..
   }, 'SignIn Component - Coming in Sprint 004');
 };
 
-const SignUpBase: React.FC<StackAuthComponentProps> = ({ className, children, ...props }) => {
+const SignUpBase: React.FC<StackAuthComponentProps> = ({ className, children, ...props }) => { // eslint-disable-line @typescript-eslint/no-unused-vars
   return React.createElement('div', {
     className: className || 'stack-auth-placeholder',
     style: {
@@ -117,7 +117,7 @@ const SignUpBase: React.FC<StackAuthComponentProps> = ({ className, children, ..
   }, 'SignUp Component - Coming in Sprint 004');
 };
 
-const AccountSettingsBase: React.FC<StackAuthComponentProps> = ({ className, children, ...props }) => {
+const AccountSettingsBase: React.FC<StackAuthComponentProps> = ({ className, children, ...props }) => { // eslint-disable-line @typescript-eslint/no-unused-vars
   return React.createElement('div', {
     className: className || 'stack-auth-placeholder',
     style: {
@@ -134,7 +134,7 @@ const AccountSettingsBase: React.FC<StackAuthComponentProps> = ({ className, chi
   }, 'AccountSettings Component - Coming in Sprint 004');
 };
 
-const StackProviderBase: React.FC<StackProviderProps> = ({ app, children }) => {
+const StackProviderBase: React.FC<StackProviderProps> = ({ app, children }) => { // eslint-disable-line @typescript-eslint/no-unused-vars
   return React.createElement('div', {
     'data-stack-provider': 'placeholder',
     style: {

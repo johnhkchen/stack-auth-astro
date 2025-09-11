@@ -8,7 +8,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   checkDependency,
-  safeImport,
   clearDependencyCaches,
   getDependencyMetrics,
   generateDependencyPerformanceReport,
@@ -138,7 +137,7 @@ describe('Performance Monitoring', () => {
       expect(Object.keys(metrics.operationStats).length).toBeGreaterThan(0);
       
       // Check that we have detailed stats per operation
-      for (const [operation, stats] of Object.entries(metrics.operationStats)) {
+      for (const [_operation, stats] of Object.entries(metrics.operationStats)) {
         expect(stats.count).toBeGreaterThan(0);
         expect(stats.avgDuration).toBeGreaterThanOrEqual(0);
         expect(stats.successRate).toBeGreaterThanOrEqual(0);

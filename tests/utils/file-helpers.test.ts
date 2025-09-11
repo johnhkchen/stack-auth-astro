@@ -20,7 +20,6 @@ import {
   SRC_DIR,
   TESTS_DIR
 } from './file-helpers.js';
-import fs from 'fs';
 import path from 'path';
 
 describe('File Helpers', () => {

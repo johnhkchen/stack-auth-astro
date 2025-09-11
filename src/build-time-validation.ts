@@ -13,13 +13,14 @@ import fs from 'fs/promises';
 import path from 'path';
 import { parse as parseAstro } from '@astrojs/compiler';
 import { parse as parseJS } from '@babel/parser';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - No type definitions available
 import * as traverseModule from '@babel/traverse';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - Handle complex ESM/CJS default export pattern
 const traverse = (traverseModule as any).default?.default || (traverseModule as any).default || traverseModule;
 import type { AstroIntegration } from 'astro';
 import { 
-  validateComponentProps, 
   createBuildValidation,
   type PropValidationError,
   type PropValidationWarning,
@@ -94,7 +95,7 @@ const DEFAULT_CONFIG: BuildValidationConfig = {
 /**
  * Global validation cache
  */
-let validationCache: ValidationCache = {
+const validationCache: ValidationCache = {
   fileHashes: new Map(),
   results: new Map(),
   lastCleanup: Date.now()
@@ -557,7 +558,7 @@ export function formatValidationResults(result: BuildValidationResult): string {
  * Create Astro integration for build-time validation
  */
 export function createBuildTimeValidationIntegration(
-  config: Partial<BuildValidationConfig> = {}
+  _config: Partial<BuildValidationConfig> = {}
 ): AstroIntegration {
   return {
     name: 'stack-auth-build-validation',
