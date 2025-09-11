@@ -246,4 +246,3 @@ export type {
   StackAuthMouseEvent,
   StackAuthChangeEvent,
   ForwardRefStackComponentProps
-} from './components.js';
