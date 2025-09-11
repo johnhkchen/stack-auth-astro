@@ -600,11 +600,4 @@ export async function validateBuildComponents(
   }
 }
 
-export default {
-  runBuildTimeValidation,
-  createBuildTimeValidationIntegration,
-  validateBuildComponents,
-  extractAstroComponentUsages,
-  extractJSXComponentUsages,
-  formatValidationResults
-};
+// Only named exports to avoid mixed exports warning

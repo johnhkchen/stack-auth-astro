@@ -24,6 +24,22 @@ export default defineConfig((options) => ({
       js: format === 'cjs' ? '.cjs' : '.mjs'
     }
   },
+  // Configure Rollup output options to suppress mixed exports warnings
+  rollupOptions: {
+    output: {
+      exports: 'named'
+    }
+  },
+  // Performance optimizations
+  esbuildOptions(options) {
+    options.chunkNames = 'chunks/[name]-[hash]';
+    // Optimize for better tree shaking
+    options.treeShaking = true;
+    // Use faster target for development
+    if (process.env.NODE_ENV !== 'production') {
+      options.target = 'es2022';
+    }
+  },
   // Configure TypeScript to be more permissive for external dependencies
   tsconfig: './tsconfig.build.json',
   external: [
@@ -41,16 +57,6 @@ export default defineConfig((options) => ({
   splitting: true, // Enable code splitting for better chunking
   treeshake: true, // Remove unused code
   minify: process.env.NODE_ENV === 'production',
-  // Optimize chunk splitting strategy
-  esbuildOptions(options) {
-    options.chunkNames = 'chunks/[name]-[hash]';
-    // Optimize for better tree shaking
-    options.treeShaking = true;
-    // Use faster target for development
-    if (process.env.NODE_ENV !== 'production') {
-      options.target = 'es2022';
-    }
-  },
   // Watch mode optimizations
   ...(options.watch && {
     // Skip DTS generation in watch mode for faster rebuilds

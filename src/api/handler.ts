@@ -51,5 +51,4 @@ export const ALL = async (context: APIContext) => {
   );
 };
 
-// Export the handler as the default export as well for flexibility
-export default ALL;
+// Only named exports to avoid mixed exports warning

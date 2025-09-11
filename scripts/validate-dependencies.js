@@ -211,6 +211,7 @@ async function testBuildProcess(exampleDir) {
     STACK_PROJECT_ID: 'test-project-id',
     STACK_PUBLISHABLE_CLIENT_KEY: 'test-publishable-key',
     STACK_SECRET_SERVER_KEY: 'test-secret-key',
+    STACK_AUTH_TEST_MODE: 'true', // Enable test mode to skip validation in Sprint 001
     NODE_ENV: 'production'
   };
   

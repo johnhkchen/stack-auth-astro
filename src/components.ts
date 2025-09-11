@@ -168,4 +168,4 @@ export const SignUp: React.FC<StackAuthComponentProps> = validatedComponents.Sig
 export const AccountSettings: React.FC<StackAuthComponentProps> = validatedComponents.AccountSettings;
 export const StackProvider: React.FC<StackProviderProps> = validatedComponents.StackProvider;
 
-export default {};
+// No default export to avoid mixed exports warning
