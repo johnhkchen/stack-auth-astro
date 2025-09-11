@@ -1,0 +1,116 @@
+{
+  "$schema": "../../schemas/performance-budgets.schema.json",
+  "version": "1.0.0",
+  "description": "Performance budgets for minimal Astro Stack Auth example",
+  
+  "environments": {
+    "production": {
+      "description": "Production build performance budgets for minimal example",
+      "budgets": {
+        "total": {
+          "maxSize": "2mb",
+          "warningSize": "1.5mb",
+          "description": "Total example application size"
+        },
+        "html": {
+          "maxSize": "500kb",
+          "warningSize": "300kb",
+          "description": "Generated HTML pages"
+        },
+        "clientJS": {
+          "maxSize": "800kb",
+          "warningSize": "600kb",
+          "description": "Client-side JavaScript bundles"
+        },
+        "css": {
+          "maxSize": "200kb",
+          "warningSize": "150kb",
+          "description": "CSS stylesheets"
+        },
+        "assets": {
+          "maxSize": "500kb",
+          "warningSize": "300kb",
+          "description": "Images and other static assets"
+        }
+      },
+      "thresholds": {
+        "sizeIncrease": {
+          "maxPercent": 15,
+          "warningPercent": 10,
+          "description": "Size increase from baseline (examples are more volatile)"
+        },
+        "buildTime": {
+          "maxSeconds": 45,
+          "warningSeconds": 30,
+          "description": "Build time for minimal example"
+        }
+      }
+    },
+    
+    "development": {
+      "description": "Development build performance budgets for minimal example",
+      "budgets": {
+        "total": {
+          "maxSize": "5mb",
+          "warningSize": "3mb",
+          "description": "Total example application size (dev mode)"
+        },
+        "html": {
+          "maxSize": "1mb",
+          "warningSize": "800kb",
+          "description": "Generated HTML pages with dev tooling"
+        },
+        "clientJS": {
+          "maxSize": "2mb",
+          "warningSize": "1.5mb",
+          "description": "Client-side JavaScript with sourcemaps"
+        },
+        "css": {
+          "maxSize": "500kb",
+          "warningSize": "300kb",
+          "description": "CSS with sourcemaps"
+        },
+        "assets": {
+          "maxSize": "1mb",
+          "warningSize": "800kb",
+          "description": "Assets in dev mode"
+        }
+      },
+      "thresholds": {
+        "sizeIncrease": {
+          "maxPercent": 30,
+          "warningPercent": 20,
+          "description": "More lenient for development builds"
+        },
+        "buildTime": {
+          "maxSeconds": 90,
+          "warningSeconds": 60,
+          "description": "Dev build time for minimal example"
+        }
+      }
+    }
+  },
+  
+  "defaultEnvironment": "production",
+  
+  "reporting": {
+    "failOnBudgetExceeded": true,
+    "warnOnBudgetWarning": true,
+    "showDifferenceFromBaseline": true,
+    "includeRecommendations": true,
+    "outputFormat": "console",
+    "ciIntegration": {
+      "exitOnFailure": true,
+      "createAnnotations": true,
+      "generateReport": true,
+      "reportPath": "build-performance-report.json"
+    }
+  },
+  
+  "baseline": {
+    "enabled": true,
+    "baselineFile": "performance-baseline.json",
+    "updateBaseline": false,
+    "compareAgainstBranch": "main"
+  }
+}

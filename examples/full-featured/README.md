@@ -40,6 +40,57 @@ npm run build:test
 
 This uses the mock credentials from `.env.test` and enables test mode to skip validation of unimplemented Sprint 002 features. Production builds still require real environment variables.
 
+## Performance Monitoring
+
+This example includes comprehensive build performance analysis with budgets optimized for a full-featured application with Tailwind CSS:
+
+### Build Analysis
+
+Run build analysis to examine bundle sizes and get optimization recommendations:
+
+```bash
+npm run build:analyze
+```
+
+This will:
+- Build the project with test credentials
+- Analyze the build output (HTML, JavaScript, CSS, assets)
+- Compare against performance budgets for full-featured apps
+- Provide Astro-specific optimization recommendations
+
+### Performance Budgets
+
+The example has configured performance budgets in `performance-budgets.json` for larger applications:
+
+- **Total Size**: 3MB max (2.5MB warning) - accounts for Tailwind CSS
+- **Client JavaScript**: 1.2MB max (1MB warning) - includes React components
+- **HTML Pages**: 600KB max (400KB warning)
+- **CSS**: 400KB max (300KB warning) - includes Tailwind CSS
+- **Assets**: 800KB max (600KB warning)
+
+### Optimization Recommendations
+
+The analyzer provides specific recommendations for Astro + Tailwind applications:
+
+- Using `client:idle` or `client:visible` directives to reduce initial JS bundle
+- CSS optimization with Tailwind's purge/JIT features
+- Image optimization with `@astrojs/image`
+- Code splitting strategies for larger applications
+
+### CI Integration
+
+For continuous integration, the build analysis outputs JSON metrics:
+
+```bash
+OUTPUT_JSON=true npm run build:analyze
+```
+
+Use `build:budget:strict` for strict budget enforcement in CI/CD:
+
+```bash
+npm run build:budget:strict
+```
+
 3. **Start the development server:**
    ```bash
    npm run dev
