@@ -109,8 +109,16 @@ function testModuleImports() {
         throw new Error('Module is null or undefined');
       }
       
-      if (typeof module !== 'object') {
-        throw new Error(`Module is not an object (got ${typeof module})`);
+      // For index module, we expect a function (the integration function)
+      // For other modules, we expect an object with named exports
+      if (entryPoint === 'index') {
+        if (typeof module !== 'function') {
+          throw new Error(`Index module is not a function (got ${typeof module})`);
+        }
+      } else {
+        if (typeof module !== 'object') {
+          throw new Error(`Module is not an object (got ${typeof module})`);
+        }
       }
     });
   }
@@ -130,13 +138,9 @@ function testModuleFunctionality() {
     delete require.cache[path.resolve(modulePath)];
     const module = require(modulePath);
     
-    if (!module.default && !module.astroStackAuth) {
-      throw new Error('Index module does not export integration function');
-    }
-    
-    const integrationFn = module.default || module.astroStackAuth;
-    if (typeof integrationFn !== 'function') {
-      throw new Error('Integration export is not a function');
+    // With named exports only, the module itself is the integration function
+    if (typeof module !== 'function') {
+      throw new Error('Index module does not export integration function (expected function)');
     }
   });
   
@@ -174,9 +178,12 @@ function testModuleFunctionality() {
     delete require.cache[path.resolve(modulePath)];
     const module = require(modulePath);
     
-    // In Sprint 001, components module should at least have a default export
-    if (!module.default) {
-      throw new Error('Components module missing default export');
+    // Components module uses named exports only - check for expected component exports
+    const expectedComponents = ['UserButton', 'SignIn', 'SignUp', 'AccountSettings', 'StackProvider'];
+    for (const componentName of expectedComponents) {
+      if (typeof module[componentName] !== 'function' && typeof module[componentName] !== 'object') {
+        throw new Error(`Components module missing component: ${componentName}`);
+      }
     }
   });
 
@@ -186,9 +193,9 @@ function testModuleFunctionality() {
     delete require.cache[path.resolve(modulePath)];
     const module = require(modulePath);
     
-    // In Sprint 001, middleware module should at least have a default export
-    if (!module.default) {
-      throw new Error('Middleware module missing default export');
+    // Middleware module uses named exports - check for onRequest function
+    if (typeof module.onRequest !== 'function') {
+      throw new Error('Middleware module missing onRequest function');
     }
   });
   
@@ -304,7 +311,12 @@ function testIntegrationSmoke() {
     delete require.cache[path.resolve(modulePath)];
     const module = require(modulePath);
     
-    const integrationFn = module.default || module.astroStackAuth;
+    // With named exports only, the module itself is the integration function
+    const integrationFn = module;
+    
+    if (typeof integrationFn !== 'function') {
+      throw new Error('integrationFn is not a function');
+    }
     
     // Test that we can call the integration with basic options
     const result = integrationFn({

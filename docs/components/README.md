@@ -2,14 +2,14 @@
 
 > 🔄 **Dynamic Type Extraction**: ✅ Active  
 > 📊 **SDK Version**: 2.8.36  
-> 🕒 **Last Updated**: 9/11/2025, 10:16:19 AM  
+> 🕒 **Last Updated**: 9/11/2025, 10:26:36 AM  
 > 📈 **Components**: 5 components with live type data
 
 *This documentation is automatically synchronized with your installed Stack Auth SDK version.*
 
 > ✅ **Interface Change Detection**: No changes detected  
 > 📊 **Version**: unknown → unknown  
-> 🕒 **Last Checked**: 9/11/2025, 10:16:19 AM
+> 🕒 **Last Checked**: 9/11/2025, 10:26:36 AM
 
 *No interface changes detected since last update.*
 
