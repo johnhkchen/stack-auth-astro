@@ -147,21 +147,22 @@ Learn more: https://docs.astro.build/en/guides/integrations-guide/react/
 
 Missing implementation: src/api/handler.ts
 
-The integration is configured to inject Stack Auth API routes, but the handler implementation is missing or incomplete.
+The integration is configured to inject Stack Auth API routes (injectRoutes: true), but the handler implementation is missing or incomplete.
 
 To fix this:
 1. This is likely because you're using an early version of the integration
 2. The full API handler will be implemented in Sprint 002 (Task 2.3)
 3. For now, you can:
    - Set skipValidation: true in your integration options to bypass this check
-   - Or set injectRoutes: false to disable route injection
+   - Or set injectRoutes: false to disable route injection entirely
 
 Temporary workaround:
 // astro.config.mjs
 export default defineConfig({
   integrations: [
     astroStackAuth({ 
-      skipValidation: true // Skip until Sprint 002 is complete
+      injectRoutes: false,     // Disable routes until Sprint 002
+      skipValidation: true     // Or skip validation entirely
     })
   ]
 });
@@ -174,19 +175,22 @@ Coming in Sprint 002: Full Stack Auth API handler with signin, callback, and ses
 
 Missing implementation: src/middleware.ts
 
-The integration is configured to register authentication middleware, but the middleware implementation is missing or incomplete.
+The integration is configured to register authentication middleware (addMiddleware: true), but the middleware implementation is missing or incomplete.
 
 To fix this:
 1. This is likely because you're using an early version of the integration
 2. The full middleware will be implemented in Sprint 002 (Task 2.2)
-3. For now, you can set skipValidation: true in your integration options
+3. For now, you can:
+   - Set skipValidation: true in your integration options to bypass this check
+   - Or set addMiddleware: false to disable middleware registration entirely
 
 Temporary workaround:
 // astro.config.mjs
 export default defineConfig({
   integrations: [
     astroStackAuth({ 
-      skipValidation: true // Skip until Sprint 002 is complete
+      addMiddleware: false,    // Disable middleware until Sprint 002
+      skipValidation: true     // Or skip validation entirely
     })
   ]
 });

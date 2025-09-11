@@ -168,6 +168,17 @@ describe('Stack Auth Options Validation', () => {
     expect(result.errors).toContain('addReactRenderer must be a boolean');
   });
 
+  it('should validate addMiddleware boolean option', () => {
+    const options = {
+      addMiddleware: 'false' as any // Should be boolean
+    };
+    
+    const result = validateStackAuthOptions(options);
+    
+    expect(result.isValid).toBe(false);
+    expect(result.errors).toContain('addMiddleware must be a boolean');
+  });
+
   it('should validate options with config fields', () => {
     const options = {
       projectId: '',
@@ -376,6 +387,23 @@ describe('Complete Validation with Dependencies', () => {
     expect(result.warnings.some(warning => 
       warning.includes('Dependency validation skipped')
     )).toBe(true);
+  });
+
+  it('should respect addMiddleware: false option in dependency validation', () => {
+    const result = validateCompleteWithDependencies({
+      injectRoutes: true,
+      addMiddleware: false
+    });
+    
+    // Should be valid since environment is set and middleware validation is skipped
+    expect(result.isValid).toBe(true);
+    // Should not contain middleware-specific validation errors
+    const hasMiddlewareValidationErrors = [...result.errors, ...result.warnings]
+      .some(message => 
+        message.includes('Missing implementation: src/middleware.ts') ||
+        message.includes('Stack Auth middleware is required')
+      );
+    expect(hasMiddlewareValidationErrors).toBe(false);
   });
 });
 

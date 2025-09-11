@@ -7,6 +7,7 @@ export interface StackAuthOptions {
   prefix?: string;
   injectRoutes?: boolean;
   addReactRenderer?: boolean;
+  addMiddleware?: boolean;
   skipValidation?: boolean;
 }
 

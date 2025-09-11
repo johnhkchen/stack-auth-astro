@@ -155,6 +155,10 @@ export function validateStackAuthOptions(options: StackAuthOptions): ValidationR
     errors.push('injectRoutes must be a boolean');
   }
 
+  if (options.addMiddleware !== undefined && typeof options.addMiddleware !== 'boolean') {
+    errors.push('addMiddleware must be a boolean');
+  }
+
   // Validate the options as a config-like object
   if (options.projectId || options.publishableClientKey || options.secretServerKey) {
     const configValidation = validateConfiguration(options);
@@ -429,7 +433,7 @@ export function validateCompleteWithDependencies(options?: StackAuthOptions): Va
   const dependencyValidation = validateCriticalDependencies({
     skipValidation: options?.skipValidation,
     injectRoutes: options?.injectRoutes !== false,
-    addMiddleware: true // Middleware is always enabled in integration
+    addMiddleware: options?.addMiddleware !== false // Middleware defaults to enabled but can be disabled
   });
 
   const allErrors = [

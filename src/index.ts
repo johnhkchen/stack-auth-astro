@@ -49,6 +49,12 @@ export interface StackAuthOptions {
   injectRoutes?: boolean;
 
   /**
+   * Whether to add authentication middleware
+   * @default true
+   */
+  addMiddleware?: boolean;
+
+  /**
    * Stack Auth configuration
    */
   config?: Partial<StackAuthConfig>;
@@ -78,6 +84,7 @@ export default function astroStackAuth(options: StackAuthOptions = {}): AstroInt
     prefix = '/handler',
     addReactRenderer = true,
     injectRoutes = true,
+    addMiddleware: enableMiddleware = true,
     config = {},
     skipValidation = false,
     enableDevTools = process.env.NODE_ENV === 'development'
@@ -169,11 +176,15 @@ export default function astroStackAuth(options: StackAuthOptions = {}): AstroInt
           }
 
           // Add authentication middleware
-          addMiddleware({
-            entrypoint: 'astro-stack-auth/middleware',
-            order: 'pre'
-          });
-          logger.info('✅ Added Stack Auth middleware');
+          if (enableMiddleware) {
+            addMiddleware({
+              entrypoint: 'astro-stack-auth/middleware',
+              order: 'pre'
+            });
+            logger.info('✅ Added Stack Auth middleware');
+          } else {
+            logger.info('ℹ️  Middleware disabled - authentication context will not be available in Astro.locals');
+          }
 
           // Development tools integration
           if (enableDevTools && process.env.NODE_ENV === 'development') {
