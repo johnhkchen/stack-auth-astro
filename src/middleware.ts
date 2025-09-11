@@ -8,6 +8,7 @@
  * user resolution, and performance-optimized caching.
  */
 
+import { defineMiddleware } from 'astro:middleware';
 import type { APIContext } from 'astro';
 import { StackServerApp } from '@stackframe/stack';
 import { tryGetConfig } from './config.js';
@@ -119,7 +120,7 @@ async function validateSession(config: any, request: Request): Promise<{ user: U
  * Validates Stack Auth configuration, performs session validation,
  * resolves user data, and populates Astro.locals with caching optimization.
  */
-export async function onRequest(context: APIContext, next: any) {
+export const onRequest = defineMiddleware(async (context, next) => {
   try {
     // Validate Stack Auth configuration
     const { config, validation } = tryGetConfig();
@@ -228,4 +229,4 @@ export async function onRequest(context: APIContext, next: any) {
     // Continue processing - don't let middleware errors break the application
     return await next();
   }
-}
+});
