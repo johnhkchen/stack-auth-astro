@@ -408,7 +408,11 @@ export function validateCriticalDependencies(options: DependencyValidationOption
         errors.push(ERROR_MESSAGES.MISSING_MIDDLEWARE);
       } else {
         // Check if middleware is empty or stub
-        if (middlewareContent.includes('export default {}') || middlewareContent.length < 100) {
+        if (middlewareContent.includes('export default {}') || 
+            middlewareContent.length < 100 ||
+            middlewareContent.includes('TODO: Sprint 002') ||
+            middlewareContent.includes('stub mode') ||
+            middlewareContent.includes('Sprint 002 Task 2.2')) {
           warnings.push(ERROR_MESSAGES.STUB_IMPLEMENTATION_WARNING);
         }
       }
