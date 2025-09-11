@@ -11,6 +11,34 @@ import { validateTestEnvironment } from './utils/dependency-helpers.js';
 import { cleanupTempFiles } from './utils/file-helpers.js';
 import { performanceHooks } from './utils/vitest-performance-plugin.js';
 
+// DOM testing utilities
+let isDOMEnvironment = false;
+
+// Detect if we're running in jsdom environment
+try {
+  if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    isDOMEnvironment = true;
+    
+    // Set up DOM-specific globals for testing
+    global.ResizeObserver = global.ResizeObserver || class ResizeObserver {
+      constructor(callback: ResizeObserverCallback) {}
+      observe(target: Element, options?: ResizeObserverOptions): void {}
+      unobserve(target: Element): void {}
+      disconnect(): void {}
+    };
+    
+    global.IntersectionObserver = global.IntersectionObserver || class IntersectionObserver {
+      constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {}
+      observe(target: Element): void {}
+      unobserve(target: Element): void {}
+      disconnect(): void {}
+    };
+  }
+} catch (e) {
+  // Running in Node.js environment
+  isDOMEnvironment = false;
+}
+
 // Global test utilities available in all tests
 declare global {
   var __TEST_UTILS__: typeof testUtils;
@@ -99,6 +127,84 @@ export const testUtils = {
    */
   clearEnvMocks() {
     vi.unstubAllEnvs();
+  },
+
+  /**
+   * DOM testing utilities - only available in jsdom environment
+   */
+  dom: {
+    /**
+     * Creates a DOM container for React component testing
+     */
+    createContainer(): HTMLDivElement {
+      if (typeof document === 'undefined') {
+        throw new Error('DOM utilities can only be used in jsdom environment');
+      }
+      const container = document.createElement('div');
+      container.setAttribute('data-testid', 'test-container');
+      document.body.appendChild(container);
+      return container;
+    },
+
+    /**
+     * Cleans up DOM containers and elements
+     */
+    cleanup() {
+      if (typeof document !== 'undefined') {
+        const containers = document.querySelectorAll('[data-testid="test-container"]');
+        containers.forEach(container => container.remove());
+        
+        // Clear document body children if needed
+        while (document.body.firstChild) {
+          document.body.removeChild(document.body.firstChild);
+        }
+      }
+    },
+
+    /**
+     * Simulates user interactions
+     */
+    simulate: {
+      click(element: Element) {
+        if (typeof element.dispatchEvent === 'function') {
+          element.dispatchEvent(new Event('click', { bubbles: true }));
+        }
+      },
+      
+      change(element: Element, value: string) {
+        if (element instanceof HTMLInputElement) {
+          element.value = value;
+          element.dispatchEvent(new Event('change', { bubbles: true }));
+          element.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      }
+    },
+
+    /**
+     * DOM assertion helpers
+     */
+    expect: {
+      elementToBeInDocument(element: Element | null) {
+        if (!element) {
+          throw new Error('Expected element to be in document, but element was null');
+        }
+        if (typeof document === 'undefined') {
+          throw new Error('DOM expectations can only be used in jsdom environment');
+        }
+        if (!document.body.contains(element)) {
+          throw new Error('Expected element to be in document');
+        }
+      },
+
+      elementToHaveTextContent(element: Element | null, text: string) {
+        if (!element) {
+          throw new Error('Expected element to have text content, but element was null');
+        }
+        if (element.textContent !== text) {
+          throw new Error(`Expected element to have text content "${text}", but got "${element.textContent}"`);
+        }
+      }
+    }
   }
 };
 
@@ -227,6 +333,9 @@ afterEach((context) => {
   // Clean up after each test
   vi.restoreAllMocks();
   cleanupTempFiles();
+  
+  // Clean up DOM if in jsdom environment
+  testUtils.dom.cleanup();
 });
 
 afterAll(() => {

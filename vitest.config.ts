@@ -29,9 +29,16 @@ function getReporters() {
 
 export default defineConfig({
   test: {
-    // Environment configuration
+    // Environment configuration - default to node
     environment: 'node',
     globals: true,
+    
+    // Environment-specific configuration
+    environmentOptions: {
+      jsdom: {
+        resources: 'usable'
+      }
+    },
     
     // Test file patterns
     include: [
@@ -44,6 +51,7 @@ export default defineConfig({
       './build/**',
       '**/.{idea,git,cache,output,temp}/**'
     ],
+    
     
     // Coverage configuration
     coverage: {
