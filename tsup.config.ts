@@ -1,6 +1,6 @@
 import { defineConfig } from 'tsup';
 
-export default defineConfig({
+export default defineConfig((options) => ({
   entry: {
     // Main entry points matching package.json exports
     index: 'src/index.ts',
@@ -15,7 +15,8 @@ export default defineConfig({
   format: ['cjs', 'esm'],
   dts: true,
   clean: true,
-  sourcemap: true,
+  // Conditional source maps - disable for production builds for smaller output
+  sourcemap: options.watch || process.env.NODE_ENV !== 'production',
   outDir: 'dist',
   // Use .cjs extension for CommonJS files when package.json has "type": "module"
   outExtension({ format }) {
@@ -35,5 +36,48 @@ export default defineConfig({
     '@astrojs/compiler',
     '@babel/parser',
     '@babel/traverse'
-  ]
-});
+  ],
+  // Performance optimizations
+  splitting: true, // Enable code splitting for better chunking
+  treeshake: true, // Remove unused code
+  minify: process.env.NODE_ENV === 'production',
+  // Optimize chunk splitting strategy
+  esbuildOptions(options) {
+    options.chunkNames = 'chunks/[name]-[hash]';
+    // Optimize for better tree shaking
+    options.treeShaking = true;
+    // Use faster target for development
+    if (process.env.NODE_ENV !== 'production') {
+      options.target = 'es2022';
+    }
+  },
+  // Watch mode optimizations
+  ...(options.watch && {
+    // Skip DTS generation in watch mode for faster rebuilds
+    dts: false,
+    // Use faster incremental builds
+    skipNodeModulesBundle: true,
+    onSuccess: async () => {
+      console.log('✅ Development build completed successfully');
+    },
+    // Ignore non-source files for better performance
+    ignoreWatch: [
+      'dist/**',
+      'node_modules/**',
+      '**/*.test.ts',
+      '**/*.test.js',
+      '**/*.spec.ts',
+      '**/*.spec.js',
+      'coverage/**',
+      '.git/**',
+      '**/*.md',
+      '**/*.json'
+    ]
+  }),
+  // Production optimizations
+  ...(!options.watch && {
+    dts: true,
+    minifyIdentifiers: process.env.NODE_ENV === 'production',
+    keepNames: process.env.NODE_ENV !== 'production'
+  })
+}));

@@ -43,8 +43,11 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
+    "build": "NODE_ENV=production tsup",
+    "build:dev": "NODE_ENV=development tsup",
+    "build:analyze": "npm run build && node scripts/build-analyzer.js",
+    "dev": "NODE_ENV=development tsup --watch",
+    "dev:fast": "NODE_ENV=development tsup --watch --no-dts",
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:perf": "STACK_AUTH_PERF_DEBUG=true vitest",
@@ -82,6 +85,8 @@
     "validate:components:no-fail": "node scripts/validate-component-props.js --no-fail",
     "build:full": "npm run build && npm run validate:components",
     "build:clean": "rm -rf dist",
+    "build:cache:clean": "rm -rf node_modules/.tsup",
+    "build:watch": "npm run dev",
     "prebuild": "npm run build:clean",
     "prepare": "npm run docs:generate",
     "stack:validate": "npm list @stackframe/stack @stackframe/stack-ui",
