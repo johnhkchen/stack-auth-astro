@@ -77,6 +77,15 @@ jobs:
     - name: Validate TypeScript declarations
       run: npm run build:validate:types
       
+    - name: Validate dependency management
+      run: npm run build:validate:deps
+      env:
+        STACK_PROJECT_ID: test-project-id
+        STACK_PUBLISHABLE_CLIENT_KEY: test-publishable-key
+        STACK_SECRET_SERVER_KEY: test-secret-key
+        STACK_AUTH_TEST_MODE: 'true'
+      timeout-minutes: 10
+      
     - name: Run smoke tests
       run: npm run build:smoke
       

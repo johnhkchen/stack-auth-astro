@@ -2,14 +2,14 @@
 
 > 🔄 **Dynamic Type Extraction**: ✅ Active  
 > 📊 **SDK Version**: 2.8.36  
-> 🕒 **Last Updated**: 9/11/2025, 1:06:56 PM  
+> 🕒 **Last Updated**: 9/11/2025, 1:12:01 PM  
 > 📈 **Components**: 5 components with live type data
 
 *This documentation is automatically synchronized with your installed Stack Auth SDK version.*
 
 > ✅ **Interface Change Detection**: No changes detected  
 > 📊 **Version**: 2.8.36 → 2.8.36  
-> 🕒 **Last Checked**: 9/11/2025, 1:06:56 PM
+> 🕒 **Last Checked**: 9/11/2025, 1:12:01 PM
 
 *No interface changes detected since last update.*
 
@@ -47,7 +47,7 @@ The UserButton component is a Stack Auth UI component that provides a user profi
 | 2.8.x | className, style, showDisplayName, showEmail | None | 📝 Static |
 
 > 📊 **Current SDK Version**: 2.8.36
-> 🕒 **Last Updated**: 9/11/2025, 1:06:56 PM
+> 🕒 **Last Updated**: 9/11/2025, 1:12:01 PM
 
 
 ## TypeScript Integration
