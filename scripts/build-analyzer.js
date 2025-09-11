@@ -110,6 +110,32 @@ async function analyzeBuild() {
     
     console.log(chalk.green('  ✅ Analysis complete!'));
     
+    // Output JSON metrics for CI consumption
+    if (process.env.CI || process.env.OUTPUT_JSON) {
+      const metricsOutput = {
+        timestamp: new Date().toISOString(),
+        totalSize: analysis.total,
+        totalSizeFormatted: formatBytes(analysis.total),
+        byType: Object.entries(analysis.byType).reduce((acc, [type, data]) => {
+          acc[type] = {
+            size: data.size,
+            sizeFormatted: formatBytes(data.size),
+            percentage: ((data.size / analysis.total) * 100).toFixed(1),
+            fileCount: data.files.length
+          };
+          return acc;
+        }, {}),
+        largestFiles: allFiles.map(f => ({
+          name: f.file,
+          size: f.size,
+          sizeFormatted: formatBytes(f.size)
+        }))
+      };
+      
+      console.log('\n📊 JSON Metrics:');
+      console.log(JSON.stringify(metricsOutput, null, 2));
+    }
+    
     return analysis;
   } catch (error) {
     console.error(chalk.red('Error analyzing build:', error.message));
