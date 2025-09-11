@@ -29,6 +29,48 @@ npm run build:test
 
 This uses the mock credentials from `.env.test` and enables test mode to skip validation of unimplemented Sprint 002 features. Production builds still require real environment variables.
 
+## Performance Monitoring
+
+This example includes build performance analysis and budget monitoring to ensure optimal bundle sizes:
+
+### Build Analysis
+
+Run build analysis to examine bundle sizes and get optimization recommendations:
+
+```bash
+npm run build:analyze
+```
+
+This will:
+- Build the project with test credentials
+- Analyze the build output (HTML, JavaScript, CSS, assets)
+- Compare against performance budgets
+- Provide Astro-specific optimization recommendations
+
+### Performance Budgets
+
+The example has configured performance budgets in `performance-budgets.json`:
+
+- **Total Size**: 2MB max (1.5MB warning)
+- **Client JavaScript**: 800KB max (600KB warning)
+- **HTML Pages**: 500KB max (300KB warning)
+- **CSS**: 200KB max (150KB warning)
+- **Assets**: 500KB max (300KB warning)
+
+### CI Integration
+
+For continuous integration, the build analysis outputs JSON metrics:
+
+```bash
+OUTPUT_JSON=true npm run build:analyze
+```
+
+Use `build:budget:strict` for strict budget enforcement in CI/CD:
+
+```bash
+npm run build:budget:strict
+```
+
 3. **Start the development server:**
    ```bash
    npm run dev

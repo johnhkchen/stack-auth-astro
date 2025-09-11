@@ -7,6 +7,9 @@
     "start": "astro dev",
     "build": "astro check && astro build",
     "build:test": "STACK_PROJECT_ID=test_project_id_12345 STACK_PUBLISHABLE_CLIENT_KEY=pk_test_mockkey123456789abcdef STACK_SECRET_SERVER_KEY=sk_test_mocksecret123456789abcdef STACK_AUTH_TEST_MODE=true npm run build",
+    "build:analyze": "npm run build:test && node ../../scripts/astro-build-analyzer.js ./dist ../../examples/minimal-astro/performance-budgets.json",
+    "build:budget": "npm run build:analyze",
+    "build:budget:strict": "STRICT_BUDGETS=true npm run build:budget",
     "preview": "astro preview",
     "astro": "astro"
   },
