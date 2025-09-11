@@ -8,7 +8,7 @@
  */
 
 import { program } from 'commander';
-import { PerformanceBaselineManager } from '../tests/utils/performance-baseline-manager.js';
+import { PerformanceBaselineManager } from '../tests/utils/performance-baseline-manager.ts';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
 import chalk from 'chalk';

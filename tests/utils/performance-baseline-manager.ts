@@ -5,9 +5,10 @@
  * historical tracking, and team collaboration features for performance baselines.
  */
 
-import { readFileContent, fileExists, writeFileContent, createDirectory } from './file-helpers.js';
+import { readFileContent, fileExists, writeFileContent, createDirectory } from './file-helpers.ts';
 import path from 'path';
 import { createHash } from 'crypto';
+import os from 'os';
 
 /**
  * Version 2 baseline with enhanced tracking capabilities
@@ -155,7 +156,6 @@ export class PerformanceBaselineManager {
   }
 
   private getEnvironmentFingerprint(): string {
-    const os = require('os');
     const components = [
       process.version,
       process.platform,
@@ -213,7 +213,6 @@ export class PerformanceBaselineManager {
     }
 
     // Migrate from v1 to v2
-    const os = require('os');
     return {
       testFile: baseline.testFile,
       testName: baseline.testName,
@@ -464,7 +463,6 @@ export class PerformanceBaselineManager {
     testName: string,
     metrics: any
   ): PerformanceBaselineV2 {
-    const os = require('os');
     const runId = createHash('sha256')
       .update(`${Date.now()}-${Math.random()}`)
       .digest('hex')

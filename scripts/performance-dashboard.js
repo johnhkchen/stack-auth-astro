@@ -7,7 +7,7 @@
  * including trends, regressions, and historical data visualization.
  */
 
-import { PerformanceBaselineManager } from '../tests/utils/performance-baseline-manager.js';
+import { PerformanceBaselineManager } from '../tests/utils/performance-baseline-manager.ts';
 import { writeFileSync, mkdirSync, existsSync } from 'fs';
 import { resolve, join } from 'path';
 import { program } from 'commander';
