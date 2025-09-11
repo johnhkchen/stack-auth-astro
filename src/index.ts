@@ -248,5 +248,12 @@ export default function astroStackAuth(options: StackAuthOptions = {}): AstroInt
   };
 }
 
+// Re-export basic integration for backward compatibility
+export { 
+  createBasicStackAuthIntegration,
+  default as basicIntegration,
+  type BasicStackAuthOptions
+} from './integration.js';
+
 // Re-export types for convenience  
 export type { StackAuthConfig } from './types.js';
