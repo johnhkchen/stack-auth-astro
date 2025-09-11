@@ -37,6 +37,31 @@ function createReporter() {
         this.consoleReporter.onTaskUpdate?.(...args);
         this.jsonReporter.onTaskUpdate?.(...args);
       }
+      
+      onTestUpdate(...args) {
+        this.consoleReporter.onTestUpdate?.(...args);
+        this.jsonReporter.onTestUpdate?.(...args);
+      }
+      
+      onWatcherStart(...args) {
+        this.consoleReporter.onWatcherStart?.(...args);
+        this.jsonReporter.onWatcherStart?.(...args);
+      }
+      
+      onWatcherRerun(...args) {
+        this.consoleReporter.onWatcherRerun?.(...args);
+        this.jsonReporter.onWatcherRerun?.(...args);
+      }
+      
+      onTestRemoved(...args) {
+        this.consoleReporter.onTestRemoved?.(...args);
+        this.jsonReporter.onTestRemoved?.(...args);
+      }
+      
+      onCollected(...args) {
+        this.consoleReporter.onCollected?.(...args);
+        this.jsonReporter.onCollected?.(...args);
+      }
     };
   }
   

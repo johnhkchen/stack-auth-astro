@@ -44,11 +44,56 @@ class TestPerformanceCollector {
   private baselines: Map<string, PerformanceBaseline> = new Map();
   private currentTestStart: Map<string, number> = new Map();
   private enabled: boolean;
+  private baselineFile: string = '.vitest-performance-baseline.json';
   
   constructor() {
     this.enabled = process.env.STACK_AUTH_PERF_DEBUG === 'true' || 
                    process.env.VITEST_PERF === 'true' ||
                    process.env.NODE_ENV === 'test';
+    
+    // Load existing baselines if available
+    if (this.enabled) {
+      this.loadBaselines();
+    }
+  }
+
+  private loadBaselines(): void {
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const baselinePath = path.resolve(this.baselineFile);
+      
+      if (fs.existsSync(baselinePath)) {
+        const data = fs.readFileSync(baselinePath, 'utf-8');
+        const loaded = JSON.parse(data);
+        
+        // Convert array back to Map
+        if (Array.isArray(loaded)) {
+          loaded.forEach((baseline: PerformanceBaseline) => {
+            this.baselines.set(baseline.testFile, baseline);
+          });
+        }
+      }
+    } catch (error) {
+      // Silent failure - baselines are optional
+    }
+  }
+
+  private saveBaselines(): void {
+    if (!this.enabled || process.env.CI) return; // Don't save in CI
+    
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const baselinePath = path.resolve(this.baselineFile);
+      
+      // Convert Map to array for JSON serialization
+      const baselineData = Array.from(this.baselines.values());
+      
+      fs.writeFileSync(baselinePath, JSON.stringify(baselineData, null, 2));
+    } catch (error) {
+      // Silent failure - baselines are optional
+    }
   }
 
   startTest(testFile: string, testName: string): void {
@@ -159,7 +204,7 @@ class TestPerformanceCollector {
     };
   }
 
-  private detectRegressions(threshold: number = 1.5): Array<{
+  private detectRegressions(threshold: number = 1.2): Array<{  // Lower threshold to 20% for more sensitive detection
     testFile: string;
     testName: string;
     currentDuration: number;
@@ -171,7 +216,7 @@ class TestPerformanceCollector {
     for (const result of this.testResults) {
       const baseline = this.baselines.get(result.testFile);
       
-      if (baseline && baseline.runs > 1) { // Only check if we have historical data
+      if (baseline && baseline.runs >= 1) { // Check even on first comparison
         const regressionRatio = result.duration / baseline.averageDuration;
         
         if (regressionRatio > threshold) {
@@ -192,6 +237,8 @@ class TestPerformanceCollector {
   clear(): void {
     this.testResults = [];
     this.currentTestStart.clear();
+    // Save baselines when clearing (end of test run)
+    this.saveBaselines();
   }
 
   isEnabled(): boolean {
