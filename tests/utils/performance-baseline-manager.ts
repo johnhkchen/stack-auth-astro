@@ -621,7 +621,7 @@ export class PerformanceBaselineManager {
   }
 
   /**
-   * Analyze performance trends over time
+   * Analyze performance trends over time with enhanced gradual regression detection
    */
   public analyzeTrends(testFile?: string, testName?: string): PerformanceTrend[] {
     if (!this.options.enableTrendAnalysis) {
@@ -643,6 +643,234 @@ export class PerformanceBaselineManager {
     }
 
     return trends;
+  }
+
+  /**
+   * Detect gradual regression patterns over time
+   */
+  public detectGradualRegressions(thresholds: {
+    gradualRegressionPercent?: number;
+    timeWindowDays?: number;
+    minDataPoints?: number;
+    confidenceThreshold?: number;
+  } = {}): Array<{
+    testKey: string;
+    regressionType: 'gradual' | 'sudden' | 'volatile';
+    severity: 'minor' | 'moderate' | 'severe';
+    timespan: number;
+    totalChange: number;
+    averageChangePerDay: number;
+    confidence: number;
+    affectedMetrics: string[];
+    recommendation: string;
+  }> {
+    const config = {
+      gradualRegressionPercent: thresholds.gradualRegressionPercent || 15, // 15% over time window
+      timeWindowDays: thresholds.timeWindowDays || 7, // Look at last 7 days
+      minDataPoints: thresholds.minDataPoints || 5,
+      confidenceThreshold: thresholds.confidenceThreshold || 70
+    };
+
+    const regressions = [];
+    const timeWindowMs = config.timeWindowDays * 24 * 60 * 60 * 1000;
+    const cutoffTime = Date.now() - timeWindowMs;
+
+    for (const [testKey, baseline] of this.baselines.entries()) {
+      if (baseline.history.length < config.minDataPoints) {
+        continue;
+      }
+
+      // Filter to recent history within time window
+      const recentHistory = baseline.history
+        .filter(h => h.timestamp >= cutoffTime)
+        .sort((a, b) => a.timestamp - b.timestamp);
+
+      if (recentHistory.length < config.minDataPoints) {
+        continue;
+      }
+
+      // Check for gradual duration regression
+      const durationRegression = this.analyzeMetricRegression(
+        recentHistory.map(h => ({ timestamp: h.timestamp, value: h.duration })),
+        config
+      );
+
+      // Check for success rate degradation
+      const successRateRegression = this.analyzeMetricRegression(
+        recentHistory.map(h => ({ timestamp: h.timestamp, value: h.successRate })),
+        { ...config, invertTrend: true } // Lower success rate is worse
+      );
+
+      // Check for cache hit rate degradation  
+      const cacheHitRegression = this.analyzeMetricRegression(
+        recentHistory.map(h => ({ timestamp: h.timestamp, value: h.cacheHitRate })),
+        { ...config, invertTrend: true } // Lower cache hit rate is worse
+      );
+
+      const affectedMetrics = [];
+      let worstRegression = null;
+
+      if (durationRegression.isRegression) {
+        affectedMetrics.push('duration');
+        worstRegression = durationRegression;
+      }
+      if (successRateRegression.isRegression) {
+        affectedMetrics.push('success_rate');
+        if (!worstRegression || successRateRegression.severity > worstRegression.severity) {
+          worstRegression = successRateRegression;
+        }
+      }
+      if (cacheHitRegression.isRegression) {
+        affectedMetrics.push('cache_hit_rate');
+        if (!worstRegression || cacheHitRegression.severity > worstRegression.severity) {
+          worstRegression = cacheHitRegression;
+        }
+      }
+
+      if (affectedMetrics.length > 0 && worstRegression) {
+        regressions.push({
+          testKey,
+          regressionType: worstRegression.regressionType,
+          severity: this.mapSeverityScore(worstRegression.severity),
+          timespan: timeWindowMs,
+          totalChange: worstRegression.totalChange,
+          averageChangePerDay: worstRegression.averageChangePerDay,
+          confidence: worstRegression.confidence,
+          affectedMetrics,
+          recommendation: this.generateRegressionRecommendation(affectedMetrics, worstRegression)
+        });
+      }
+    }
+
+    return regressions.sort((a, b) => b.confidence - a.confidence);
+  }
+
+  private analyzeMetricRegression(
+    dataPoints: Array<{ timestamp: number; value: number }>,
+    config: { gradualRegressionPercent: number; timeWindowDays: number; invertTrend?: boolean }
+  ): {
+    isRegression: boolean;
+    regressionType: 'gradual' | 'sudden' | 'volatile';
+    severity: number;
+    totalChange: number;
+    averageChangePerDay: number;
+    confidence: number;
+  } {
+    if (dataPoints.length < 3) {
+      return {
+        isRegression: false,
+        regressionType: 'gradual',
+        severity: 0,
+        totalChange: 0,
+        averageChangePerDay: 0,
+        confidence: 0
+      };
+    }
+
+    // Calculate linear trend
+    const n = dataPoints.length;
+    const timestamps = dataPoints.map(d => d.timestamp);
+    const values = dataPoints.map(d => d.value);
+
+    // Normalize timestamps to days from first point
+    const firstTimestamp = timestamps[0];
+    const dayTimestamps = timestamps.map(t => (t - firstTimestamp) / (24 * 60 * 60 * 1000));
+
+    // Linear regression calculation
+    const sumX = dayTimestamps.reduce((sum, x) => sum + x, 0);
+    const sumY = values.reduce((sum, y) => sum + y, 0);
+    const sumXY = dayTimestamps.reduce((sum, x, i) => sum + x * values[i], 0);
+    const sumX2 = dayTimestamps.reduce((sum, x) => sum + x * x, 0);
+
+    const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+    const intercept = (sumY - slope * sumX) / n;
+
+    // Calculate R-squared for confidence
+    const yMean = sumY / n;
+    const ssTotal = values.reduce((sum, y) => sum + Math.pow(y - yMean, 2), 0);
+    const ssRes = dayTimestamps.reduce((sum, x, i) => {
+      const predicted = slope * x + intercept;
+      return sum + Math.pow(values[i] - predicted, 2);
+    }, 0);
+    const rSquared = 1 - (ssRes / ssTotal);
+
+    // Calculate total change percentage
+    const firstValue = values[0];
+    const lastValue = values[values.length - 1];
+    const totalChangePercent = ((lastValue - firstValue) / firstValue) * 100;
+
+    // Invert trend direction if needed (for success rate, cache hit rate)
+    const adjustedChange = config.invertTrend ? -totalChangePercent : totalChangePercent;
+    const adjustedSlope = config.invertTrend ? -slope : slope;
+
+    // Determine if this is a regression
+    const isRegression = adjustedChange > config.gradualRegressionPercent;
+    
+    // Calculate volatility
+    const volatility = Math.sqrt(values.reduce((sum, v, i) => {
+      const expected = slope * dayTimestamps[i] + intercept;
+      return sum + Math.pow(v - expected, 2);
+    }, 0) / n) / (sumY / n) * 100;
+
+    // Determine regression type
+    let regressionType: 'gradual' | 'sudden' | 'volatile' = 'gradual';
+    if (volatility > 30) {
+      regressionType = 'volatile';
+    } else if (adjustedChange > config.gradualRegressionPercent * 2) {
+      regressionType = 'sudden';
+    }
+
+    // Calculate severity score (0-100)
+    const severityScore = Math.min(100, 
+      (Math.abs(adjustedChange) / config.gradualRegressionPercent) * 50 + 
+      Math.max(0, (rSquared * 50))
+    );
+
+    return {
+      isRegression,
+      regressionType,
+      severity: severityScore,
+      totalChange: adjustedChange,
+      averageChangePerDay: adjustedSlope,
+      confidence: rSquared * 100
+    };
+  }
+
+  private mapSeverityScore(score: number): 'minor' | 'moderate' | 'severe' {
+    if (score >= 75) return 'severe';
+    if (score >= 50) return 'moderate';
+    return 'minor';
+  }
+
+  private generateRegressionRecommendation(
+    affectedMetrics: string[],
+    regression: { regressionType: string; totalChange: number; averageChangePerDay: number }
+  ): string {
+    const recommendations = [];
+
+    if (affectedMetrics.includes('duration')) {
+      if (regression.regressionType === 'sudden') {
+        recommendations.push('Recent changes may have introduced performance bottlenecks - review latest commits');
+      } else {
+        recommendations.push('Gradual performance degradation detected - profile and optimize slow operations');
+      }
+    }
+
+    if (affectedMetrics.includes('success_rate')) {
+      recommendations.push('Success rate declining - investigate failing tests and error patterns');
+    }
+
+    if (affectedMetrics.includes('cache_hit_rate')) {
+      recommendations.push('Cache efficiency dropping - review cache configuration and invalidation patterns');
+    }
+
+    if (regression.regressionType === 'volatile') {
+      recommendations.push('Performance is unstable - consider environmental factors and test consistency');
+    }
+
+    return recommendations.length > 0 
+      ? recommendations.join('; ')
+      : 'Monitor performance closely and consider optimization efforts';
   }
 
   private calculateTrend(baseline: PerformanceBaselineV2): PerformanceTrend {

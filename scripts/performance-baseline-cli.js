@@ -514,6 +514,268 @@ program
     });
   });
 
+// Gradual regression detection command
+program
+  .command('gradual-regressions')
+  .alias('gradual')
+  .description('Detect gradual performance regressions over time')
+  .option('--days <days>', 'Time window in days to analyze', parseInt, 7)
+  .option('--threshold <percent>', 'Regression threshold percentage', parseFloat, 15)
+  .option('--min-points <n>', 'Minimum data points required', parseInt, 5)
+  .option('--format <format>', 'Output format (table|json|markdown)', 'table')
+  .action((options) => {
+    const regressions = manager.detectGradualRegressions({
+      gradualRegressionPercent: options.threshold,
+      timeWindowDays: options.days,
+      minDataPoints: options.minPoints,
+      confidenceThreshold: 70
+    });
+
+    if (regressions.length === 0) {
+      success('No gradual regressions detected');
+      return;
+    }
+
+    console.log(chalk.bold(`\n🔍 Gradual Regression Analysis (${options.days} days)\n`));
+
+    if (options.format === 'markdown') {
+      console.log('# Gradual Regression Report\n');
+      console.log(`**Analysis Period:** ${options.days} days`);
+      console.log(`**Regression Threshold:** ${options.threshold}%`);
+      console.log(`**Generated:** ${new Date().toISOString()}\n`);
+      
+      console.log('## Detected Regressions\n');
+      console.log('| Test | Type | Severity | Total Change | Daily Change | Confidence | Affected Metrics |');
+      console.log('|------|------|----------|--------------|--------------|------------|------------------|');
+      
+      regressions.forEach(reg => {
+        const severityIcon = reg.severity === 'severe' ? '🔴' : 
+                           reg.severity === 'moderate' ? '🟡' : '🟢';
+        console.log(`| ${reg.testKey.substring(0, 25)} | ${reg.regressionType} | ${severityIcon} ${reg.severity} | +${reg.totalChange.toFixed(1)}% | +${reg.averageChangePerDay.toFixed(2)}%/day | ${reg.confidence.toFixed(0)}% | ${reg.affectedMetrics.join(', ')} |`);
+      });
+      
+      const severeRegressions = regressions.filter(r => r.severity === 'severe');
+      const moderateRegressions = regressions.filter(r => r.severity === 'moderate');
+      
+      console.log('\n## Summary\n');
+      console.log(`- **Total regressions detected:** ${regressions.length}`);
+      console.log(`- **Severe regressions:** ${severeRegressions.length}`);
+      console.log(`- **Moderate regressions:** ${moderateRegressions.length}`);
+      
+      if (severeRegressions.length > 0) {
+        console.log('\n### 🔴 Severe Regressions\n');
+        severeRegressions.slice(0, 3).forEach(reg => {
+          console.log(`**${reg.testKey}**`);
+          console.log(`- Change: +${reg.totalChange.toFixed(1)}% over ${options.days} days`);
+          console.log(`- Type: ${reg.regressionType}`);
+          console.log(`- Recommendation: ${reg.recommendation}\n`);
+        });
+      }
+      
+    } else if (options.format === 'json') {
+      console.log(JSON.stringify({
+        analysis: {
+          timeWindowDays: options.days,
+          threshold: options.threshold,
+          timestamp: new Date().toISOString(),
+          regressions
+        }
+      }, null, 2));
+    } else {
+      // Table format
+      const table = new Table({
+        head: ['Test', 'Type', 'Severity', 'Change', 'Confidence', 'Metrics'],
+        style: { head: ['cyan'] }
+      });
+
+      regressions.forEach(reg => {
+        const severityColor = reg.severity === 'severe' ? chalk.red :
+                             reg.severity === 'moderate' ? chalk.yellow :
+                             chalk.green;
+        
+        const typeIcon = reg.regressionType === 'sudden' ? '⚡' :
+                        reg.regressionType === 'volatile' ? '📈' : '📊';
+
+        table.push([
+          reg.testKey.substring(0, 25),
+          `${typeIcon} ${reg.regressionType}`,
+          severityColor(reg.severity),
+          `+${reg.totalChange.toFixed(1)}%`,
+          `${reg.confidence.toFixed(0)}%`,
+          reg.affectedMetrics.join(', ')
+        ]);
+      });
+
+      console.log(table.toString());
+      
+      // Recommendations
+      console.log(chalk.bold('\n💡 Recommendations:\n'));
+      const uniqueRecommendations = [...new Set(regressions.map(r => r.recommendation))];
+      uniqueRecommendations.slice(0, 3).forEach(rec => {
+        console.log(`  • ${rec}`);
+      });
+    }
+  });
+
+// Compare branches command - compare current branch against main
+program
+  .command('compare-branches')
+  .description('Compare performance between current branch and main baseline')
+  .option('--format <format>', 'Output format (table|json|markdown)', 'markdown')
+  .option('--threshold <percent>', 'Difference threshold for highlighting', parseFloat, 10)
+  .action((options) => {
+    // Try to get current branch from environment or git
+    const currentBranch = process.env.GITHUB_HEAD_REF || 
+                         process.env.GITHUB_REF?.replace('refs/heads/', '') || 
+                         'current';
+    const baseBranch = process.env.GITHUB_BASE_REF || 'main';
+    
+    // Load current branch baselines (from current environment)
+    const currentBaselines = manager.getAllBaselines();
+    
+    // Try to load main branch baselines from artifacts or previous runs
+    const mainManager = new PerformanceBaselineManager({
+      baselineDir: '.performance',
+      environmentSeparation: true
+    });
+    
+    // Get main baseline environment fingerprint (simplified for comparison)
+    const mainBaselines = mainManager.getAllBaselines();
+    
+    if (currentBaselines.length === 0 && mainBaselines.length === 0) {
+      info('No baselines available for comparison');
+      return;
+    }
+    
+    console.log(chalk.bold(`\n🔄 Branch Performance Comparison: ${currentBranch} vs ${baseBranch}\n`));
+    
+    if (options.format === 'markdown') {
+      console.log(`# Performance Comparison Report`);
+      console.log(`\n**Branch:** \`${currentBranch}\` vs \`${baseBranch}\``);
+      console.log(`**Generated:** ${new Date().toISOString()}\n`);
+    }
+    
+    // Create comparison map
+    const comparisons = [];
+    const currentMap = new Map(currentBaselines.map(b => [
+      `${b.testFile}::${b.testName}`, b
+    ]));
+    const mainMap = new Map(mainBaselines.map(b => [
+      `${b.testFile}::${b.testName}`, b
+    ]));
+    
+    // Compare common tests
+    for (const [testKey, currentBaseline] of currentMap.entries()) {
+      const mainBaseline = mainMap.get(testKey);
+      if (mainBaseline) {
+        const perfDiff = ((currentBaseline.metrics.averageDuration - mainBaseline.metrics.averageDuration) / mainBaseline.metrics.averageDuration) * 100;
+        const successDiff = currentBaseline.qualityMetrics.successRate - mainBaseline.qualityMetrics.successRate;
+        const cacheDiff = currentBaseline.qualityMetrics.cacheHitRate - mainBaseline.qualityMetrics.cacheHitRate;
+        
+        comparisons.push({
+          testKey,
+          currentDuration: currentBaseline.metrics.averageDuration,
+          mainDuration: mainBaseline.metrics.averageDuration,
+          perfDiff,
+          successDiff,
+          cacheDiff,
+          significant: Math.abs(perfDiff) > options.threshold
+        });
+      }
+    }
+    
+    if (comparisons.length === 0) {
+      if (options.format === 'markdown') {
+        console.log('## No Common Tests Found\n');
+        console.log('No tests were found in both branches for comparison.');
+      } else {
+        info('No common tests found for comparison');
+      }
+      return;
+    }
+    
+    // Sort by performance difference (worst first)
+    comparisons.sort((a, b) => Math.abs(b.perfDiff) - Math.abs(a.perfDiff));
+    
+    if (options.format === 'markdown') {
+      console.log('## Performance Changes\n');
+      console.log('| Test | Current Duration | Main Duration | Change | Success Rate | Cache Hit Rate |');
+      console.log('|------|------------------|---------------|---------|--------------|----------------|');
+      
+      comparisons.forEach(comp => {
+        const changeIcon = comp.perfDiff > 0 ? '🔴' : '🟢';
+        const changeText = comp.significant ? 
+          `${changeIcon} **${comp.perfDiff > 0 ? '+' : ''}${comp.perfDiff.toFixed(1)}%**` :
+          `${comp.perfDiff > 0 ? '+' : ''}${comp.perfDiff.toFixed(1)}%`;
+        
+        console.log(`| ${comp.testKey.substring(0, 30)} | ${formatDuration(comp.currentDuration)} | ${formatDuration(comp.mainDuration)} | ${changeText} | ${comp.successDiff > 0 ? '+' : ''}${(comp.successDiff * 100).toFixed(1)}% | ${comp.cacheDiff > 0 ? '+' : ''}${(comp.cacheDiff * 100).toFixed(1)}% |`);
+      });
+      
+      const significantRegressions = comparisons.filter(c => c.perfDiff > options.threshold);
+      const significantImprovements = comparisons.filter(c => c.perfDiff < -options.threshold);
+      
+      console.log('\n## Summary\n');
+      console.log(`- **Total tests compared:** ${comparisons.length}`);
+      console.log(`- **Significant regressions (>${options.threshold}%):** ${significantRegressions.length}`);
+      console.log(`- **Significant improvements (>${options.threshold}%):** ${significantImprovements.length}`);
+      
+      if (significantRegressions.length > 0) {
+        console.log('\n### 🔴 Performance Regressions\n');
+        significantRegressions.slice(0, 5).forEach(comp => {
+          console.log(`- **${comp.testKey}**: ${formatDuration(comp.currentDuration)} (+${comp.perfDiff.toFixed(1)}% vs main)`);
+        });
+      }
+      
+      if (significantImprovements.length > 0) {
+        console.log('\n### 🟢 Performance Improvements\n');
+        significantImprovements.slice(0, 5).forEach(comp => {
+          console.log(`- **${comp.testKey}**: ${formatDuration(comp.currentDuration)} (${comp.perfDiff.toFixed(1)}% vs main)`);
+        });
+      }
+      
+    } else if (options.format === 'json') {
+      console.log(JSON.stringify({
+        comparison: {
+          currentBranch,
+          baseBranch,
+          timestamp: new Date().toISOString(),
+          summary: {
+            totalTests: comparisons.length,
+            significantRegressions: comparisons.filter(c => c.perfDiff > options.threshold).length,
+            significantImprovements: comparisons.filter(c => c.perfDiff < -options.threshold).length
+          },
+          details: comparisons
+        }
+      }, null, 2));
+    } else {
+      // Table format
+      const table = new Table({
+        head: ['Test', 'Current', 'Main', 'Change %', 'Status'],
+        style: { head: ['cyan'] }
+      });
+      
+      comparisons.forEach(comp => {
+        const statusIcon = comp.perfDiff > options.threshold ? chalk.red('🔴') :
+                          comp.perfDiff < -options.threshold ? chalk.green('🟢') :
+                          chalk.blue('⚪');
+        
+        const changeColor = Math.abs(comp.perfDiff) > options.threshold
+          ? (comp.perfDiff > 0 ? chalk.red : chalk.green)
+          : chalk.white;
+        
+        table.push([
+          comp.testKey.substring(0, 30),
+          formatDuration(comp.currentDuration),
+          formatDuration(comp.mainDuration),
+          changeColor(`${comp.perfDiff > 0 ? '+' : ''}${comp.perfDiff.toFixed(1)}%`),
+          statusIcon
+        ]);
+      });
+      
+      console.log(table.toString());
+    }
+  });
+
 // Clean command - cleanup old baselines
 program
   .command('clean')

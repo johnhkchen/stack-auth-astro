@@ -85,31 +85,61 @@ jobs:
         echo "🔍 Running build analysis..."
         OUTPUT_JSON=true npm run build:analyze
         
+    - name: Download previous performance baselines
+      uses: actions/download-artifact@v4
+      if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+      continue-on-error: true
+      with:
+        name: performance-baselines-main
+        path: .performance/
+        
     - name: Performance metrics summary
       run: |
         echo "📊 Performance Summary:"
         echo "- Build completed at: $(date)"
         echo "- Node version: ${{ matrix.node-version }}"
         echo "- Git commit: $GITHUB_SHA"
+        echo "- Branch: ${GITHUB_REF#refs/heads/}"
         npm run perf:baseline:stats || echo "No baseline data available yet"
       
     - name: Store build size baseline
       run: |
-        # Create performance baseline for main branch
-        if [ "$GITHUB_REF" = "refs/heads/main" ]; then
-          npm run perf:baseline
-          echo "BUILD_SIZE_BASELINE=true" >> $GITHUB_ENV
-        fi
+        # Create performance baseline for current build
+        npm run perf:baseline
+        echo "BUILD_BASELINE_CREATED=true" >> $GITHUB_ENV
         
-    - name: Build size regression detection
+    - name: Upload performance baselines as artifact
+      uses: actions/upload-artifact@v4
+      if: github.ref == 'refs/heads/main'
+      with:
+        name: performance-baselines-main
+        path: |
+          .performance/
+          !.performance/archives/
+        retention-days: 90
+        
+    - name: Performance regression detection
       if: github.event_name == 'pull_request'
       run: |
-        # Check for build size regressions in PR
+        # Check for performance regressions in PR
+        echo "🔍 Checking for performance regressions..."
+        npm run perf:baseline:trends
+        
+        # Check for gradual regressions over time
+        echo "🔍 Detecting gradual performance regressions..."
+        npm run perf:baseline:gradual --format=markdown > gradual-regressions.md || true
+        
+        # Run comprehensive regression testing with branch comparison
         npm run test:regression || {
-          echo "⚠️ Build size regression detected!"
-          echo "Build size has increased beyond acceptable threshold."
+          echo "⚠️ Performance regression detected!"
+          echo "Performance has degraded beyond acceptable threshold."
           echo "Review the build analysis output above for optimization recommendations."
           echo "REGRESSION_DETECTED=true" >> $GITHUB_ENV
+          
+          # Generate detailed regression report
+          echo "Generating detailed regression report..."
+          npm run perf:baseline:compare-branches > regression-report.md || true
+          
           exit 1
         }
         
@@ -124,24 +154,32 @@ jobs:
             run_id: context.runId
           });
           
-          const comment = `## ⚠️ Build Performance Alert
+          const comment = `## ⚠️ Performance Regression Alert
           
-          **Build size regression detected** in this pull request.
+          **Performance regression detected** in this pull request.
           
           ### What happened?
-          - Build size has increased beyond the acceptable threshold (10%)
-          - This could impact loading times and user experience
+          - Performance metrics have degraded beyond acceptable thresholds
+          - This could impact user experience and system efficiency
           
           ### What to do next?
-          1. Review the build analysis output in the CI logs
-          2. Look for optimization opportunities:
-             - Remove unused dependencies
-             - Enable tree shaking
-             - Optimize bundle splitting
-          3. Consider if the size increase is justified by new features
+          1. Review the performance trends analysis in the CI logs
+          2. Check the detailed regression report (if available)
+          3. Look for optimization opportunities:
+             - Optimize slow operations
+             - Review dependency resolution performance
+             - Check for memory leaks or inefficient algorithms
+             - Analyze cache hit rates
+          4. Consider if the performance impact is justified by new features
           
-          ### Build Analysis
-          You can find detailed build analysis in the \`Analyze build performance\` step above.
+          ### Performance Analysis
+          - Detailed trends: Check the \`Performance regression detection\` step above
+          - Build analysis: Available in the \`Analyze build performance\` step
+          - Historical data: View baseline comparison in CI logs
+          
+          ### Resources
+          - Run \`npm run perf:baseline:trends\` locally to analyze trends
+          - Use \`npm run perf:baseline:compare-branches\` for branch comparison
           
           _This comment was generated automatically by the CI performance monitoring system._`;
           
@@ -152,6 +190,32 @@ jobs:
             body: comment
           });
       
+    - name: Generate performance dashboard
+      run: |
+        echo "📊 Generating performance dashboard..."
+        npm run perf:dashboard || echo "Dashboard generation failed, continuing..."
+        
+    - name: Archive performance regression report
+      uses: actions/upload-artifact@v4
+      if: failure() && env.REGRESSION_DETECTED == 'true'
+      with:
+        name: performance-regression-report-${{ matrix.node-version }}
+        path: |
+          regression-report.md
+          gradual-regressions.md
+          performance-dashboard/
+          .performance/
+        retention-days: 30
+        
+    - name: Archive performance dashboard
+      uses: actions/upload-artifact@v4
+      if: github.ref == 'refs/heads/main'
+      with:
+        name: performance-dashboard-main
+        path: |
+          performance-dashboard/
+        retention-days: 30
+        
     - name: Archive build artifacts
       uses: actions/upload-artifact@v4
       if: failure()
