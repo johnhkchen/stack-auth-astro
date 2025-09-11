@@ -11,8 +11,8 @@ export default defineConfig({
       // Stack Auth will auto-detect environment variables:
       // STACK_PROJECT_ID, STACK_PUBLISHABLE_CLIENT_KEY, STACK_SECRET_SERVER_KEY
       
-      // Enable builds while API handler implementation is being developed
-      skipValidation: true  // Task 1.3.2: Enable build integration testing
+      // Skip validation during test builds until Sprint 002 features are implemented
+      skipValidation: process.env.STACK_AUTH_TEST_MODE === 'true'
     })
   ],
   output: 'server', // Required for authentication

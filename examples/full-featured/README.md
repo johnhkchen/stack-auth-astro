@@ -30,6 +30,16 @@ This is a comprehensive example showcasing advanced Stack Auth integration with 
    - `STACK_PUBLISHABLE_CLIENT_KEY` - Your publishable client key
    - `STACK_SECRET_SERVER_KEY` - Your secret server key
 
+## Testing
+
+For CI/CD or testing purposes, you can build the project with mock Stack Auth environment variables:
+
+```bash
+npm run build:test
+```
+
+This uses the mock credentials from `.env.test` and enables test mode to skip validation of unimplemented Sprint 002 features. Production builds still require real environment variables.
+
 3. **Start the development server:**
    ```bash
    npm run dev
