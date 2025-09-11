@@ -1,14 +1,15 @@
 # Stack Auth Components Documentation
 
-> 📝 **Static Type Specification**: Active  
-> ⚠️ **Dynamic Extraction**: Failed - Extracted types failed validation  
-> 🕒 **Last Attempted**: 9/11/2025, 9:30:47 AM
+> 🔄 **Dynamic Type Extraction**: ✅ Active  
+> 📊 **SDK Version**: 2.8.36  
+> 🕒 **Last Updated**: 9/11/2025, 9:40:40 AM  
+> 📈 **Components**: 5 components with live type data
 
-*Using static type specifications. Install @stackframe/stack-ui for automatic synchronization.*
+*This documentation is automatically synchronized with your installed Stack Auth SDK version.*
 
 > ✅ **Interface Change Detection**: No changes detected  
 > 📊 **Version**: unknown → unknown  
-> 🕒 **Last Checked**: 9/11/2025, 9:30:47 AM
+> 🕒 **Last Checked**: 9/11/2025, 9:40:40 AM
 
 *No interface changes detected since last update.*
 
@@ -52,23 +53,23 @@ import { StackProvider } from 'astro-stack-auth/components';
 
 ## Documentation Generation
 
-This documentation is generated from static type specifications using:
+This documentation is dynamically generated from your installed @stackframe/stack-ui types using:
 
 ```bash
 npm run docs:generate
 ```
 
 The generator extracts:
-- **Prop specifications** from static validation schema
-- **Type information** from predefined TypeScript interfaces
+- **Prop specifications** from live SDK TypeScript types
+- **Type information** from installed SDK version
 - **Version compatibility** data from Stack Auth SDK versions
 - **Usage examples** tailored for Astro projects
 
 
 ## Recommendations
 
-⚠️ **Dynamic type extraction failed, using static fallback**  
-Ensure @stackframe/stack-ui is properly installed and accessible
+✅ **Successfully extracted types for 5 components**  
+Documentation will automatically reflect the exact SDK types you have installed
 
 
 
@@ -76,11 +77,11 @@ Ensure @stackframe/stack-ui is properly installed and accessible
 
 When adding new components or updating existing ones:
 
-1. Update the validation schema in the documentation generator
+1. Install/update @stackframe/stack-ui to get latest types
 2. Add usage examples in the documentation generator
 3. Run `npm run docs:generate` to update documentation
 4. Verify the generated docs are accurate and complete
 
 ---
 
-*Generated from static specifications on 2025-09-11*
+*Generated from @stackframe/stack-ui@2.8.36 on 2025-09-11*
