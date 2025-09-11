@@ -13,7 +13,7 @@
     "declarationMap": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "lib": ["ES2022", "DOM", "ES2022.Error"],
+    "lib": ["ES2022", "ES2021", "DOM"],
     "types": ["node", "react", "react-dom"],
     "resolveJsonModule": true,
     "isolatedModules": true,

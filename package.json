@@ -63,6 +63,7 @@
     "type:check-all": "node scripts/type-check-all-configs.js",
     "type:check-strict": "tsc --noEmit --project test-configs/tsconfig.strict.json",
     "type:check-loose": "tsc --noEmit --project test-configs/tsconfig.loose.json",
+    "type:check-tests": "tsc --noEmit --project tsconfig.test.json",
     "type:integration": "npm run type:check-all && npm run build",
     "test:types": "npm run type:integration",
     "test:consumer": "vitest run tests/integration/consumer-validation.test.ts",
