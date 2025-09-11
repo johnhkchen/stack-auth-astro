@@ -6,7 +6,7 @@
  * error handling and helpful guidance.
  */
 
-import type { StackAuthConfig } from './types.js';
+import type { StackAuthConfig, ValidationOptions } from './types.js';
 import {
   StackAuthEnvironmentError,
   StackAuthConfigurationError,
@@ -18,6 +18,7 @@ import {
   createMissingConfigHelp,
   type ValidationResult
 } from './validation.js';
+import { validateStackAuthConnection } from './connection-validation.js';
 
 /**
  * Get Stack Auth configuration from environment variables with comprehensive validation
@@ -137,6 +138,140 @@ export function tryGetConfig(): { config: StackAuthConfig | null; validation: Va
 export function hasValidConfig(): boolean {
   const { config } = tryGetConfig();
   return config !== null;
+}
+
+/**
+ * Get Stack Auth configuration with optional connection validation
+ * 
+ * @param options Validation options including connection testing
+ * @returns Validated Stack Auth configuration
+ * @throws StackAuthEnvironmentError if required environment variables are missing
+ * @throws StackAuthConfigurationError if configuration is invalid
+ */
+export async function getConfigWithValidation(options: ValidationOptions = {}): Promise<StackAuthConfig> {
+  // Get basic config first
+  const config = getConfig();
+
+  // Skip connection validation if explicitly disabled
+  if (options.validateConnection === false) {
+    return config;
+  }
+
+  try {
+    // Validate connection if requested
+    if (options.validateConnection === true) {
+      const connectionResult = await validateStackAuthConnection(config, options);
+      
+      if (!connectionResult.isValid) {
+        const summary = createValidationSummary(connectionResult.errors);
+        throw new StackAuthConfigurationError(
+          `Stack Auth connection validation failed\n${summary}\n\nConnection issues detected:\n${connectionResult.errors.map(e => `  • ${e}`).join('\n')}`
+        );
+      }
+
+      // Log warnings in development
+      if (connectionResult.warnings.length > 0 && options.developmentMode !== false && process.env.NODE_ENV === 'development') {
+        console.warn('⚠️  Stack Auth connection warnings:');
+        connectionResult.warnings.forEach(warning => console.warn(`  • ${warning}`));
+      }
+
+      // Log connection success in development
+      if (options.developmentMode !== false && process.env.NODE_ENV === 'development') {
+        console.log(`✅ Stack Auth connection validated (${connectionResult.responseTime}ms)`);
+      }
+    }
+
+    return config;
+  } catch (error) {
+    if (error instanceof StackAuthConfigurationError || error instanceof StackAuthEnvironmentError) {
+      throw error;
+    }
+    
+    throw new StackAuthConfigurationError(
+      `Stack Auth connection validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
+}
+
+/**
+ * Validate configuration with optional connection testing
+ * 
+ * @param options Validation options including connection testing
+ * @returns Enhanced validation result including connection status
+ */
+export async function validateConfigWithConnection(options: ValidationOptions = {}): Promise<ValidationResult & { connectionValid?: boolean }> {
+  const baseValidation = validateConfig();
+  
+  if (!baseValidation.isValid || options.validateConnection === false) {
+    return baseValidation;
+  }
+
+  try {
+    const config = {
+      projectId: process.env.STACK_PROJECT_ID!,
+      publishableClientKey: process.env.STACK_PUBLISHABLE_CLIENT_KEY!,
+      secretServerKey: process.env.STACK_SECRET_SERVER_KEY!,
+      prefix: process.env.STACK_AUTH_PREFIX || '/handler',
+      ...(process.env.STACK_BASE_URL && { baseUrl: process.env.STACK_BASE_URL })
+    };
+
+    const connectionResult = await validateStackAuthConnection(config, options);
+    
+    return {
+      ...baseValidation,
+      errors: [...baseValidation.errors, ...connectionResult.errors],
+      warnings: [...baseValidation.warnings, ...connectionResult.warnings],
+      connectionValid: connectionResult.isValid
+    };
+  } catch (error) {
+    return {
+      ...baseValidation,
+      errors: [...baseValidation.errors, `Connection validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`],
+      connectionValid: false
+    };
+  }
+}
+
+/**
+ * Safely get configuration with optional connection validation
+ * 
+ * @param options Validation options
+ * @returns Configuration object and validation result, or null if invalid
+ */
+export async function tryGetConfigWithValidation(options: ValidationOptions = {}): Promise<{ 
+  config: StackAuthConfig | null; 
+  validation: ValidationResult & { connectionValid?: boolean } 
+}> {
+  try {
+    const validation = await validateConfigWithConnection(options);
+    
+    if (!validation.isValid) {
+      return { config: null, validation };
+    }
+
+    const config: StackAuthConfig = {
+      projectId: process.env.STACK_PROJECT_ID!,
+      publishableClientKey: process.env.STACK_PUBLISHABLE_CLIENT_KEY!,
+      secretServerKey: process.env.STACK_SECRET_SERVER_KEY!,
+      prefix: process.env.STACK_AUTH_PREFIX || '/handler',
+      ...(process.env.STACK_BASE_URL && { baseUrl: process.env.STACK_BASE_URL })
+    };
+
+    return {
+      config: validation.isValid && (validation.connectionValid !== false) ? config : null,
+      validation
+    };
+  } catch (error) {
+    return {
+      config: null,
+      validation: {
+        isValid: false,
+        errors: [error instanceof Error ? error.message : 'Unknown configuration error'],
+        warnings: [],
+        connectionValid: false
+      }
+    };
+  }
 }
 
 /**

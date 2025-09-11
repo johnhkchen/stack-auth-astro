@@ -37,5 +37,30 @@ export interface SignOutOptions {
   onError?: (error: Error) => void;
 }
 
+// Connection validation types
+export interface ConnectionValidationResult {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+  responseTime: number;
+  timestamp: Date;
+  projectExists?: boolean;
+  credentialsValid?: boolean;
+  apiReachable?: boolean;
+}
+
+export interface ValidationOptions {
+  validateConnection?: boolean;
+  timeout?: number;
+  skipCache?: boolean;
+  developmentMode?: boolean;
+}
+
+export interface ConnectionCacheEntry {
+  result: ConnectionValidationResult;
+  timestamp: number;
+  ttl: number;
+}
+
 // Re-export Stack Auth types for convenience
 export type { User, Session };

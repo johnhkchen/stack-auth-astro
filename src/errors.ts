@@ -253,6 +253,113 @@ Quick setup guide:
    )}
 
 Learn more: https://github.com/your-repo/astro-stack-auth#readme
+`,
+
+  // Connection validation error messages
+  CONNECTION_TIMEOUT: `
+🔗 Stack Auth API connection timeout
+
+The connection to Stack Auth API timed out after 5 seconds.
+
+Possible causes:
+1. Network connectivity issues
+2. Stack Auth service is temporarily unavailable
+3. Firewall blocking outbound HTTPS requests
+
+To troubleshoot:
+1. Check your internet connection
+2. Verify Stack Auth service status: https://status.stack-auth.com/
+3. Try increasing timeout with: validateConnection: { timeout: 10000 }
+4. Check firewall settings allow HTTPS to *.stack-auth.com
+
+If issues persist, consider setting validateConnection: false in development.
+`,
+
+  INVALID_CREDENTIALS: `
+🔑 Stack Auth credentials validation failed
+
+Your API credentials appear to be invalid or have insufficient permissions.
+
+Common issues:
+1. Incorrect STACK_SECRET_SERVER_KEY
+2. Key doesn't match the project ID
+3. Key has been revoked or expired
+4. Test keys used in production environment
+
+To fix this:
+1. Go to your Stack Auth dashboard: https://app.stack-auth.com
+2. Navigate to API Keys in your project settings
+3. Regenerate your Secret Server Key if needed
+4. Ensure you're using the correct environment keys (test vs live)
+5. Verify the key has proper permissions
+
+Double-check your environment variables:
+  STACK_PROJECT_ID=your_project_id_here
+  STACK_SECRET_SERVER_KEY=your_secret_key_here
+`,
+
+  PROJECT_NOT_FOUND: `
+🏗️ Stack Auth project not found
+
+The specified project ID could not be found or accessed.
+
+Possible issues:
+1. Project ID is incorrect or contains typos
+2. Project has been deleted
+3. API keys don't have access to this project
+4. Using wrong environment (staging vs production)
+
+To fix this:
+1. Verify your project ID in the Stack Auth dashboard
+2. Ensure the project exists and is active
+3. Check that your API keys belong to this project
+4. Confirm you're using the correct environment
+
+Current project ID: Check your STACK_PROJECT_ID environment variable
+Dashboard: https://app.stack-auth.com
+`,
+
+  API_UNREACHABLE: `
+🌐 Stack Auth API unreachable
+
+Cannot establish connection to Stack Auth API endpoints.
+
+Possible causes:
+1. Network connectivity issues
+2. Stack Auth service outage
+3. Firewall or proxy blocking requests
+4. Invalid base URL configuration
+
+To troubleshoot:
+1. Check internet connectivity
+2. Verify Stack Auth service status: https://status.stack-auth.com/
+3. Test API access directly: curl https://api.stack-auth.com/health
+4. Check corporate firewall/proxy settings
+5. Verify STACK_BASE_URL if using custom endpoint
+
+For development, you can temporarily disable connection validation:
+  astroStackAuth({ skipValidation: true })
+`,
+
+  INSUFFICIENT_PERMISSIONS: `
+🔐 Stack Auth API permissions insufficient
+
+Your API credentials don't have required permissions for this operation.
+
+Required permissions for Stack Auth integration:
+- Read project information
+- Read user data
+- Access session management
+- Handle authentication flows
+
+To fix this:
+1. Check your API key permissions in Stack Auth dashboard
+2. Ensure you're using a Server Key (not Client Key) for server operations
+3. Verify the key hasn't been restricted or downgraded
+4. Contact your Stack Auth project admin if using team account
+
+Dashboard: https://app.stack-auth.com
+API Keys: Navigate to your project → Settings → API Keys
 `
 } as const;
 
