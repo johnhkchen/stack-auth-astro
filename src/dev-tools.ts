@@ -12,7 +12,7 @@
 import type { AstroIntegration } from 'astro';
 
 // Component prop validation schema from generate-prop-docs.js
-const COMPONENT_PROP_SPECS = {
+export const COMPONENT_PROP_SPECS = {
   SignIn: {
     onSuccess: { type: 'function', required: false },
     onError: { type: 'function', required: false },
@@ -186,6 +186,51 @@ export function validateProp(
 }
 
 /**
+ * Standard Astro framework directives that should not be validated as React props
+ */
+const ASTRO_FRAMEWORK_DIRECTIVES = new Set([
+  // Client hydration directives
+  'client:load',
+  'client:visible', 
+  'client:idle',
+  'client:media',
+  'client:only',
+  // Transition directives
+  'transition:name',
+  'transition:animate',
+  'transition:persist',
+  // Other framework attributes
+  'set:html',
+  'set:text',
+  'define:vars',
+  // Script and style directives
+  'is:raw',
+  'is:inline'
+]);
+
+/**
+ * Check if a prop name is an Astro framework directive
+ */
+function isAstroFrameworkDirective(propName: string): boolean {
+  return ASTRO_FRAMEWORK_DIRECTIVES.has(propName);
+}
+
+/**
+ * Filter out Astro framework directives from props
+ */
+function filterAstroDirectives(props: Record<string, any>): Record<string, any> {
+  const filteredProps: Record<string, any> = {};
+  
+  for (const [propName, propValue] of Object.entries(props)) {
+    if (!isAstroFrameworkDirective(propName)) {
+      filteredProps[propName] = propValue;
+    }
+  }
+  
+  return filteredProps;
+}
+
+/**
  * Validate all props for a component
  */
 export function validateComponentProps(
@@ -201,18 +246,21 @@ export function validateComponentProps(
     return { errors, warnings };
   }
 
-  // Validate each provided prop
-  for (const [propName, propValue] of Object.entries(props)) {
+  // Filter out Astro framework directives before validation
+  const reactProps = filterAstroDirectives(props);
+
+  // Validate each provided React prop
+  for (const [propName, propValue] of Object.entries(reactProps)) {
     const error = validateProp(componentName, propName, propValue, context);
     if (error) {
       errors.push(error);
     }
   }
 
-  // Check for missing required props
+  // Check for missing required props (using filtered props)
   for (const [propName, propSpec] of Object.entries(componentSpec)) {
     const spec = propSpec as any;
-    if (spec.required && !(propName in props)) {
+    if (spec.required && !(propName in reactProps)) {
       errors.push({
         component: componentName,
         prop: propName,
@@ -224,8 +272,8 @@ export function validateComponentProps(
     }
   }
 
-  // Check for deprecated props
-  const deprecationWarning = checkDeprecatedProps(componentName, props);
+  // Check for deprecated props (using filtered props)
+  const deprecationWarning = checkDeprecatedProps(componentName, reactProps);
   if (deprecationWarning) {
     warnings.push(deprecationWarning);
   }
@@ -538,4 +586,4 @@ function getComponentPropDescription(componentName: string, propName: string): s
 /**
  * Export type definitions and constants for external use
  */
-export { COMPONENT_PROP_SPECS, VERSION_COMPATIBILITY };
+export { VERSION_COMPATIBILITY };
