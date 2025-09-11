@@ -5,7 +5,10 @@
     "skipDefaultLibCheck": true,
     "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "noEmit": false,
+    "outDir": "./dist",
+    "rootDir": "./src"
   },
   "include": [
     "src/**/*",
