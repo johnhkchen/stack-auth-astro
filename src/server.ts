@@ -30,6 +30,14 @@ import {
   clearRateLimit,
   RATE_LIMIT_CONFIGS 
 } from './server/rate-limiting.js';
+import { 
+  startAuthPerformanceTracking,
+  recordProviderApiTime,
+  getAuthPerformanceStats,
+  getAuthPerformanceSummary,
+  clearAuthPerformanceData,
+  recordProviderHealthCheck
+} from './server/performance.js';
 
 /**
  * Get the authenticated user from the request context
@@ -42,6 +50,9 @@ export async function getUser(
   context: APIContext, 
   options: SecurityValidationOptions = {}
 ): Promise<User | null> {
+  // Start performance tracking
+  const performanceTracker = startAuthPerformanceTracking('getUser', context);
+  
   try {
     // Apply security validation if requested
     if (options.requireSecureTransport || options.validateOrigin || options.requireCSRF) {
@@ -55,9 +66,16 @@ export async function getUser(
       logAuthSuccess(context, user, { operation: 'getUser' });
     }
     
+    // Record successful performance tracking
+    performanceTracker.success(user, context.locals.session);
+    
     return user;
     
   } catch (error) {
+    // Record error in performance tracking
+    const errorCode = error instanceof SecurityError ? error.code : 'UNKNOWN_ERROR';
+    performanceTracker.error(errorCode, error instanceof Error ? error.message : 'Unknown error');
+    
     if (error instanceof SecurityError) {
       logSecurityViolation(
         AuditEventType.SUSPICIOUS_ACTIVITY,
@@ -92,6 +110,9 @@ export async function getSession(
   context: APIContext, 
   options: SecurityValidationOptions = {}
 ): Promise<Session | null> {
+  // Start performance tracking
+  const performanceTracker = startAuthPerformanceTracking('getSession', context);
+  
   try {
     // Apply security validation if requested
     if (options.requireSecureTransport || options.validateOrigin || options.requireCSRF) {
@@ -102,15 +123,23 @@ export async function getSession(
     
     // Log session access for audit purposes (low priority, only in development)
     if (session && process.env.NODE_ENV === 'development') {
-      logAuthSuccess(context, context.locals.user, { 
+      logAuthSuccess(context, context.locals.user || null, { 
         operation: 'getSession',
-        sessionId: session.id 
+        sessionId: (session as any)?.id || 'unknown'
       });
     }
+    
+    // Record successful performance tracking with cache hit indication
+    // Note: Cache hit information would come from middleware, this is server-side access
+    performanceTracker.success(context.locals.user, session, true);
     
     return session;
     
   } catch (error) {
+    // Record error in performance tracking
+    const errorCode = error instanceof SecurityError ? error.code : 'UNKNOWN_ERROR';
+    performanceTracker.error(errorCode, error instanceof Error ? error.message : 'Unknown error');
+    
     if (error instanceof SecurityError) {
       logSecurityViolation(
         AuditEventType.SUSPICIOUS_ACTIVITY,
@@ -193,6 +222,9 @@ export async function requireAuth(
   context: APIContext, 
   options: RequireAuthOptions & SecurityValidationOptions = {}
 ): Promise<User> {
+  // Start performance tracking
+  const performanceTracker = startAuthPerformanceTracking('requireAuth', context);
+  
   try {
     // Apply rate limiting for authentication attempts
     enforceRateLimit(context.request, RATE_LIMIT_CONFIGS.AUTH_ENDPOINTS);
@@ -221,6 +253,9 @@ export async function requireAuth(
         endpoint: context.url.pathname 
       });
       
+      // Record successful performance tracking
+      performanceTracker.success(user, context.locals.session);
+      
       return user;
     }
     
@@ -235,6 +270,9 @@ export async function requireAuth(
     const isApi = isApiRoute(context);
     
     if (isApi) {
+      // Record API error in performance tracking
+      performanceTracker.error('API_UNAUTHENTICATED', 'User not authenticated for API route');
+      
       // Create secure 401 response for API routes
       const response = new Response(JSON.stringify({
         error: 'Authentication required',
@@ -253,6 +291,9 @@ export async function requireAuth(
       
       throw response;
     } else {
+      // Record redirect in performance tracking (this is not an error, but a redirect)
+      performanceTracker.error('REDIRECT', 'User redirected to sign-in');
+      
       // Redirect for pages with URL preservation and validation
       const signInUrl = getSignInUrl(options.signInUrl);
       let returnUrl = options.redirectTo || context.url.pathname + context.url.search;
@@ -275,6 +316,12 @@ export async function requireAuth(
     }
     
   } catch (error) {
+    // Record error in performance tracking if not already recorded
+    if (!(error instanceof Response)) {
+      const errorCode = error instanceof SecurityError ? error.code : 'UNKNOWN_ERROR';
+      performanceTracker.error(errorCode, error instanceof Error ? error.message : 'Unknown error');
+    }
+    
     if (error instanceof SecurityError) {
       // Log security violations
       logSecurityViolation(
@@ -334,4 +381,41 @@ export async function requireAuth(
     // Re-throw the original error if it's already a Response
     throw error;
   }
+}
+
+/**
+ * Get current authentication performance statistics
+ * 
+ * @returns Current performance stats for all auth operations
+ */
+export function getPerformanceStats() {
+  return getAuthPerformanceStats();
+}
+
+/**
+ * Get authentication performance summary with alerts and recommendations
+ * 
+ * @returns Performance summary with actionable insights
+ */
+export function getPerformanceSummary() {
+  return getAuthPerformanceSummary();
+}
+
+/**
+ * Clear all collected performance data
+ * 
+ * Useful for testing or when starting fresh monitoring
+ */
+export function clearPerformanceData(): void {
+  clearAuthPerformanceData();
+}
+
+/**
+ * Record a Stack Auth provider health check result
+ * 
+ * @param responseTime - Time taken for health check in milliseconds
+ * @param success - Whether the health check succeeded
+ */
+export function recordHealthCheck(responseTime: number, success: boolean): void {
+  recordProviderHealthCheck(responseTime, success);
 }

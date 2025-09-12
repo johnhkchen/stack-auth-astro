@@ -18,6 +18,7 @@ import {
   createErrorWithGuide 
 } from './errors.js';
 import type { User, Session, StackAuthConfig } from './types.js';
+import { recordProviderApiTime } from './server/performance.js';
 
 // Simple in-memory session cache for performance optimization
 interface CachedSession {
@@ -91,8 +92,15 @@ async function validateSession(config: StackAuthConfig, request: Request): Promi
       tokenStore: request // Stack Auth will extract tokens from cookies/headers automatically
     });
 
+    // Track Stack Auth API response time
+    const apiStartTime = performance.now();
+    
     // Get user - this handles session validation internally
     const user = await stackApp.getUser();
+    
+    // Record API response time
+    const apiResponseTime = performance.now() - apiStartTime;
+    recordProviderApiTime(apiResponseTime);
     
     if (user) {
       // User is authenticated - access session if available
