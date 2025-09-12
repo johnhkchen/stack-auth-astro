@@ -192,21 +192,28 @@ export const onRequest = defineMiddleware(async (context, next) => {
         }
       } else {
         // No valid cache - perform session validation
-        const { user, session } = await validateSession(config, context.request);
+        if (!config) {
+          // Handle null config case - set empty locals and continue
+          context.locals.user = null;
+          context.locals.session = null;
+          setCachedSession(cacheKey, null, null);
+        } else {
+          const { user, session } = await validateSession(config, context.request);
         
-        // Populate Astro.locals
-        context.locals.user = user;
-        context.locals.session = session;
-        
-        // Cache the session data
-        setCachedSession(cacheKey, user, session);
-        
-        if (process.env.NODE_ENV === 'development' && context.url.searchParams.has('debug-auth')) {
-          console.log('🔍 Stack Auth: Session validated and cached', {
-            hasUser: !!user,
-            hasSession: !!session,
-            cacheKey: cacheKey.slice(0, 20) + '...'
-          });
+          // Populate Astro.locals
+          context.locals.user = user;
+          context.locals.session = session;
+          
+          // Cache the session data
+          setCachedSession(cacheKey, user, session);
+          
+          if (process.env.NODE_ENV === 'development' && context.url.searchParams.has('debug-auth')) {
+            console.log('🔍 Stack Auth: Session validated and cached', {
+              hasUser: !!user,
+              hasSession: !!session,
+              cacheKey: cacheKey.slice(0, 20) + '...'
+            });
+          }
         }
       }
     }
