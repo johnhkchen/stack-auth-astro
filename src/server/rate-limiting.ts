@@ -113,7 +113,7 @@ class InMemoryRateLimitStore {
   
   private cleanup(): void {
     const now = Date.now();
-    for (const [key, entry] of this.store) {
+    for (const [key, entry] of Array.from(this.store.entries())) {
       if (now > entry.resetTime) {
         this.store.delete(key);
       }
@@ -248,7 +248,7 @@ export function createRateLimitMiddleware(config: RateLimitConfig, customKeyGene
       if (error instanceof SecurityError && error.code === 'RATE_LIMIT_EXCEEDED') {
         const rateLimitInfo = (error as any).rateLimit as RateLimitResult;
         
-        return new Response(JSON.stringify({
+        return Promise.resolve(new Response(JSON.stringify({
           error: 'Rate limit exceeded',
           message: error.message,
           retryAfter: rateLimitInfo.retryAfter
@@ -262,7 +262,7 @@ export function createRateLimitMiddleware(config: RateLimitConfig, customKeyGene
             'X-RateLimit-Remaining': '0',
             'X-RateLimit-Reset': new Date(rateLimitInfo.resetTime).toISOString()
           }
-        });
+        }));
       }
       
       throw error;
@@ -311,7 +311,7 @@ export const RateLimiters = {
       RATE_LIMIT_CONFIGS.SENSITIVE_OPERATIONS,
       // Use user-based key if authenticated
       (ctx) => {
-        const user = ctx.locals.user;
+        const user = (ctx.locals as any).user;
         if (user && user.id) {
           return generateRateLimitKey(ctx.request, 'user', user.id);
         }

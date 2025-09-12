@@ -5,7 +5,7 @@
  * for authentication operations, useful for monitoring and debugging.
  */
 
-import type { APIRoute, APIContext } from 'astro';
+import type { APIContext } from 'astro';
 import { getAuthPerformanceStats, getAuthPerformanceSummary } from '../server/performance.js';
 
 /**
@@ -18,7 +18,7 @@ import { getAuthPerformanceStats, getAuthPerformanceSummary } from '../server/pe
  * - Stack Auth provider API response times
  * - Performance alerts and recommendations
  */
-export const GET: APIRoute = async ({ url, request }: APIContext) => {
+export async function GET({ url, request }: APIContext) {
   try {
     // Check if this is an authorized request (basic protection)
     const authHeader = request.headers.get('authorization');
@@ -131,7 +131,7 @@ export const GET: APIRoute = async ({ url, request }: APIContext) => {
  * Clears all collected performance data. Useful for testing
  * or when starting fresh monitoring periods.
  */
-export const DELETE: APIRoute = async ({ request }: APIContext) => {
+export async function DELETE({ request }: APIContext) {
   try {
     // Check authorization for destructive operations
     const authHeader = request.headers.get('authorization');

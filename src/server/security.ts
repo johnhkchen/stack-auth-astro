@@ -302,6 +302,7 @@ export function validateAPIContext(
   options: SecurityValidationOptions = {}
 ): void {
   const { request } = context;
+  const cookies = (context as any).cookies;
   
   // Validate secure transport in production
   if (options.requireSecureTransport && process.env.NODE_ENV === 'production') {
@@ -321,7 +322,7 @@ export function validateAPIContext(
   if (options.requireCSRF && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method)) {
     const csrfToken = request.headers.get(SECURITY_CONFIG.CSRF_HEADER_NAME) || 
                       new URL(request.url).searchParams.get('csrf_token');
-    const expectedToken = context.cookies.get(SECURITY_CONFIG.CSRF_COOKIE_NAME)?.value;
+    const expectedToken = cookies.get(SECURITY_CONFIG.CSRF_COOKIE_NAME)?.value;
     
     if (!csrfToken || !expectedToken || !validateCSRFToken(csrfToken, expectedToken)) {
       throw new SecurityError('Invalid or missing CSRF token', 'CSRF_TOKEN_INVALID');

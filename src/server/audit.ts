@@ -277,7 +277,7 @@ class AuditLogger {
       eventType: entry.eventType,
       riskLevel,
       userId: entry.user?.id || entry.userId,
-      sessionId: entry.session?.id || entry.sessionId,
+      sessionId: entry.sessionId,
       clientIP: this.config.hashSensitiveData ? generateSecureHash(clientIP).substring(0, 16) : clientIP,
       userAgent,
       endpoint,
@@ -405,7 +405,7 @@ export function logSystemError(context: APIContext | Request, error: Error, deta
 export function createAuditMiddleware(options?: { logAllRequests?: boolean }) {
   return async (context: APIContext, next: () => Promise<Response>): Promise<Response> => {
     const startTime = Date.now();
-    let response: Response;
+    let response: Response | undefined;
     let error: Error | undefined;
     
     try {
@@ -417,12 +417,12 @@ export function createAuditMiddleware(options?: { logAllRequests?: boolean }) {
       const duration = Date.now() - startTime;
       
       // Log the request if configured or if there was an error
-      if (options?.logAllRequests || error || (response! && response.status >= 400)) {
+      if (options?.logAllRequests || error || (response && response.status >= 400)) {
         auditLogger.log({
           eventType: error ? AuditEventType.SYSTEM_ERROR : AuditEventType.AUTH_SUCCESS,
           message: error ? 
             `Request failed: ${error.message}` : 
-            `Request completed with status ${response.status}`,
+            `Request completed with status ${response?.status || 'unknown'}`,
           context,
           error,
           details: {
@@ -434,7 +434,7 @@ export function createAuditMiddleware(options?: { logAllRequests?: boolean }) {
       }
     }
     
-    return response!;
+    return response as Response;
   };
 }
 
