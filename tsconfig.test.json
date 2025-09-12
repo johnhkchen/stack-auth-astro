@@ -5,7 +5,8 @@
     "skipLibCheck": true,
     "allowJs": true,
     "noEmit": true,
-    "rootDir": "."
+    "rootDir": ".",
+    "jsx": "react"
   },
   "include": [
     "src/**/*.test.ts",

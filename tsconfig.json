@@ -17,7 +17,8 @@
     "types": ["node", "react", "react-dom"],
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true
+    "noEmit": true,
+    "jsx": "react"
   },
   "include": [
     "src/**/*",

@@ -28,9 +28,12 @@ function getReporters() {
 }
 
 export default defineConfig({
+  // Unified esbuild configuration for JSX support
   esbuild: {
-    jsx: 'automatic',
-    jsxImportSource: 'react'
+    jsx: 'transform',
+    jsxFactory: 'React.createElement',
+    jsxFragment: 'React.Fragment',
+    target: 'node18'
   },
   test: {
     // Environment configuration - default to jsdom for React testing
@@ -80,10 +83,10 @@ export default defineConfig({
       }
     },
     
-    // TypeScript support
+    // TypeScript support with updated tsconfig for testing
     typecheck: {
       enabled: true,
-      tsconfig: './tsconfig.json'
+      tsconfig: './tsconfig.test.json'
     },
     
     // Setup files for mocking and test utilities
@@ -125,11 +128,6 @@ export default defineConfig({
     // Enhanced module resolution for better dependency handling
     define: {
       'import.meta.vitest': 'undefined',
-    },
-    
-    // ESM/CJS compatibility settings
-    esbuild: {
-      target: 'node18'
     }
   },
   
