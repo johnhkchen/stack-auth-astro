@@ -19,6 +19,16 @@ import {
 } from '@stackframe/stack';
 import { createValidatedComponents } from './component-wrapper.js';
 import { createAuthStateBridge, getHydrationData, type HydrationOptions, type AuthState } from './auth-state.js';
+import { 
+  StackAuthErrorBoundary, 
+  StackAuthComponentBoundary,
+  withStackAuthErrorBoundary,
+  useStackAuthErrorHandler,
+  type ErrorFallbackProps,
+  type StackAuthErrorBoundaryProps
+} from './error-boundary.js';
+import { StackAuthClientError, CLIENT_ERROR_CODES } from './client.js';
+import { getErrorMessage, formatClientError, createErrorNotification, logError } from './error-messages.js';
 
 // Real Stack Auth component re-exports with validation wrapper integration
 
@@ -42,7 +52,7 @@ export interface AstroStackProviderProps extends Omit<StackProviderProps, 'child
   onHydrationComplete?: (islandId: string) => void;
   fallback?: React.ReactNode;
   loadingFallback?: React.ReactNode;
-  errorFallback?: React.ComponentType<{ error: Error; retry: () => void }>;
+  errorFallback?: React.ComponentType<ErrorFallbackProps>;
 }
 
 // Legacy interface for backward compatibility
@@ -108,7 +118,7 @@ const AstroStackProviderImpl: React.FC<AstroStackProviderProps> = ({
   onHydrationComplete,
   fallback = null,
   loadingFallback = null,
-  errorFallback: ErrorFallback,
+  errorFallback: ErrorFallback = undefined,
   ...stackProviderProps
 }) => {
   // State for managing auth data and hydration status
@@ -185,7 +195,27 @@ const AstroStackProviderImpl: React.FC<AstroStackProviderProps> = ({
         authBridge.getAuthState().catch(console.error);
       }
     };
-    return React.createElement(ErrorFallback, { error: authState.error, retry });
+    
+    // Ensure error is properly formatted
+    const formattedError = authState.error instanceof StackAuthClientError 
+      ? authState.error 
+      : new StackAuthClientError(
+          authState.error.message || 'Component error',
+          'COMPONENT_ERROR',
+          CLIENT_ERROR_CODES.COMPONENT_ERROR,
+          authState.error
+        );
+    
+    return React.createElement(ErrorFallback, { 
+      error: formattedError, 
+      retry, 
+      resetError: () => setAuthState(prev => ({ ...prev, error: null })),
+      details: {
+        componentStack: 'AstroStackProvider',
+        errorBoundary: 'AstroStackProvider',
+        operation: 'component hydration'
+      }
+    });
   }
   
   // If no auth state available and fallback provided, show fallback
@@ -216,12 +246,75 @@ const validatedComponents = createValidatedComponents({
   enhanced: true // Enable enhanced development features
 });
 
-// Export validated components with proper Stack Auth typing
-export const UserButton = validatedComponents.UserButton as typeof StackUserButton;
-export const SignIn = validatedComponents.SignIn as typeof StackSignIn;
-export const SignUp = validatedComponents.SignUp as typeof StackSignUp;
-export const AccountSettings = validatedComponents.AccountSettings as typeof StackAccountSettings;
+// Wrap components with error boundaries for better reliability
+const UserButtonWithBoundary = withStackAuthErrorBoundary(validatedComponents.UserButton, {
+  level: 'component',
+  isolateFailures: true,
+  enableRecovery: true,
+  resetOnPropsChange: true
+});
+
+const SignInWithBoundary = withStackAuthErrorBoundary(validatedComponents.SignIn, {
+  level: 'component',
+  isolateFailures: true,
+  enableRecovery: true,
+  resetOnPropsChange: true
+});
+
+const SignUpWithBoundary = withStackAuthErrorBoundary(validatedComponents.SignUp, {
+  level: 'component',
+  isolateFailures: true,
+  enableRecovery: true,
+  resetOnPropsChange: true
+});
+
+const AccountSettingsWithBoundary = withStackAuthErrorBoundary(validatedComponents.AccountSettings, {
+  level: 'component',
+  isolateFailures: true,
+  enableRecovery: true,
+  resetOnPropsChange: true
+});
+
+// Export validated components with proper Stack Auth typing and error boundaries
+export const UserButton = UserButtonWithBoundary as typeof StackUserButton;
+export const SignIn = SignInWithBoundary as typeof StackSignIn;
+export const SignUp = SignUpWithBoundary as typeof StackSignUp;
+export const AccountSettings = AccountSettingsWithBoundary as typeof StackAccountSettings;
 export const StackProvider = validatedComponents.StackProvider as typeof StackStackProvider;
 export const AstroStackProvider = validatedComponents.AstroStackProvider as React.FC<AstroStackProviderProps>;
+
+// Export error handling components and utilities
+export {
+  StackAuthErrorBoundary,
+  StackAuthComponentBoundary,
+  withStackAuthErrorBoundary,
+  useStackAuthErrorHandler,
+  type ErrorFallbackProps,
+  type StackAuthErrorBoundaryProps
+};
+
+// Export error classes and utilities
+export {
+  StackAuthClientError,
+  CLIENT_ERROR_CODES,
+  getErrorMessage,
+  formatClientError,
+  createErrorNotification,
+  logError
+};
+
+// Export edge case handling utilities
+export {
+  detectBrowserCapabilities,
+  getNetworkCondition,
+  analyzeSecurityContext,
+  getBrowserHandler,
+  getNetworkHandler,
+  performEnvironmentCheck,
+  initializeEdgeCaseHandling,
+  type BrowserCapabilities,
+  type NetworkCondition,
+  type SecurityContext
+} from './edge-case-handler.js';
 
 // No default export to avoid mixed exports warning
