@@ -1,0 +1,635 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getUser } from 'astro-stack-auth/server';
+
+const user = await getUser(Astro);
+---
+
+<Layout title="Sprint 004 Demo - Full Featured">
+  <div class="px-4 py-6 sm:px-0">
+    <!-- Header -->
+    <div class="text-center mb-12">
+      <h1 class="text-4xl font-bold text-gray-900 mb-4">
+        🚀 Sprint 004 Integration Demo
+      </h1>
+      <p class="text-xl text-gray-600 mb-6">
+        Complete implementation of all Sprint 004 features in a production-ready Astro application
+      </p>
+      
+      <div class="flex flex-wrap justify-center gap-2 mb-8">
+        <span class="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">Feature #3: SignIn Component</span>
+        <span class="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">Feature #5: Client signOut</span>
+        <span class="px-3 py-1 bg-purple-100 text-purple-800 text-sm font-medium rounded-full">Feature #7: UserButton</span>
+        <span class="px-3 py-1 bg-indigo-100 text-indigo-800 text-sm font-medium rounded-full">Feature #8: SignUp Component</span>
+        <span class="px-3 py-1 bg-red-100 text-red-800 text-sm font-medium rounded-full">Feature #10: Error Handling</span>
+      </div>
+    </div>
+
+    <!-- Server-side Authentication Status -->
+    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 mb-8">
+      <h2 class="text-2xl font-semibold text-gray-900 mb-4">
+        📊 Server-side Authentication Status
+      </h2>
+      
+      {user ? (
+        <div class="flex items-center space-x-4">
+          <div class="flex-shrink-0">
+            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+              <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </div>
+          </div>
+          <div>
+            <p class="text-lg font-medium text-gray-900">
+              Authenticated as: {user.displayName || user.primaryEmail}
+            </p>
+            <p class="text-gray-600">
+              Server-side user detection working correctly
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div class="flex items-center space-x-4">
+          <div class="flex-shrink-0">
+            <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+              <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+              </svg>
+            </div>
+          </div>
+          <div>
+            <p class="text-lg font-medium text-gray-900">
+              No active session detected
+            </p>
+            <p class="text-gray-600">
+              Server-side authentication check: Not signed in
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+
+    <!-- Component Demo Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+      
+      <!-- UserButton Demo -->
+      <div class="bg-white border border-gray-200 rounded-lg p-6">
+        <div class="flex items-center space-x-2 mb-4">
+          <h3 class="text-xl font-semibold text-gray-900">🔘 UserButton Component</h3>
+          <span class="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">Feature #7</span>
+        </div>
+        <p class="text-gray-600 mb-6">
+          Smart user interface component that adapts based on authentication state with multiple hydration strategies.
+        </p>
+        
+        <div class="space-y-4">
+          <div class="border border-gray-100 rounded-lg p-4 bg-gray-50">
+            <h4 class="font-medium text-gray-900 mb-2">Immediate Hydration</h4>
+            <div id="userbutton-immediate" class="min-h-[50px] flex items-center">
+              <div class="animate-pulse bg-gray-200 h-8 w-32 rounded"></div>
+            </div>
+          </div>
+          
+          <div class="border border-gray-100 rounded-lg p-4 bg-gray-50">
+            <h4 class="font-medium text-gray-900 mb-2">Lazy Hydration</h4>
+            <div id="userbutton-lazy" class="min-h-[50px] flex items-center">
+              <div class="animate-pulse bg-gray-200 h-8 w-32 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SignIn/SignUp Components -->
+      <div class="bg-white border border-gray-200 rounded-lg p-6">
+        <div class="flex items-center space-x-2 mb-4">
+          <h3 class="text-xl font-semibold text-gray-900">🔐 Authentication Components</h3>
+          <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">Features #3 & #8</span>
+        </div>
+        <p class="text-gray-600 mb-6">
+          React-based SignIn and SignUp components with comprehensive error handling and provider support.
+        </p>
+        
+        {!user ? (
+          <div class="space-y-4">
+            <div class="border border-gray-100 rounded-lg p-4 bg-gray-50">
+              <h4 class="font-medium text-gray-900 mb-2">SignIn Component</h4>
+              <div id="signin-demo" class="min-h-[50px] flex items-center">
+                <div class="animate-pulse bg-gray-200 h-8 w-40 rounded"></div>
+              </div>
+            </div>
+            
+            <div class="border border-gray-100 rounded-lg p-4 bg-gray-50">
+              <h4 class="font-medium text-gray-900 mb-2">SignUp Component</h4>
+              <div id="signup-demo" class="min-h-[50px] flex items-center">
+                <div class="animate-pulse bg-gray-200 h-8 w-40 rounded"></div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div class="flex items-center space-x-2">
+              <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              <p class="text-green-800 font-medium">
+                Already authenticated! Authentication components are not displayed for signed-in users.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <!-- Client-side Functions -->
+      <div class="bg-white border border-gray-200 rounded-lg p-6">
+        <div class="flex items-center space-x-2 mb-4">
+          <h3 class="text-xl font-semibold text-gray-900">⚡ Client-side Functions</h3>
+          <span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded">Feature #5</span>
+        </div>
+        <p class="text-gray-600 mb-6">
+          Programmatic authentication functions with customizable options and comprehensive error handling.
+        </p>
+        
+        {user ? (
+          <div class="space-y-3">
+            <button 
+              id="signout-basic"
+              class="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
+            >
+              Sign Out (Basic)
+            </button>
+            <button 
+              id="signout-with-clear"
+              class="w-full bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition-colors"
+            >
+              Sign Out + Clear Storage
+            </button>
+            <button 
+              id="signout-custom-redirect"
+              class="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              Sign Out + Custom Redirect
+            </button>
+          </div>
+        ) : (
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p class="text-blue-800">
+              💡 Sign in first to see client-side signOut function demos
+            </p>
+          </div>
+        )}
+      </div>
+
+      <!-- Error Handling Demo -->
+      <div class="bg-white border border-gray-200 rounded-lg p-6">
+        <div class="flex items-center space-x-2 mb-4">
+          <h3 class="text-xl font-semibold text-gray-900">🚨 Error Handling</h3>
+          <span class="px-2 py-1 bg-red-100 text-red-800 text-xs font-medium rounded">Feature #10</span>
+        </div>
+        <p class="text-gray-600 mb-6">
+          Comprehensive error handling with user-friendly messages and recovery mechanisms.
+        </p>
+        
+        <div class="space-y-3">
+          <button 
+            id="simulate-network-error"
+            class="w-full bg-yellow-600 text-white py-2 px-4 rounded-lg hover:bg-yellow-700 transition-colors"
+          >
+            Simulate Network Error
+          </button>
+          <button 
+            id="simulate-rate-limit"
+            class="w-full bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition-colors"
+          >
+            Simulate Rate Limit
+          </button>
+          <button 
+            id="simulate-offline"
+            class="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            Simulate Offline Error
+          </button>
+        </div>
+        
+        <div id="error-display" class="mt-4"></div>
+      </div>
+    </div>
+
+    <!-- Cross-Component Synchronization -->
+    <div class="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-8 mb-12">
+      <h2 class="text-2xl font-semibold text-gray-900 mb-6 text-center">
+        🔄 Cross-Component State Synchronization
+      </h2>
+      <p class="text-center text-gray-600 mb-8">
+        Multiple component islands that maintain synchronized authentication state across the page and browser tabs.
+      </p>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white border border-gray-200 rounded-lg p-4 text-center">
+          <h4 class="font-medium text-gray-900 mb-2">Controller Island</h4>
+          <div id="sync-controller" class="min-h-[50px] flex items-center justify-center">
+            <div class="animate-pulse bg-gray-200 h-8 w-24 rounded"></div>
+          </div>
+          <p class="text-xs text-gray-500 mt-2">Tab + Local Sync</p>
+        </div>
+        
+        <div class="bg-white border border-gray-200 rounded-lg p-4 text-center">
+          <h4 class="font-medium text-gray-900 mb-2">Mirror Island 1</h4>
+          <div id="sync-mirror-1" class="min-h-[50px] flex items-center justify-center">
+            <div class="animate-pulse bg-gray-200 h-8 w-24 rounded"></div>
+          </div>
+          <p class="text-xs text-gray-500 mt-2">Local Sync Only</p>
+        </div>
+        
+        <div class="bg-white border border-gray-200 rounded-lg p-4 text-center">
+          <h4 class="font-medium text-gray-900 mb-2">Mirror Island 2</h4>
+          <div id="sync-mirror-2" class="min-h-[50px] flex items-center justify-center">
+            <div class="animate-pulse bg-gray-200 h-8 w-24 rounded"></div>
+          </div>
+          <p class="text-xs text-gray-500 mt-2">Visible Hydration</p>
+        </div>
+        
+        <div class="bg-white border border-gray-200 rounded-lg p-4 text-center">
+          <h4 class="font-medium text-gray-900 mb-2">Cross-Tab Island</h4>
+          <div id="sync-cross-tab" class="min-h-[50px] flex items-center justify-center">
+            <div class="animate-pulse bg-gray-200 h-8 w-24 rounded"></div>
+          </div>
+          <p class="text-xs text-gray-500 mt-2">Cross-Tab Sync</p>
+        </div>
+      </div>
+      
+      <div class="text-center mt-6 space-x-4">
+        <button 
+          id="trigger-sync"
+          class="bg-purple-600 text-white py-2 px-6 rounded-lg hover:bg-purple-700 transition-colors"
+        >
+          Trigger Sync Event
+        </button>
+        <button 
+          id="open-tab"
+          class="bg-indigo-600 text-white py-2 px-6 rounded-lg hover:bg-indigo-700 transition-colors"
+        >
+          Test Cross-Tab Sync
+        </button>
+      </div>
+    </div>
+
+    <!-- Performance Metrics -->
+    <div class="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-8 mb-12">
+      <h2 class="text-2xl font-semibold text-gray-900 mb-6 text-center">
+        ⚡ Performance Metrics
+      </h2>
+      
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+        <div class="bg-white rounded-lg p-4 border border-gray-200">
+          <div class="text-3xl font-bold text-blue-600" id="perf-hydration">-</div>
+          <div class="text-sm text-gray-600">Hydration Time (ms)</div>
+        </div>
+        <div class="bg-white rounded-lg p-4 border border-gray-200">
+          <div class="text-3xl font-bold text-green-600" id="perf-components">0</div>
+          <div class="text-sm text-gray-600">Active Components</div>
+        </div>
+        <div class="bg-white rounded-lg p-4 border border-gray-200">
+          <div class="text-3xl font-bold text-purple-600" id="perf-sync-events">0</div>
+          <div class="text-sm text-gray-600">Sync Events</div>
+        </div>
+        <div class="bg-white rounded-lg p-4 border border-gray-200">
+          <div class="text-3xl font-bold text-red-600" id="perf-errors">0</div>
+          <div class="text-sm text-gray-600">Errors Handled</div>
+        </div>
+      </div>
+      
+      <div class="text-center mt-6 space-x-4">
+        <button 
+          id="refresh-stats"
+          class="bg-green-600 text-white py-2 px-6 rounded-lg hover:bg-green-700 transition-colors"
+        >
+          Refresh Stats
+        </button>
+        <button 
+          id="reset-stats"
+          class="bg-gray-600 text-white py-2 px-6 rounded-lg hover:bg-gray-700 transition-colors"
+        >
+          Reset Counters
+        </button>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="text-center">
+      <h2 class="text-2xl font-semibold text-gray-900 mb-6">
+        🧭 Explore More Features
+      </h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <a 
+          href="/" 
+          class="block bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+        >
+          <h3 class="font-semibold text-gray-900 mb-2">← Main Dashboard</h3>
+          <p class="text-gray-600 text-sm">Return to the main application dashboard</p>
+        </a>
+        
+        <a 
+          href="/protected" 
+          class="block bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+        >
+          <h3 class="font-semibold text-gray-900 mb-2">🔒 Protected Content</h3>
+          <p class="text-gray-600 text-sm">Test server-side authentication protection</p>
+        </a>
+        
+        <a 
+          href="/settings" 
+          class="block bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+        >
+          <h3 class="font-semibold text-gray-900 mb-2">⚙️ Account Settings</h3>
+          <p class="text-gray-600 text-sm">Manage your account with React components</p>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript for Interactive Features -->
+  <script>
+    // Import all Sprint 004 features
+    import { 
+      UserButton, 
+      SignIn, 
+      SignUp, 
+      AstroStackProvider,
+      StackAuthClientError,
+      CLIENT_ERROR_CODES 
+    } from 'astro-stack-auth/components';
+    import { signOut, broadcastSignIn } from 'astro-stack-auth/client';
+    import { createRoot } from 'react-dom/client';
+    
+    // Performance tracking
+    let performanceMetrics = {
+      hydrationStartTime: performance.now(),
+      componentCount: 0,
+      syncEvents: 0,
+      errorsHandled: 0
+    };
+    
+    function updatePerformanceDisplay() {
+      document.getElementById('perf-hydration').textContent = 
+        Math.round(performance.now() - performanceMetrics.hydrationStartTime);
+      document.getElementById('perf-components').textContent = performanceMetrics.componentCount;
+      document.getElementById('perf-sync-events').textContent = performanceMetrics.syncEvents;
+      document.getElementById('perf-errors').textContent = performanceMetrics.errorsHandled;
+    }
+    
+    // Initialize UserButton components
+    const userButtonConfigs = [
+      { id: 'userbutton-immediate', strategy: 'immediate' },
+      { id: 'userbutton-lazy', strategy: 'lazy' }
+    ];
+    
+    userButtonConfigs.forEach(config => {
+      const container = document.getElementById(config.id);
+      if (container) {
+        const root = createRoot(container);
+        
+        root.render(
+          React.createElement(AstroStackProvider, {
+            initialUser: {user && JSON.stringify(user)},
+            hydrationStrategy: config.strategy,
+            onHydrationComplete: () => {
+              performanceMetrics.componentCount++;
+              updatePerformanceDisplay();
+            },
+            onAuthStateChange: (state) => {
+              performanceMetrics.syncEvents++;
+              updatePerformanceDisplay();
+            }
+          },
+            React.createElement(UserButton, {
+              className: 'inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700'
+            })
+          )
+        );
+      }
+    });
+    
+    // Initialize auth components if user not signed in
+    {!user && `
+      const authComponents = [
+        { id: 'signin-demo', component: SignIn, name: 'SignIn' },
+        { id: 'signup-demo', component: SignUp, name: 'SignUp' }
+      ];
+      
+      authComponents.forEach(({ id, component, name }) => {
+        const container = document.getElementById(id);
+        if (container) {
+          const root = createRoot(container);
+          
+          root.render(
+            React.createElement(AstroStackProvider, {
+              hydrationStrategy: 'immediate',
+              errorFallback: ({ error, retry }) => 
+                React.createElement('div', { className: 'text-red-600' },
+                  React.createElement('p', null, error.message),
+                  React.createElement('button', { 
+                    onClick: retry, 
+                    className: 'mt-2 px-3 py-1 bg-red-100 text-red-800 rounded text-sm'
+                  }, 'Retry')
+                ),
+              onHydrationComplete: () => {
+                performanceMetrics.componentCount++;
+                updatePerformanceDisplay();
+              }
+            },
+              React.createElement(component, {
+                className: 'inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700',
+                onSuccess: () => {
+                  alert(\`\${name} successful! Page will reload.\`);
+                  window.location.reload();
+                },
+                onError: (error) => {
+                  performanceMetrics.errorsHandled++;
+                  updatePerformanceDisplay();
+                  console.error(\`\${name} error:\`, error);
+                }
+              })
+            )
+          );
+        }
+      });
+    `}
+    
+    // Initialize sync components
+    const syncConfigs = [
+      { id: 'sync-controller', enableSync: true, syncAcrossTabs: true },
+      { id: 'sync-mirror-1', enableSync: true, syncAcrossTabs: false },
+      { id: 'sync-mirror-2', enableSync: true, syncAcrossTabs: false, strategy: 'onVisible' },
+      { id: 'sync-cross-tab', enableSync: true, syncAcrossTabs: true }
+    ];
+    
+    syncConfigs.forEach(config => {
+      const container = document.getElementById(config.id);
+      if (container) {
+        const root = createRoot(container);
+        
+        root.render(
+          React.createElement(AstroStackProvider, {
+            initialUser: {user && JSON.stringify(user)},
+            enableSync: config.enableSync,
+            syncAcrossTabs: config.syncAcrossTabs,
+            hydrationStrategy: config.strategy || 'immediate',
+            onHydrationComplete: () => {
+              performanceMetrics.componentCount++;
+              updatePerformanceDisplay();
+            },
+            onAuthStateChange: (state) => {
+              performanceMetrics.syncEvents++;
+              updatePerformanceDisplay();
+              console.log(\`\${config.id} auth state:\`, state.isAuthenticated ? 'authenticated' : 'unauthenticated');
+            }
+          },
+            React.createElement(UserButton, {
+              className: 'inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700'
+            })
+          )
+        );
+      }
+    });
+    
+    // SignOut button handlers
+    {user && `
+      document.getElementById('signout-basic')?.addEventListener('click', async () => {
+        try {
+          await signOut({
+            onSuccess: () => {
+              alert('✅ Signed out successfully!');
+              window.location.reload();
+            }
+          });
+        } catch (error) {
+          performanceMetrics.errorsHandled++;
+          updatePerformanceDisplay();
+          alert(\`❌ Sign out error: \${error.message}\`);
+        }
+      });
+      
+      document.getElementById('signout-with-clear')?.addEventListener('click', async () => {
+        try {
+          await signOut({
+            clearLocalStorage: true,
+            onSuccess: () => {
+              alert('✅ Signed out and cleared storage!');
+              window.location.reload();
+            }
+          });
+        } catch (error) {
+          performanceMetrics.errorsHandled++;
+          updatePerformanceDisplay();
+          alert(\`❌ Sign out error: \${error.message}\`);
+        }
+      });
+      
+      document.getElementById('signout-custom-redirect')?.addEventListener('click', async () => {
+        try {
+          await signOut({
+            redirectTo: '/goodbye',
+            onSuccess: () => {
+              alert('✅ Signing out with custom redirect...');
+            }
+          });
+        } catch (error) {
+          performanceMetrics.errorsHandled++;
+          updatePerformanceDisplay();
+          alert(\`❌ Sign out error: \${error.message}\`);
+          window.location.href = '/goodbye';
+        }
+      });
+    `}
+    
+    // Error simulation
+    function displayError(errorType, message, recovery) {
+      const errorDisplay = document.getElementById('error-display');
+      errorDisplay.innerHTML = `
+        <div class="mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
+          <div class="flex items-start">
+            <svg class="w-5 h-5 text-red-600 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+            </svg>
+            <div class="flex-1">
+              <h4 class="text-sm font-medium text-red-800">\${errorType} Error</h4>
+              <p class="text-sm text-red-700 mt-1">\${message}</p>
+              <p class="text-sm text-red-600 mt-2 font-medium">Recovery: \${recovery}</p>
+              <button 
+                onclick="document.getElementById('error-display').innerHTML = ''"
+                class="mt-3 px-3 py-1 bg-red-100 text-red-800 text-sm rounded hover:bg-red-200 transition-colors"
+              >
+                Clear Error
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      performanceMetrics.errorsHandled++;
+      updatePerformanceDisplay();
+    }
+    
+    document.getElementById('simulate-network-error')?.addEventListener('click', () => {
+      displayError(
+        'NETWORK_ERROR',
+        'Failed to connect to authentication service',
+        CLIENT_ERROR_CODES.NETWORK_ERROR
+      );
+    });
+    
+    document.getElementById('simulate-rate-limit')?.addEventListener('click', () => {
+      displayError(
+        'RATE_LIMITED', 
+        'Too many authentication requests',
+        CLIENT_ERROR_CODES.RATE_LIMITED
+      );
+    });
+    
+    document.getElementById('simulate-offline')?.addEventListener('click', () => {
+      displayError(
+        'OFFLINE',
+        'You appear to be offline',
+        CLIENT_ERROR_CODES.OFFLINE
+      );
+    });
+    
+    // Sync demonstration
+    document.getElementById('trigger-sync')?.addEventListener('click', () => {
+      const mockUser = { id: 'demo-user', email: 'demo@example.com' };
+      const mockSession = { id: 'demo-session' };
+      
+      broadcastSignIn(mockUser, mockSession);
+      
+      performanceMetrics.syncEvents++;
+      updatePerformanceDisplay();
+      
+      alert('🔄 Sync event triggered! Check console for sync logs and watch components update.');
+    });
+    
+    document.getElementById('open-tab')?.addEventListener('click', () => {
+      window.open(window.location.href, '_blank');
+      alert('🌟 New tab opened! Try triggering sync events to see cross-tab synchronization.');
+    });
+    
+    // Performance controls
+    document.getElementById('refresh-stats')?.addEventListener('click', () => {
+      performanceMetrics.syncEvents++;
+      updatePerformanceDisplay();
+      alert('📊 Performance stats refreshed! Check console for detailed metrics.');
+      console.log('Performance Metrics:', performanceMetrics);
+    });
+    
+    document.getElementById('reset-stats')?.addEventListener('click', () => {
+      performanceMetrics.syncEvents = 0;
+      performanceMetrics.errorsHandled = 0;
+      updatePerformanceDisplay();
+      alert('🔄 Performance counters reset!');
+    });
+    
+    // Initial performance update
+    updatePerformanceDisplay();
+  </script>
+</Layout>
