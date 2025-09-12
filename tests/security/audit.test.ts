@@ -22,19 +22,17 @@ import {
 import type { APIContext } from 'astro';
 import type { User } from '@stackframe/stack';
 
-// Mock console methods to capture log output
-const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
 describe('Audit Logging', () => {
   let mockContext: APIContext;
   let mockUser: User;
+  let consoleSpy: any;
   
   beforeEach(() => {
     // Clear any existing logs
     auditLogger.clearBuffer();
     
-    // Reset console spy
-    consoleSpy.mockClear();
+    // Create console spy
+    consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     
     // Create mock API context
     mockContext = {
@@ -60,6 +58,7 @@ describe('Audit Logging', () => {
   
   afterEach(() => {
     auditLogger.clearBuffer();
+    consoleSpy?.mockRestore();
   });
   
   describe('Basic Logging', () => {
@@ -375,6 +374,41 @@ describe('Audit Logging', () => {
       expect(calls[0][0]).toContain('[AUDIT:LOW]');
       expect(calls[1][0]).toContain('[AUDIT:MEDIUM]');
       expect(calls[2][0]).toContain('[AUDIT:HIGH]');
+    });
+  });
+  
+  describe('Edge Cases', () => {
+    it('should handle extremely long log messages', () => {
+      const longMessage = 'x'.repeat(10000);
+      logAuthFailure(mockContext, longMessage);
+      
+      const logs = auditLogger.getRecentLogs();
+      expect(logs).toHaveLength(1);
+      expect(logs[0].message).toBe(`Authentication failed: ${longMessage}`);
+    });
+    
+    it('should handle special characters in log messages', () => {
+      const specialMessage = 'Test with "quotes" and \n newlines \t tabs';
+      logAuthFailure(mockContext, specialMessage);
+      
+      const logs = auditLogger.getRecentLogs();
+      expect(logs).toHaveLength(1);
+      expect(logs[0].message).toContain(specialMessage);
+    });
+    
+    it('should handle concurrent logging', () => {
+      // Simulate concurrent log entries
+      const promises = [];
+      for (let i = 0; i < 10; i++) {
+        promises.push(Promise.resolve().then(() => {
+          logAuthSuccess(mockContext, { ...mockUser, id: `user-${i}` });
+        }));
+      }
+      
+      return Promise.all(promises).then(() => {
+        const logs = auditLogger.getRecentLogs();
+        expect(logs.length).toBeGreaterThanOrEqual(10);
+      });
     });
   });
 });
