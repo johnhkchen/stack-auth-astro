@@ -1,0 +1,202 @@
+---
+/**
+ * Astro test fixture for component hydration testing
+ * 
+ * This file demonstrates different hydration strategies for Stack Auth components
+ * and serves as test fixtures for component integration testing.
+ */
+
+// Import Stack Auth components for testing
+import { UserButton, SignIn, SignUp, AccountSettings } from 'astro-stack-auth/components';
+import { 
+  TestUserButton, 
+  TestSignIn, 
+  EventTestComponent, 
+  PerformanceTestComponent,
+  CompleteTestSuite,
+  TestStackProvider
+} from './test-components.tsx';
+
+// Test props for components
+const testProps = {
+  testId: 'hydration-test',
+  onHydrationComplete: () => console.log('Component hydrated'),
+  onStateChange: (state: any) => console.log('State changed:', state)
+};
+---
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Stack Auth Component Hydration Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+  <h1>Stack Auth Component Hydration Tests</h1>
+  
+  <!-- Test client:load hydration -->
+  <section data-testid="client-load-section">
+    <h2>Client Load Hydration</h2>
+    <TestUserButton 
+      client:load 
+      hydrationDirective="load"
+      testId="user-button-load"
+      {...testProps}
+    />
+    <TestSignIn 
+      client:load
+      hydrationDirective="load" 
+      testId="sign-in-load"
+      {...testProps}
+    />
+  </section>
+
+  <!-- Test client:visible hydration -->
+  <section data-testid="client-visible-section">
+    <h2>Client Visible Hydration</h2>
+    <TestUserButton 
+      client:visible
+      hydrationDirective="visible"
+      testId="user-button-visible"
+      {...testProps}
+    />
+    <TestSignIn 
+      client:visible
+      hydrationDirective="visible"
+      testId="sign-in-visible"
+      {...testProps}
+    />
+  </section>
+
+  <!-- Test client:idle hydration -->
+  <section data-testid="client-idle-section">
+    <h2>Client Idle Hydration</h2>
+    <TestUserButton 
+      client:idle
+      hydrationDirective="idle"
+      testId="user-button-idle"
+      {...testProps}
+    />
+    <SignUp 
+      client:idle
+      data-testid="sign-up-idle"
+    />
+  </section>
+
+  <!-- Test client:media hydration -->
+  <section data-testid="client-media-section">
+    <h2>Client Media Query Hydration</h2>
+    <UserButton 
+      client:media="(max-width: 768px)"
+      data-testid="user-button-mobile"
+    />
+    <AccountSettings 
+      client:media="(min-width: 769px)"
+      data-testid="account-settings-desktop"
+    />
+  </section>
+
+  <!-- Test client:only hydration -->
+  <section data-testid="client-only-section">
+    <h2>Client Only Hydration</h2>
+    <EventTestComponent 
+      client:only="react"
+      testId="event-test-only"
+      onClientEvent={(event) => console.log('Client event:', event)}
+    />
+  </section>
+
+  <!-- Test event handling across hydration boundaries -->
+  <section data-testid="event-handling-section">
+    <h2>Event Handling Tests</h2>
+    <EventTestComponent 
+      client:load
+      testId="event-handling-load"
+      onClientEvent={(event) => console.log('Event:', event)}
+    />
+    <EventTestComponent 
+      client:visible
+      testId="event-handling-visible"
+      onClientEvent={(event) => console.log('Event:', event)}
+    />
+  </section>
+
+  <!-- Test performance across different hydration strategies -->
+  <section data-testid="performance-section">
+    <h2>Performance Tests</h2>
+    <PerformanceTestComponent 
+      client:load
+      testId="performance-load"
+      onPerformanceData={(data) => console.log('Performance (load):', data)}
+    />
+    <PerformanceTestComponent 
+      client:idle
+      testId="performance-idle"
+      onPerformanceData={(data) => console.log('Performance (idle):', data)}
+    />
+  </section>
+
+  <!-- Test complete component suite -->
+  <section data-testid="complete-suite-section">
+    <h2>Complete Component Suite</h2>
+    <CompleteTestSuite client:load />
+  </section>
+
+  <!-- SSR-only components (no hydration) -->
+  <section data-testid="ssr-only-section">
+    <h2>SSR Only (No Hydration)</h2>
+    <div data-testid="ssr-user-button">
+      <UserButton />
+    </div>
+    <div data-testid="ssr-sign-in">
+      <SignIn />
+    </div>
+  </section>
+
+  <!-- Stack Provider wrapped components -->
+  <section data-testid="provider-section">
+    <h2>Stack Provider Wrapped Components</h2>
+    <TestStackProvider testId="provider-wrapper">
+      <UserButton client:load data-testid="provider-user-button" />
+      <SignIn client:visible data-testid="provider-sign-in" />
+      <SignUp client:idle data-testid="provider-sign-up" />
+    </TestStackProvider>
+  </section>
+
+  <script>
+    // Client-side script to test hydration completion
+    console.log('Astro page loaded');
+    
+    // Monitor for component hydration
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'data-hydrated') {
+          console.log('Component hydrated:', mutation.target);
+        }
+      });
+    });
+    
+    observer.observe(document.body, {
+      attributes: true,
+      subtree: true,
+      attributeFilter: ['data-hydrated', 'data-mounted']
+    });
+    
+    // Performance monitoring
+    window.addEventListener('load', () => {
+      console.log('Page load complete');
+      
+      // Test component interaction after hydration
+      setTimeout(() => {
+        const buttons = document.querySelectorAll('[data-testid*="click-button"]');
+        buttons.forEach(button => {
+          if (button instanceof HTMLElement) {
+            button.click();
+            console.log('Clicked button:', button);
+          }
+        });
+      }, 1000);
+    });
+  </script>
+</body>
+</html>

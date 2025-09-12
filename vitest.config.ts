@@ -28,9 +28,13 @@ function getReporters() {
 }
 
 export default defineConfig({
+  esbuild: {
+    jsx: 'automatic',
+    jsxImportSource: 'react'
+  },
   test: {
-    // Environment configuration - default to node
-    environment: 'node',
+    // Environment configuration - default to jsdom for React testing
+    environment: 'jsdom',
     globals: true,
     
     // Environment-specific configuration
