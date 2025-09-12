@@ -2,14 +2,14 @@
 
 > 🔄 **Dynamic Type Extraction**: ✅ Active  
 > 📊 **SDK Version**: 2.8.36  
-> 🕒 **Last Updated**: 9/11/2025, 6:14:17 PM  
+> 🕒 **Last Updated**: 9/11/2025, 6:47:55 PM  
 > 📈 **Components**: 5 components with live type data
 
 *This documentation is automatically synchronized with your installed Stack Auth SDK version.*
 
 > ✅ **Interface Change Detection**: No changes detected  
 > 📊 **Version**: 2.8.36 → 2.8.36  
-> 🕒 **Last Checked**: 9/11/2025, 6:14:17 PM
+> 🕒 **Last Checked**: 9/11/2025, 6:47:55 PM
 
 *No interface changes detected since last update.*
 
@@ -51,7 +51,7 @@ The AccountSettings component is a Stack Auth UI component that provides compreh
 | 2.8.x | className, style, sections | None | 📝 Static |
 
 > 📊 **Current SDK Version**: 2.8.36
-> 🕒 **Last Updated**: 9/11/2025, 6:14:17 PM
+> 🕒 **Last Updated**: 9/11/2025, 6:47:55 PM
 
 
 ## TypeScript Integration
