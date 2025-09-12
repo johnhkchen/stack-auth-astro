@@ -188,7 +188,7 @@ export default function astroStackAuth(options: StackAuthOptions = {}): AstroInt
             const devContext: DevValidationContext = {
               isDevMode: true,
               config: {}, // This would be passed from Astro
-              logger
+              logger: console
             };
 
             // Initialize dev tools
