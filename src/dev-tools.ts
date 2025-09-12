@@ -122,7 +122,9 @@ export interface DevValidationContext {
   isDevMode: boolean;
   config: Record<string, unknown>; // Generic config object
   logger: Console;
-  errorOverlay?: unknown;
+  errorOverlay?: {
+    show: (message: string) => void;
+  };
 }
 
 /**
@@ -134,12 +136,12 @@ export function validateProp(
   propValue: unknown,
   context?: DevValidationContext
 ): PropValidationError | null {
-  const componentSpec = (COMPONENT_PROP_SPECS as Record<string, unknown>)[componentName];
+  const componentSpec = (COMPONENT_PROP_SPECS as Record<string, Record<string, { type: string; required: boolean }>>)[componentName];
   if (!componentSpec) {
     return null; // Unknown component, skip validation
   }
 
-  const propSpec = (componentSpec as Record<string, any>)[propName];
+  const propSpec = componentSpec[propName];
   if (!propSpec) {
     // Unknown prop warning
     if (context?.isDevMode) {
@@ -149,7 +151,7 @@ export function validateProp(
         received: propValue,
         expected: 'unknown',
         message: `Unknown prop "${propName}" for ${componentName} component`,
-        suggestion: `Did you mean: ${suggestSimilarProp(propName, Object.keys(componentSpec))}?`
+        suggestion: `Did you mean: ${suggestSimilarProp(propName, Object.keys(componentSpec as Record<string, unknown>))}?`
       };
     }
     return null;
@@ -241,7 +243,7 @@ export function validateComponentProps(
   const errors: PropValidationError[] = [];
   const warnings: PropValidationWarning[] = [];
 
-  const componentSpec = (COMPONENT_PROP_SPECS as Record<string, unknown>)[componentName];
+  const componentSpec = (COMPONENT_PROP_SPECS as Record<string, Record<string, { type: string; required: boolean }>>)[componentName];
   if (!componentSpec) {
     return { errors, warnings };
   }
@@ -259,15 +261,14 @@ export function validateComponentProps(
 
   // Check for missing required props (using filtered props)
   for (const [propName, propSpec] of Object.entries(componentSpec)) {
-    const spec = propSpec as Record<string, unknown>;
-    if (spec.required && !(propName in reactProps)) {
+    if (propSpec.required && !(propName in reactProps)) {
       errors.push({
         component: componentName,
         prop: propName,
         received: undefined,
-        expected: String(spec.type),
+        expected: propSpec.type,
         message: `Required prop "${propName}" is missing for ${componentName} component`,
-        suggestion: `Add the ${propName} prop with type ${spec.type}`
+        suggestion: `Add the ${propName} prop with type ${propSpec.type}`
       });
     }
   }
@@ -331,14 +332,14 @@ function getTypeSuggestion(expectedType: string, receivedValue: unknown): string
   switch (expectedType) {
     case 'string':
       if (receivedType === 'number') {
-        return `Convert to string: "${receivedValue}"`;
+        return `Convert to string: "${String(receivedValue)}"`;
       }
       if (receivedType === 'boolean') {
         return `Convert to string: "${String(receivedValue)}"`;
       }
       return `Wrap in quotes: "${String(receivedValue)}"`;
     case 'boolean':
-      if (receivedType === 'string') {
+      if (receivedType === 'string' && receivedValue !== null && receivedValue !== undefined) {
         return `Use boolean value: ${String(receivedValue).toLowerCase() === 'true'}`;
       }
       return `Use boolean: true or false`;
@@ -357,16 +358,15 @@ function getTypeSuggestion(expectedType: string, receivedValue: unknown): string
  * Check for deprecated props
  */
 function checkDeprecatedProps(componentName: string, props: Record<string, unknown>): PropValidationWarning | null {
-  const compatibility = (VERSION_COMPATIBILITY as Record<string, unknown>)[componentName];
+  const compatibility = (VERSION_COMPATIBILITY as Record<string, Record<string, { props: readonly string[]; deprecated: readonly string[] }>>)[componentName];
   if (!compatibility) return null;
 
   const deprecatedProps = new Set<string>();
   
   // Collect all deprecated props across versions
   for (const versionData of Object.values(compatibility)) {
-    const data = versionData as Record<string, unknown>;
-    if (data.deprecated && Array.isArray(data.deprecated)) {
-      data.deprecated.forEach((prop: string) => deprecatedProps.add(prop));
+    if (versionData.deprecated && Array.isArray(versionData.deprecated)) {
+      versionData.deprecated.forEach((prop: string) => deprecatedProps.add(prop));
     }
   }
 
@@ -417,7 +417,7 @@ export function createErrorOverlayIntegration(context: DevValidationContext) {
       }
 
       const errorMessage = formatErrorForOverlay(error);
-      (context.errorOverlay as any).show(errorMessage);
+      context.errorOverlay.show(errorMessage);
     },
 
     displayPropValidationWarning(warning: PropValidationWarning) {
@@ -473,12 +473,18 @@ export function createBuildValidation(context: DevValidationContext) {
         // Add location information if available
         const errorsWithLocation = errors.map(error => ({
           ...error,
-          location: usage.location as { file: string; line: number; column: number; } | undefined
+          location: usage.location && typeof usage.location === 'object' && 
+                   'file' in usage.location && 'line' in usage.location && 'column' in usage.location
+                   ? usage.location as { file: string; line: number; column: number; }
+                   : undefined
         }));
         
         const warningsWithLocation = warnings.map(warning => ({
           ...warning,
-          location: usage.location as { file: string; line: number; column: number; } | undefined
+          location: usage.location && typeof usage.location === 'object' && 
+                   'file' in usage.location && 'line' in usage.location && 'column' in usage.location
+                   ? usage.location as { file: string; line: number; column: number; }
+                   : undefined
         }));
 
         allErrors.push(...errorsWithLocation);
