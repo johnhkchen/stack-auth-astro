@@ -9,7 +9,6 @@
  */
 
 import { defineMiddleware } from 'astro:middleware';
-import type { APIContext } from 'astro';
 import { StackServerApp } from '@stackframe/stack';
 import { tryGetConfig } from './config.js';
 import { createSetupGuide } from './validation.js';
