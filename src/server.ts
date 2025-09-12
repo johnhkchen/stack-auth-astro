@@ -59,7 +59,7 @@ export async function getUser(
       validateAPIContext(context, options);
     }
     
-    const user = context.locals.user || null;
+    const user = context.locals?.user || null;
     
     // Log successful user retrieval for audit purposes (low priority)
     if (user && process.env.NODE_ENV === 'development') {
@@ -67,7 +67,7 @@ export async function getUser(
     }
     
     // Record successful performance tracking
-    performanceTracker.success(user, context.locals.session);
+    performanceTracker.success(user, context.locals?.session);
     
     return user;
     
@@ -119,11 +119,11 @@ export async function getSession(
       validateAPIContext(context, options);
     }
     
-    const session = context.locals.session || null;
+    const session = context.locals?.session || null;
     
     // Log session access for audit purposes (low priority, only in development)
     if (session && process.env.NODE_ENV === 'development') {
-      logAuthSuccess(context, context.locals.user || null, { 
+      logAuthSuccess(context, context.locals?.user || null, { 
         operation: 'getSession',
         sessionId: (session as any)?.id || 'unknown'
       });
@@ -131,7 +131,7 @@ export async function getSession(
     
     // Record successful performance tracking with cache hit indication
     // Note: Cache hit information would come from middleware, this is server-side access
-    performanceTracker.success(context.locals.user, session, true);
+    performanceTracker.success(context.locals?.user, session, true);
     
     return session;
     
@@ -254,7 +254,7 @@ export async function requireAuth(
       });
       
       // Record successful performance tracking
-      performanceTracker.success(user, context.locals.session);
+      performanceTracker.success(user, context.locals?.session);
       
       return user;
     }
