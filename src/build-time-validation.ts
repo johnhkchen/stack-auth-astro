@@ -13,6 +13,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { parse as parseAstro } from '@astrojs/compiler';
 import { parse as parseJS } from '@babel/parser';
+import * as t from '@babel/types';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - No type definitions available
 import * as traverseModule from '@babel/traverse';
@@ -182,7 +183,7 @@ export async function extractJSXComponentUsages(
     const stackAuthComponents = Object.keys(COMPONENT_PROP_SPECS);
     
     traverse(ast, {
-      JSXElement(path: babel.NodePath<babel.types.JSXElement>) {
+      JSXElement(path: any) {
         const openingElement = path.node.openingElement;
         
         if (openingElement.name.type === 'JSXIdentifier') {
@@ -271,7 +272,7 @@ function parsePropsFromString(propsString: string): Record<string, unknown> {
 /**
  * Evaluate JSX expression (simplified)
  */
-function evaluateJSXExpression(expression: babel.types.Expression): unknown {
+function evaluateJSXExpression(expression: t.Expression): unknown {
   // Simplified evaluation - in real implementation would handle more cases
   switch (expression.type) {
     case 'StringLiteral':
@@ -563,7 +564,7 @@ export function createBuildTimeValidationIntegration(
   return {
     name: 'stack-auth-build-validation',
     hooks: {
-      'astro:config:setup': ({ logger }: { logger: Console }) => {
+      'astro:config:setup': ({ logger }: { logger: { info: (message: string) => void; warn: (message: string) => void; error: (message: string) => void; } }) => {
         logger.info('Stack Auth component validation configured');
       }
     }
