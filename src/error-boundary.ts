@@ -65,7 +65,7 @@ function createBoundaryError(error: Error, context: string): StackAuthClientErro
   
   // Classify the error based on common React error patterns
   let code: keyof typeof CLIENT_ERROR_CODES = 'COMPONENT_ERROR';
-  let recovery = CLIENT_ERROR_CODES.COMPONENT_ERROR;
+  let recovery: string = CLIENT_ERROR_CODES.COMPONENT_ERROR;
   
   const errorMessage = error.message.toLowerCase();
   
@@ -335,7 +335,7 @@ export class StackAuthErrorBoundary extends React.Component<
         retry: enableRecovery ? this.retryOperation : () => window.location.reload(),
         resetError: this.resetErrorBoundary,
         details: {
-          componentStack: errorInfo?.componentStack,
+          componentStack: errorInfo?.componentStack || undefined,
           errorBoundary: this.constructor.name,
           operation: level
         }
@@ -356,8 +356,9 @@ export function withStackAuthErrorBoundary<P extends object>(
   const WrappedComponent = React.forwardRef<any, P>((props, ref) => {
     return React.createElement(StackAuthErrorBoundary, {
       ...errorBoundaryProps,
-      level: 'component'
-    }, React.createElement(Component, { ...props, ref }));
+      level: 'component',
+      children: React.createElement(Component, { ...props, ref } as any)
+    });
   });
   
   WrappedComponent.displayName = `withStackAuthErrorBoundary(${
@@ -410,6 +411,7 @@ export const StackAuthComponentBoundary: React.FC<{
     enableRecovery: true,
     resetOnPropsChange: true,
     onError: onError,
+    children,
     fallback: ({ error, retry, resetError }) => {
       const stackAuthError = error instanceof StackAuthClientError ? error : null;
       
@@ -452,5 +454,3 @@ export const StackAuthComponentBoundary: React.FC<{
   }, children);
 };
 
-// Export types for external use
-export type { ErrorFallbackProps, StackAuthErrorBoundaryProps };

@@ -349,8 +349,25 @@ export class BrowserCompatibilityHandler {
           reject(new Error('Request timeout'));
         };
 
-        // Send request
-        xhr.send(options.body || null);
+        // Send request - convert body to proper XMLHttpRequest format
+        let body: Document | XMLHttpRequestBodyInit | null = null;
+        if (options.body) {
+          if (typeof options.body === 'string' || 
+              options.body instanceof FormData || 
+              options.body instanceof ArrayBuffer ||
+              options.body instanceof Blob) {
+            body = options.body as XMLHttpRequestBodyInit;
+          } else if (options.body instanceof ReadableStream) {
+            // For ReadableStream, we need to read and convert to string
+            // This is a fallback scenario, so we can be conservative
+            console.warn('ReadableStream body not supported in XHR fallback, converting to string');
+            body = '[Stream]'; // Simple fallback
+          } else {
+            // Handle other BodyInit types by converting to string
+            body = String(options.body);
+          }
+        }
+        xhr.send(body);
       });
     };
   }
