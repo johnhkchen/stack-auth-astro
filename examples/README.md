@@ -220,7 +220,19 @@ import { getUser } from 'astro-stack-auth/server';
 
 export const GET: APIRoute = async (context) => {
   const user = await getUser(context);
-  if (!user) return new Response(null, { status: 401 });
+  if (!user) {
+    return new Response(JSON.stringify({
+      error: 'Authentication required',
+      message: 'You must be signed in to access this resource',
+      statusCode: 401
+    }), {
+      status: 401,
+      headers: { 
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store'
+      }
+    });
+  }
   
   return new Response(JSON.stringify({ 
     message: 'Protected data',
