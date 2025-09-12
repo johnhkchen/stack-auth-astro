@@ -122,8 +122,8 @@ export async function getSession(
     const session = context.locals?.session || null;
     
     // Log session access for audit purposes (low priority, only in development)
-    if (session && process.env.NODE_ENV === 'development') {
-      logAuthSuccess(context, context.locals?.user || null, { 
+    if (session && process.env.NODE_ENV === 'development' && context.locals?.user) {
+      logAuthSuccess(context, context.locals.user, { 
         operation: 'getSession',
         sessionId: (session as any)?.id || 'unknown'
       });

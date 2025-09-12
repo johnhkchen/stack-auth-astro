@@ -28,6 +28,8 @@ export interface RequireAuthOptions {
 export interface SignInOptions {
   redirectTo?: string;
   provider?: string;
+  onSuccess?: () => void;
+  onError?: (error: Error) => void;
 }
 
 export interface SignOutOptions {
