@@ -59,16 +59,17 @@ const user = await requireAuth(Astro);
             href="/protected" 
             class="block bg-gray-100 hover:bg-gray-200 p-2 rounded text-sm"
           >
-            📄 Protected Content
+            🔒 Protected Content
           </a>
           <a 
-            href="/api-example" 
+            href="/api/user" 
             class="block bg-gray-100 hover:bg-gray-200 p-2 rounded text-sm"
+            target="_blank"
           >
             🔌 API Integration
           </a>
           <a 
-            href="/middleware-example" 
+            href="/middleware-demo" 
             class="block bg-gray-100 hover:bg-gray-200 p-2 rounded text-sm"
           >
             ⚙️ Middleware Demo
