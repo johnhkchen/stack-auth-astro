@@ -121,6 +121,12 @@ export function validateRedirectURL(url: string, allowedOrigins: string[] = []):
     throw new ValidationError(`URL length exceeds maximum of ${SECURITY_CONFIG.MAX_URL_LENGTH} characters`);
   }
   
+  // Check for dangerous schemes first (both absolute and relative)
+  if (['javascript:', 'data:', 'vbscript:', 'file:'].some(scheme => 
+      url.toLowerCase().startsWith(scheme))) {
+    throw new ValidationError('Unsafe URL scheme detected');
+  }
+  
   try {
     const parsedUrl = new URL(url, 'https://localhost'); // Use base for relative URLs
     
@@ -140,11 +146,7 @@ export function validateRedirectURL(url: string, allowedOrigins: string[] = []):
       }
     }
     
-    // Prevent javascript: and data: URL schemes
-    if (['javascript:', 'data:', 'vbscript:', 'file:'].some(scheme => 
-        parsedUrl.protocol.toLowerCase().startsWith(scheme))) {
-      throw new ValidationError('Unsafe URL scheme detected');
-    }
+    // Dangerous schemes are already checked above before URL parsing
     
     return parsedUrl.toString();
     

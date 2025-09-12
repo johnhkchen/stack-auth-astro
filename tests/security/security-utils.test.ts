@@ -142,13 +142,15 @@ describe('Security Utilities', () => {
         .toThrow(ValidationError);
     });
     
-    it('should sanitize dangerous URL schemes', () => {
-      expect(validateRedirectURL('javascript:alert("xss")'))
-        .toBe('javascript:alert(xss)');
-      expect(validateRedirectURL('data:text/html,<script>alert("xss")</script>'))
-        .toBe('data:texthtml,scriptalert(xss)script');
-      expect(validateRedirectURL('vbscript:msgbox("xss")'))
-        .toBe('vbscript:msgbox(xss)');
+    it('should reject dangerous URL schemes', () => {
+      expect(() => validateRedirectURL('javascript:alert("xss")'))
+        .toThrow(ValidationError);
+      expect(() => validateRedirectURL('data:text/html,<script>alert("xss")</script>'))
+        .toThrow(ValidationError);
+      expect(() => validateRedirectURL('vbscript:msgbox("xss")'))
+        .toThrow(ValidationError);
+      expect(() => validateRedirectURL('file:///etc/passwd'))
+        .toThrow(ValidationError);
     });
     
     it('should reject empty URLs but allow invalid formats', () => {
