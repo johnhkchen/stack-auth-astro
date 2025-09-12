@@ -7,6 +7,7 @@
 
 import { vi, beforeEach, afterEach, afterAll } from 'vitest';
 import type { AstroIntegration } from 'astro';
+import * as React from 'react';
 import { validateTestEnvironment } from './utils/dependency-helpers.js';
 import { cleanupTempFiles } from './utils/file-helpers.js';
 import { performanceHooks } from './utils/vitest-performance-plugin.js';
@@ -211,29 +212,82 @@ export const testUtils = {
 // Stack Auth SDK mocks
 export const stackAuthMocks = {
   /**
-   * Mock Stack Auth SDK
+   * Mock Stack Auth SDK with components
    */
   createStackMock() {
+    // Create mock React components that return proper JSX
+    const createMockComponent = (name: string) => {
+      const Component = vi.fn((props: any) => {
+        // Return a proper React element for testing
+        return React.createElement('div', {
+          'data-testid': props['data-testid'] || name.toLowerCase(),
+          'data-stack-component': name,
+          'data-mock': 'true',
+          children: props.children || `Mock ${name}`
+        });
+      });
+      Component.displayName = `Mock${name}`;
+      return Component;
+    };
+
     return {
+      // Core SDK functions
       getUser: vi.fn().mockResolvedValue(null),
       getSession: vi.fn().mockResolvedValue(null),
       signIn: vi.fn().mockResolvedValue(undefined),
       signOut: vi.fn().mockResolvedValue(undefined),
       middleware: vi.fn(),
-      handler: vi.fn()
+      handler: vi.fn(),
+      
+      // Component exports (these are imported from @stackframe/stack in components.ts)
+      UserButton: createMockComponent('UserButton'),
+      SignIn: createMockComponent('SignIn'),
+      SignUp: createMockComponent('SignUp'),
+      AccountSettings: createMockComponent('AccountSettings'),
+      StackProvider: vi.fn(({ children }: { children: any }) => {
+        return React.createElement('div', {
+          'data-testid': 'stack-provider',
+          'data-stack-component': 'StackProvider',
+          'data-mock': 'true'
+        }, children);
+      }),
+      
+      // Additional Stack Auth exports that might be imported
+      StackClientApp: vi.fn(),
+      StackServerApp: vi.fn(),
     };
   },
 
   /**
-   * Mock Stack Auth UI components
+   * Mock Stack Auth UI components (for @stackframe/stack-ui if used separately)
    */
   createStackUIMocks() {
+    // Create mock React components that return proper JSX
+    const createMockComponent = (name: string) => {
+      const Component = vi.fn((props: any) => {
+        return React.createElement('div', {
+          'data-testid': props['data-testid'] || `ui-${name.toLowerCase()}`,
+          'data-stack-ui-component': name,
+          'data-mock': 'true',
+          children: props.children || `Mock UI ${name}`
+        });
+      });
+      Component.displayName = `MockUI${name}`;
+      return Component;
+    };
+
     return {
-      SignIn: vi.fn(() => null),
-      SignUp: vi.fn(() => null),
-      UserButton: vi.fn(() => null),
-      AccountSettings: vi.fn(() => null),
-      StackProvider: vi.fn(({ children }: { children: any }) => children)
+      SignIn: createMockComponent('SignIn'),
+      SignUp: createMockComponent('SignUp'),
+      UserButton: createMockComponent('UserButton'),
+      AccountSettings: createMockComponent('AccountSettings'),
+      StackProvider: vi.fn(({ children }: { children: any }) => {
+        return React.createElement('div', {
+          'data-testid': 'ui-stack-provider',
+          'data-stack-ui-component': 'StackProvider',
+          'data-mock': 'true'
+        }, children);
+      })
     };
   }
 };
