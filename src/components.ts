@@ -10,23 +10,30 @@
 
 import * as React from 'react';
 import type { User, Session, StackClientApp } from '@stackframe/stack';
+import {
+  SignIn as StackSignIn,
+  SignUp as StackSignUp,
+  UserButton as StackUserButton,
+  AccountSettings as StackAccountSettings,
+  StackProvider as StackStackProvider
+} from '@stackframe/stack';
 import { createValidatedComponents } from './component-wrapper.js';
 
-// TODO: Implement component re-exports in Sprint 004
-// For now, just provide the module structure with React namespace test
+// Real Stack Auth component re-exports with validation wrapper integration
 
-// Test React namespace and types are available
+// Component prop types derived from Stack Auth components
+export type UserButtonProps = React.ComponentProps<typeof StackUserButton>;
+export type SignInProps = React.ComponentProps<typeof StackSignIn>;
+export type SignUpProps = React.ComponentProps<typeof StackSignUp>;
+export type AccountSettingsProps = React.ComponentProps<typeof StackAccountSettings>;
+export type StackProviderProps = React.ComponentProps<typeof StackStackProvider>;
+
+// Legacy interface for backward compatibility
 export interface StackAuthComponentProps {
   children?: React.ReactNode;
   className?: string;
   user?: User | null;
   session?: Session | null;
-}
-
-// Advanced React component types for Stack Auth integration
-export interface StackProviderProps {
-  app: StackClientApp;
-  children: React.ReactNode;
 }
 
 // Test React component compatibility with Stack Auth types
@@ -64,108 +71,29 @@ export interface ForwardRefStackComponentProps extends StackAuthComponentProps {
   onClick?: (event: StackAuthMouseEvent) => void;
 }
 
-// TODO: Sprint 004 - Replace these placeholder components with real Stack Auth UI components
-// These are temporary implementations to fix TypeScript compilation in examples
-
-const UserButtonBase: React.FC<StackAuthComponentProps> = ({ className, children, ...props }) => { // eslint-disable-line @typescript-eslint/no-unused-vars
-  return React.createElement('div', {
-    className: className || 'stack-auth-placeholder',
-    style: {
-      padding: '8px 16px',
-      border: '1px solid #ccc',
-      borderRadius: '4px',
-      backgroundColor: '#f5f5f5',
-      color: '#666',
-      fontFamily: 'sans-serif',
-      fontSize: '14px'
-    },
-    ...props
-  }, 'UserButton - Coming in Sprint 004');
-};
-
-const SignInBase: React.FC<StackAuthComponentProps> = ({ className, children, ...props }) => { // eslint-disable-line @typescript-eslint/no-unused-vars
-  return React.createElement('div', {
-    className: className || 'stack-auth-placeholder',
-    style: {
-      padding: '16px',
-      border: '1px solid #007acc',
-      borderRadius: '4px',
-      backgroundColor: '#f0f8ff',
-      color: '#007acc',
-      fontFamily: 'sans-serif',
-      fontSize: '16px',
-      textAlign: 'center'
-    },
-    ...props
-  }, 'SignIn Component - Coming in Sprint 004');
-};
-
-const SignUpBase: React.FC<StackAuthComponentProps> = ({ className, children, ...props }) => { // eslint-disable-line @typescript-eslint/no-unused-vars
-  return React.createElement('div', {
-    className: className || 'stack-auth-placeholder',
-    style: {
-      padding: '16px',
-      border: '1px solid #28a745',
-      borderRadius: '4px',
-      backgroundColor: '#f8fff8',
-      color: '#28a745',
-      fontFamily: 'sans-serif',
-      fontSize: '16px',
-      textAlign: 'center'
-    },
-    ...props
-  }, 'SignUp Component - Coming in Sprint 004');
-};
-
-const AccountSettingsBase: React.FC<StackAuthComponentProps> = ({ className, children, ...props }) => { // eslint-disable-line @typescript-eslint/no-unused-vars
-  return React.createElement('div', {
-    className: className || 'stack-auth-placeholder',
-    style: {
-      padding: '16px',
-      border: '1px solid #6c757d',
-      borderRadius: '4px',
-      backgroundColor: '#f8f9fa',
-      color: '#6c757d',
-      fontFamily: 'sans-serif',
-      fontSize: '16px',
-      textAlign: 'center'
-    },
-    ...props
-  }, 'AccountSettings Component - Coming in Sprint 004');
-};
-
-const StackProviderBase: React.FC<StackProviderProps> = ({ app, children }) => { // eslint-disable-line @typescript-eslint/no-unused-vars
-  return React.createElement('div', {
-    'data-stack-provider': 'placeholder',
-    style: {
-      border: '2px dashed #ffc107',
-      padding: '16px',
-      backgroundColor: '#fff9e6',
-      color: '#856404',
-      fontFamily: 'sans-serif'
-    }
-  }, [
-    React.createElement('p', { key: 'title', style: { margin: '0 0 8px 0', fontWeight: 'bold' } }, 'StackProvider - Coming in Sprint 004'),
-    React.createElement('div', { key: 'children' }, children)
-  ]);
-};
+// Use real Stack Auth components as base components
+const UserButtonBase = StackUserButton;
+const SignInBase = StackSignIn;
+const SignUpBase = StackSignUp;
+const AccountSettingsBase = StackAccountSettings;
+const StackProviderBase = StackStackProvider;
 
 // Create validated components with development-time prop validation
 const validatedComponents = createValidatedComponents({
-  UserButton: UserButtonBase,
-  SignIn: SignInBase,
-  SignUp: SignUpBase,
-  AccountSettings: AccountSettingsBase,
-  StackProvider: StackProviderBase
+  UserButton: UserButtonBase as React.ComponentType<any>,
+  SignIn: SignInBase as React.ComponentType<any>,
+  SignUp: SignUpBase as React.ComponentType<any>,
+  AccountSettings: AccountSettingsBase as React.ComponentType<any>,
+  StackProvider: StackProviderBase as React.ComponentType<any>
 }, {
   enhanced: true // Enable enhanced development features
 });
 
-// Export validated components with explicit React.FC typing for examples validation
-export const UserButton: React.FC<StackAuthComponentProps> = validatedComponents.UserButton;
-export const SignIn: React.FC<StackAuthComponentProps> = validatedComponents.SignIn;
-export const SignUp: React.FC<StackAuthComponentProps> = validatedComponents.SignUp;
-export const AccountSettings: React.FC<StackAuthComponentProps> = validatedComponents.AccountSettings;
-export const StackProvider: React.FC<StackProviderProps> = validatedComponents.StackProvider;
+// Export validated components with proper Stack Auth typing
+export const UserButton = validatedComponents.UserButton as typeof StackUserButton;
+export const SignIn = validatedComponents.SignIn as typeof StackSignIn;
+export const SignUp = validatedComponents.SignUp as typeof StackSignUp;
+export const AccountSettings = validatedComponents.AccountSettings as typeof StackAccountSettings;
+export const StackProvider = validatedComponents.StackProvider as typeof StackStackProvider;
 
 // No default export to avoid mixed exports warning
