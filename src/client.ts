@@ -6,6 +6,24 @@
  */
 
 import type { SignInOptions, SignOutOptions } from './types.js';
+import { getAuthStateManager, initAuthState } from './client/state.js';
+import { initSync, broadcastSignIn, broadcastSignOut } from './client/sync.js';
+
+// Initialize state management on module load
+if (typeof window !== 'undefined') {
+  // Initialize auth state management with default options
+  initAuthState({
+    persistStorage: true,
+    autoRefresh: true,
+    refreshInterval: 5 * 60 * 1000, // 5 minutes
+  });
+  
+  // Initialize cross-tab synchronization
+  initSync({
+    enableBroadcastSync: true,
+    enableStorageSync: true,
+  });
+}
 
 /**
  * Sign in a user with Stack Auth
@@ -15,8 +33,12 @@ import type { SignInOptions, SignOutOptions } from './types.js';
  */
 export async function signIn(provider?: string, options: SignInOptions = {}): Promise<void> {
   const { redirectTo = window.location.origin, onSuccess, onError } = options;
+  const authStateManager = getAuthStateManager();
   
   try {
+    // Set loading state
+    authStateManager.setLoading(true);
+    
     // Construct API endpoint for sign in
     const baseUrl = '/handler';
     const endpoint = provider ? `${baseUrl}/signin/${provider}` : `${baseUrl}/signin`;
@@ -34,21 +56,29 @@ export async function signIn(provider?: string, options: SignInOptions = {}): Pr
     });
 
     if (response.ok) {
+      // Check if response contains user/session data
+      const responseData = await response.json().catch(() => ({}));
+      
+      // Update auth state if user data is available
+      if (responseData.user && responseData.session) {
+        authStateManager.setAuthData(responseData.user, responseData.session);
+        broadcastSignIn(responseData.user, responseData.session);
+      }
+      
       // Handle successful sign in
       if (onSuccess) {
         onSuccess();
       }
       
-      // Check if response contains redirect URL
-      const responseData = await response.json().catch(() => ({}));
-      const finalRedirectTo = responseData.redirectUrl || redirectTo;
-      
       // Redirect to the final destination
+      const finalRedirectTo = responseData.redirectUrl || redirectTo;
       window.location.href = finalRedirectTo;
     } else {
       // Handle API error response
       const errorData = await response.json().catch(() => ({ message: 'Sign in failed' }));
       const error = new Error(errorData.message || `Sign in failed with status: ${response.status}`);
+      
+      authStateManager.setError(error);
       
       if (onError) {
         onError(error);
@@ -59,6 +89,8 @@ export async function signIn(provider?: string, options: SignInOptions = {}): Pr
   } catch (error) {
     // Handle network or other errors
     const finalError = error instanceof Error ? error : new Error('Network error during sign in');
+    
+    authStateManager.setError(finalError);
     
     if (onError) {
       onError(finalError);
@@ -71,6 +103,8 @@ export async function signIn(provider?: string, options: SignInOptions = {}): Pr
       
       window.location.href = signInUrl;
     }
+  } finally {
+    authStateManager.setLoading(false);
   }
 }
 
@@ -81,8 +115,16 @@ export async function signIn(provider?: string, options: SignInOptions = {}): Pr
  */
 export async function signOut(options: SignOutOptions = {}): Promise<void> {
   const { redirectTo = window.location.origin, clearLocalStorage = false, onSuccess, onError } = options;
+  const authStateManager = getAuthStateManager();
   
   try {
+    // Set loading state
+    authStateManager.setLoading(true);
+    
+    // Clear auth state immediately
+    authStateManager.clearAuth();
+    broadcastSignOut();
+    
     // Clear local storage if requested
     if (clearLocalStorage) {
       // Clear Stack Auth related items from localStorage
@@ -129,6 +171,8 @@ export async function signOut(options: SignOutOptions = {}): Promise<void> {
       const errorData = await response.json().catch(() => ({ message: 'Sign out failed' }));
       const error = new Error(errorData.message || `Sign out failed with status: ${response.status}`);
       
+      authStateManager.setError(error);
+      
       if (onError) {
         onError(error);
       } else {
@@ -139,6 +183,8 @@ export async function signOut(options: SignOutOptions = {}): Promise<void> {
     // Handle network or other errors
     const finalError = error instanceof Error ? error : new Error('Network error during sign out');
     
+    authStateManager.setError(finalError);
+    
     if (onError) {
       onError(finalError);
     } else {
@@ -148,6 +194,8 @@ export async function signOut(options: SignOutOptions = {}): Promise<void> {
       
       window.location.href = signOutUrl;
     }
+  } finally {
+    authStateManager.setLoading(false);
   }
 }
 
@@ -182,3 +230,42 @@ export function redirectToAccount(callbackUrl?: string): void {
   const accountUrl = `/handler/account?redirect=${encodeURIComponent(redirectTo)}`;
   window.location.href = accountUrl;
 }
+
+// Export state management functionality
+export {
+  getAuthState,
+  subscribeToAuthState,
+  getAuthStateManager,
+  initAuthState
+} from './client/state.js';
+
+export {
+  authStorage,
+  sessionAuthStorage,
+  authStorageUtils
+} from './client/storage.js';
+
+export {
+  broadcastAuthChange,
+  broadcastSignIn as broadcastSignInEvent,
+  broadcastSignOut as broadcastSignOutEvent,
+  subscribeToSync,
+  getSyncManager,
+  initSync
+} from './client/sync.js';
+
+// Export React hooks for consuming authentication state
+export {
+  useAuthState,
+  useUser,
+  useSession,
+  useIsAuthenticated,
+  useAuthLoading,
+  useAuthError,
+  useAuthActions,
+  useAuthCheck,
+  useRequireAuth,
+  useAuthGuard,
+  useUserProfile,
+  useSessionManagement
+} from './client/hooks.js';
