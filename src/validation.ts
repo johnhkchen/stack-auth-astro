@@ -193,7 +193,7 @@ export function validateRuntimeCompatibility(): ValidationResult {
     }
 
     // Check for Astro environment (this is a heuristic check)
-    if (typeof globalThis !== 'undefined' && !(globalThis as any).astro && process.env.NODE_ENV !== 'test') {
+    if (typeof globalThis !== 'undefined' && !('astro' in globalThis) && process.env.NODE_ENV !== 'test') {
       warnings.push('Could not detect Astro environment - ensure this integration is used with Astro');
     }
 

@@ -17,7 +17,7 @@ import {
   StackAuthConfigurationError,
   createErrorWithGuide 
 } from './errors.js';
-import type { User, Session } from './types.js';
+import type { User, Session, StackAuthConfig } from './types.js';
 
 // Simple in-memory session cache for performance optimization
 interface CachedSession {
@@ -80,7 +80,7 @@ function setCachedSession(cacheKey: string, user: User | null, session: Session 
 /**
  * Validate session and resolve user using Stack Auth SDK
  */
-async function validateSession(config: any, request: Request): Promise<{ user: User | null; session: Session | null }> {
+async function validateSession(config: StackAuthConfig, request: Request): Promise<{ user: User | null; session: Session | null }> {
   try {
     // Initialize Stack Auth server app with request-based token store
     const stackApp = new StackServerApp({

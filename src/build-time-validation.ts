@@ -33,7 +33,7 @@ import {
  */
 export interface ComponentUsage {
   component: string;
-  props: Record<string, any>;
+  props: Record<string, unknown>;
   location: {
     file: string;
     line: number;
@@ -182,7 +182,7 @@ export async function extractJSXComponentUsages(
     const stackAuthComponents = Object.keys(COMPONENT_PROP_SPECS);
     
     traverse(ast, {
-      JSXElement(path: any) {
+      JSXElement(path: babel.NodePath<babel.types.JSXElement>) {
         const openingElement = path.node.openingElement;
         
         if (openingElement.name.type === 'JSXIdentifier') {
@@ -190,12 +190,12 @@ export async function extractJSXComponentUsages(
           
           if (stackAuthComponents.includes(componentName)) {
             // Extract props
-            const props: Record<string, any> = {};
+            const props: Record<string, unknown> = {};
             
             for (const attr of openingElement.attributes) {
               if (attr.type === 'JSXAttribute' && attr.name.type === 'JSXIdentifier') {
                 const propName = attr.name.name;
-                let propValue: any = true; // Default for boolean props
+                let propValue: unknown = true; // Default for boolean props
                 
                 if (attr.value) {
                   if (attr.value.type === 'StringLiteral') {
@@ -237,8 +237,8 @@ export async function extractJSXComponentUsages(
 /**
  * Parse props from Astro component attribute string
  */
-function parsePropsFromString(propsString: string): Record<string, any> {
-  const props: Record<string, any> = {};
+function parsePropsFromString(propsString: string): Record<string, unknown> {
+  const props: Record<string, unknown> = {};
   
   // Simplified prop parsing - would be more robust in real implementation
   const propRegex = /(\w+)(?:=(?:"([^"]*)"|{([^}]*)}|([^\s]+)))?/g;
@@ -271,7 +271,7 @@ function parsePropsFromString(propsString: string): Record<string, any> {
 /**
  * Evaluate JSX expression (simplified)
  */
-function evaluateJSXExpression(expression: any): any {
+function evaluateJSXExpression(expression: babel.types.Expression): unknown {
   // Simplified evaluation - in real implementation would handle more cases
   switch (expression.type) {
     case 'StringLiteral':
@@ -293,7 +293,7 @@ function evaluateJSXExpression(expression: any): any {
 /**
  * Evaluate expression string (simplified)
  */
-function evaluateExpression(expr: string): any {
+function evaluateExpression(expr: string): unknown {
   // Simplified expression evaluation
   expr = expr.trim();
   
@@ -563,7 +563,7 @@ export function createBuildTimeValidationIntegration(
   return {
     name: 'stack-auth-build-validation',
     hooks: {
-      'astro:config:setup': ({ logger }: { logger: any }) => {
+      'astro:config:setup': ({ logger }: { logger: Console }) => {
         logger.info('Stack Auth component validation configured');
       }
     }

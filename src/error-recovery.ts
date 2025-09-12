@@ -185,8 +185,8 @@ export function classifyError(error: unknown): ErrorType {
   }
   
   // Server errors (5xx responses)
-  if ('status' in error && typeof (error as any).status === 'number') {
-    const status = (error as any).status;
+  if ('status' in error && typeof (error as Record<string, unknown>).status === 'number') {
+    const status = (error as Record<string, unknown>).status as number;
     if (status >= 500) {
       return ErrorType.SERVER;
     }
@@ -464,6 +464,12 @@ export function logRecoveryEvent(
 /**
  * Get recovery statistics for monitoring
  */
+interface CircuitBreakerInternal {
+  failureCount: number;
+  lastFailureTime: number;
+  state: string;
+}
+
 export function getRecoveryStats(): {
   circuitBreakerState: string;
   circuitBreakerFailures: number;
@@ -471,8 +477,8 @@ export function getRecoveryStats(): {
 } {
   return {
     circuitBreakerState: circuitBreaker.getState(),
-    circuitBreakerFailures: (circuitBreaker as any).failureCount,
-    lastFailureTime: (circuitBreaker as any).lastFailureTime
+    circuitBreakerFailures: (circuitBreaker as unknown as CircuitBreakerInternal).failureCount,
+    lastFailureTime: (circuitBreaker as unknown as CircuitBreakerInternal).lastFailureTime
   };
 }
 
@@ -480,7 +486,7 @@ export function getRecoveryStats(): {
  * Reset recovery mechanisms (useful for testing)
  */
 export function resetRecoveryState(): void {
-  (circuitBreaker as any).failureCount = 0;
-  (circuitBreaker as any).lastFailureTime = 0;
-  (circuitBreaker as any).state = 'closed';
+  (circuitBreaker as unknown as CircuitBreakerInternal).failureCount = 0;
+  (circuitBreaker as unknown as CircuitBreakerInternal).lastFailureTime = 0;
+  (circuitBreaker as unknown as CircuitBreakerInternal).state = 'closed';
 }

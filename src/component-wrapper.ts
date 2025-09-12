@@ -23,14 +23,14 @@ import {
  */
 const devContext: DevValidationContext = {
   isDevMode: process.env.NODE_ENV === 'development',
-  config: {} as any, // Would be populated by Astro
+  config: {}, // Would be populated by Astro
   logger: console
 };
 
 /**
  * Create a wrapped component with prop validation
  */
-export function createValidatedComponent<P extends Record<string, any>>(
+export function createValidatedComponent<P extends Record<string, unknown>>(
   componentName: string,
   OriginalComponent: React.ComponentType<P>,
   isDevMode: boolean = process.env.NODE_ENV === 'development'
@@ -103,7 +103,7 @@ export function createValidatedComponent<P extends Record<string, any>>(
 /**
  * Enhanced development wrapper with additional debugging info
  */
-export function createEnhancedValidatedComponent<P extends Record<string, any>>(
+export function createEnhancedValidatedComponent<P extends Record<string, unknown>>(
   componentName: string,
   OriginalComponent: React.ComponentType<P>,
   isDevMode: boolean = process.env.NODE_ENV === 'development'
@@ -197,7 +197,7 @@ export function createEnhancedValidatedComponent<P extends Record<string, any>>(
 /**
  * Create validation wrapper for multiple components
  */
-export function createValidatedComponents<T extends Record<string, React.ComponentType<any>>>(
+export function createValidatedComponents<T extends Record<string, React.ComponentType<unknown>>>(
   components: T,
   options: {
     enhanced?: boolean;
@@ -222,7 +222,7 @@ export function createValidatedComponents<T extends Record<string, React.Compone
  */
 export function useStackAuthPropValidation(
   componentName: string,
-  props: Record<string, any>
+  props: Record<string, unknown>
 ): {
   hasErrors: boolean;
   hasWarnings: boolean;
@@ -270,7 +270,7 @@ export function StackAuthDevInspector({
   children
 }: {
   componentName: string;
-  props: Record<string, any>;
+  props: Record<string, unknown>;
   children: React.ReactNode;
 }) {
   const validation = useStackAuthPropValidation(componentName, props);

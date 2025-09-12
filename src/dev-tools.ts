@@ -89,7 +89,7 @@ const VERSION_COMPATIBILITY = {
 export interface PropValidationError {
   component: string;
   prop: string;
-  received: any;
+  received: unknown;
   expected: string;
   message: string;
   suggestion?: string;
@@ -120,9 +120,9 @@ export interface PropValidationWarning {
  */
 export interface DevValidationContext {
   isDevMode: boolean;
-  config: any; // Generic config object
-  logger: any;
-  errorOverlay?: any;
+  config: Record<string, unknown>; // Generic config object
+  logger: Console;
+  errorOverlay?: unknown;
 }
 
 /**
@@ -131,10 +131,10 @@ export interface DevValidationContext {
 export function validateProp(
   componentName: string, 
   propName: string, 
-  propValue: any,
+  propValue: unknown,
   context?: DevValidationContext
 ): PropValidationError | null {
-  const componentSpec = (COMPONENT_PROP_SPECS as any)[componentName];
+  const componentSpec = (COMPONENT_PROP_SPECS as Record<string, unknown>)[componentName];
   if (!componentSpec) {
     return null; // Unknown component, skip validation
   }
@@ -218,8 +218,8 @@ function isAstroFrameworkDirective(propName: string): boolean {
 /**
  * Filter out Astro framework directives from props
  */
-function filterAstroDirectives(props: Record<string, any>): Record<string, any> {
-  const filteredProps: Record<string, any> = {};
+function filterAstroDirectives(props: Record<string, unknown>): Record<string, unknown> {
+  const filteredProps: Record<string, unknown> = {};
   
   for (const [propName, propValue] of Object.entries(props)) {
     if (!isAstroFrameworkDirective(propName)) {
@@ -235,13 +235,13 @@ function filterAstroDirectives(props: Record<string, any>): Record<string, any> 
  */
 export function validateComponentProps(
   componentName: string,
-  props: Record<string, any>,
+  props: Record<string, unknown>,
   context?: DevValidationContext
 ): { errors: PropValidationError[], warnings: PropValidationWarning[] } {
   const errors: PropValidationError[] = [];
   const warnings: PropValidationWarning[] = [];
 
-  const componentSpec = (COMPONENT_PROP_SPECS as any)[componentName];
+  const componentSpec = (COMPONENT_PROP_SPECS as Record<string, unknown>)[componentName];
   if (!componentSpec) {
     return { errors, warnings };
   }
@@ -259,7 +259,7 @@ export function validateComponentProps(
 
   // Check for missing required props (using filtered props)
   for (const [propName, propSpec] of Object.entries(componentSpec)) {
-    const spec = propSpec as any;
+    const spec = propSpec as Record<string, unknown>;
     if (spec.required && !(propName in reactProps)) {
       errors.push({
         component: componentName,
@@ -284,7 +284,7 @@ export function validateComponentProps(
 /**
  * Validate prop type
  */
-function validatePropType(value: any, expectedType: string): boolean {
+function validatePropType(value: unknown, expectedType: string): boolean {
   switch (expectedType) {
     case 'string':
       return typeof value === 'string';
@@ -325,7 +325,7 @@ function suggestSimilarProp(propName: string, validProps: string[]): string {
 /**
  * Get type conversion suggestion
  */
-function getTypeSuggestion(expectedType: string, receivedValue: any): string {
+function getTypeSuggestion(expectedType: string, receivedValue: unknown): string {
   const receivedType = typeof receivedValue;
   
   switch (expectedType) {
@@ -356,15 +356,15 @@ function getTypeSuggestion(expectedType: string, receivedValue: any): string {
 /**
  * Check for deprecated props
  */
-function checkDeprecatedProps(componentName: string, props: Record<string, any>): PropValidationWarning | null {
-  const compatibility = (VERSION_COMPATIBILITY as any)[componentName];
+function checkDeprecatedProps(componentName: string, props: Record<string, unknown>): PropValidationWarning | null {
+  const compatibility = (VERSION_COMPATIBILITY as Record<string, unknown>)[componentName];
   if (!compatibility) return null;
 
   const deprecatedProps = new Set<string>();
   
   // Collect all deprecated props across versions
   for (const versionData of Object.values(compatibility)) {
-    const data = versionData as any;
+    const data = versionData as Record<string, unknown>;
     if (data.deprecated) {
       data.deprecated.forEach((prop: string) => deprecatedProps.add(prop));
     }
@@ -463,7 +463,7 @@ function formatWarningForConsole(warning: PropValidationWarning): string {
  */
 export function createBuildValidation(context: DevValidationContext) {
   return {
-    async validateBuildProps(componentUsages: Array<{ component: string, props: Record<string, any>, location?: any }>) {
+    async validateBuildProps(componentUsages: Array<{ component: string, props: Record<string, unknown>, location?: unknown }>) {
       const allErrors: PropValidationError[] = [];
       const allWarnings: PropValidationWarning[] = [];
 

@@ -2,14 +2,14 @@
 
 > 🔄 **Dynamic Type Extraction**: ✅ Active  
 > 📊 **SDK Version**: 2.8.36  
-> 🕒 **Last Updated**: 9/11/2025, 5:03:48 PM  
+> 🕒 **Last Updated**: 9/11/2025, 5:27:37 PM  
 > 📈 **Components**: 5 components with live type data
 
 *This documentation is automatically synchronized with your installed Stack Auth SDK version.*
 
 > ✅ **Interface Change Detection**: No changes detected  
 > 📊 **Version**: 2.8.36 → 2.8.36  
-> 🕒 **Last Checked**: 9/11/2025, 5:03:48 PM
+> 🕒 **Last Checked**: 9/11/2025, 5:27:37 PM
 
 *No interface changes detected since last update.*
 
@@ -51,7 +51,7 @@ The SignUp component is a Stack Auth UI component that provides user registratio
 | 2.8.x | className, style, onSuccess, onError, redirectUri | None | 📝 Static |
 
 > 📊 **Current SDK Version**: 2.8.36
-> 🕒 **Last Updated**: 9/11/2025, 5:03:48 PM
+> 🕒 **Last Updated**: 9/11/2025, 5:27:37 PM
 
 
 ## TypeScript Integration
