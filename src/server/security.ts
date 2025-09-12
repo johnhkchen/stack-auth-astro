@@ -132,7 +132,11 @@ export function validateRedirectURL(url: string, allowedOrigins: string[] = []):
     
     // Allow relative URLs (same origin)
     if (!url.startsWith('http')) {
-      return sanitizeInput(url);
+      // Sanitize URL but preserve URL-safe characters
+      return url
+        .replace(/[<>"'\\]/g, '') // Remove HTML/script injection chars but keep URL chars
+        .replace(/[\x00-\x1f\x7f-\x9f]/g, '') // Remove control characters
+        .trim();
     }
     
     // For absolute URLs, validate against allowed origins

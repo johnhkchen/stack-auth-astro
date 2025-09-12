@@ -126,8 +126,8 @@ describe('Security Utilities', () => {
   
   describe('URL Validation', () => {
     it('should validate safe relative URLs', () => {
-      expect(validateRedirectURL('/dashboard')).toBe('dashboard');
-      expect(validateRedirectURL('/auth/callback')).toBe('authcallback');
+      expect(validateRedirectURL('/dashboard')).toBe('/dashboard');
+      expect(validateRedirectURL('/auth/callback')).toBe('/auth/callback');
     });
     
     it('should validate absolute URLs with allowed origins', () => {
@@ -165,16 +165,16 @@ describe('Security Utilities', () => {
     
     it('should handle edge case URLs', () => {
       // Test URLs with multiple slashes
-      expect(validateRedirectURL('//example.com')).toBe('example.com');
+      expect(validateRedirectURL('//example.com')).toBe('//example.com');
       
       // Test URLs with query parameters and fragments
-      expect(validateRedirectURL('/path?param=value#fragment')).toBe('path?param=value#fragment');
+      expect(validateRedirectURL('/path?param=value#fragment')).toBe('/path?param=value#fragment');
       
       // Test URLs with encoded characters  
-      expect(validateRedirectURL('/path%20with%20spaces')).toBe('path%20with%20spaces');
+      expect(validateRedirectURL('/path%20with%20spaces')).toBe('/path%20with%20spaces');
       
       // Test URLs with port numbers
-      expect(validateRedirectURL('/dashboard:8080')).toBe('dashboard:8080');
+      expect(validateRedirectURL('/dashboard:8080')).toBe('/dashboard:8080');
     });
     
     it('should handle whitespace-only URLs', () => {
