@@ -139,7 +139,7 @@ export function validateProp(
     return null; // Unknown component, skip validation
   }
 
-  const propSpec = componentSpec[propName];
+  const propSpec = (componentSpec as Record<string, any>)[propName];
   if (!propSpec) {
     // Unknown prop warning
     if (context?.isDevMode) {
@@ -265,7 +265,7 @@ export function validateComponentProps(
         component: componentName,
         prop: propName,
         received: undefined,
-        expected: spec.type,
+        expected: String(spec.type),
         message: `Required prop "${propName}" is missing for ${componentName} component`,
         suggestion: `Add the ${propName} prop with type ${spec.type}`
       });
@@ -334,12 +334,12 @@ function getTypeSuggestion(expectedType: string, receivedValue: unknown): string
         return `Convert to string: "${receivedValue}"`;
       }
       if (receivedType === 'boolean') {
-        return `Convert to string: "${receivedValue.toString()}"`;
+        return `Convert to string: "${String(receivedValue)}"`;
       }
-      return `Wrap in quotes: "${receivedValue}"`;
+      return `Wrap in quotes: "${String(receivedValue)}"`;
     case 'boolean':
       if (receivedType === 'string') {
-        return `Use boolean value: ${receivedValue.toLowerCase() === 'true'}`;
+        return `Use boolean value: ${String(receivedValue).toLowerCase() === 'true'}`;
       }
       return `Use boolean: true or false`;
     case 'function':
@@ -365,7 +365,7 @@ function checkDeprecatedProps(componentName: string, props: Record<string, unkno
   // Collect all deprecated props across versions
   for (const versionData of Object.values(compatibility)) {
     const data = versionData as Record<string, unknown>;
-    if (data.deprecated) {
+    if (data.deprecated && Array.isArray(data.deprecated)) {
       data.deprecated.forEach((prop: string) => deprecatedProps.add(prop));
     }
   }
@@ -417,7 +417,7 @@ export function createErrorOverlayIntegration(context: DevValidationContext) {
       }
 
       const errorMessage = formatErrorForOverlay(error);
-      context.errorOverlay.show(errorMessage);
+      (context.errorOverlay as any).show(errorMessage);
     },
 
     displayPropValidationWarning(warning: PropValidationWarning) {
@@ -473,12 +473,12 @@ export function createBuildValidation(context: DevValidationContext) {
         // Add location information if available
         const errorsWithLocation = errors.map(error => ({
           ...error,
-          location: usage.location
+          location: usage.location as { file: string; line: number; column: number; } | undefined
         }));
         
         const warningsWithLocation = warnings.map(warning => ({
           ...warning,
-          location: usage.location
+          location: usage.location as { file: string; line: number; column: number; } | undefined
         }));
 
         allErrors.push(...errorsWithLocation);
