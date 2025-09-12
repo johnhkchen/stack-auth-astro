@@ -64,5 +64,72 @@ export interface ConnectionCacheEntry {
   ttl: number;
 }
 
+// Client-side authentication state management types
+export interface AuthState {
+  user: User | null;
+  session: Session | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  error: Error | null;
+  lastUpdated: number;
+}
+
+export interface AuthStateOptions {
+  persistStorage?: boolean;
+  autoRefresh?: boolean;
+  refreshInterval?: number;
+  onStateChange?: (state: AuthState) => void;
+  onError?: (error: Error) => void;
+}
+
+export interface StorageOptions {
+  prefix?: string;
+  encrypt?: boolean;
+  ttl?: number;
+}
+
+export interface StorageItem<T = any> {
+  value: T;
+  timestamp: number;
+  ttl?: number;
+}
+
+export interface SyncMessage {
+  type: 'AUTH_STATE_CHANGE' | 'SIGN_IN' | 'SIGN_OUT' | 'SESSION_REFRESH' | 'SYNC_REQUEST';
+  payload?: any;
+  timestamp: number;
+  tabId: string;
+}
+
+export interface SyncOptions {
+  channelName?: string;
+  enableStorageSync?: boolean;
+  enableBroadcastSync?: boolean;
+  onSync?: (message: SyncMessage) => void;
+  onError?: (error: Error) => void;
+}
+
+export interface UseAuthStateOptions {
+  autoRefresh?: boolean;
+  syncAcrossTabs?: boolean;
+}
+
+export interface UseAuthStateReturn {
+  user: User | null;
+  session: Session | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  error: Error | null;
+  lastUpdated: number;
+}
+
+export interface UseAuthActionsReturn {
+  signIn: (provider?: string, options?: any) => Promise<void>;
+  signOut: (options?: any) => Promise<void>;
+  refreshSession: () => Promise<void>;
+  checkAuthStatus: () => Promise<void>;
+  clearError: () => void;
+}
+
 // Re-export Stack Auth types for convenience
 export type { User, Session };
