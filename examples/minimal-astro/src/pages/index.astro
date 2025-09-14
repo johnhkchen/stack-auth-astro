@@ -71,15 +71,27 @@ const user = await getUser(Astro);
       <li>Server-side authentication with <code>getUser()</code></li>
       <li>Basic Stack Auth React components</li>
       <li>Simple sign in and sign up flows</li>
+      <li><a href="/component-showcase">🎨 Component Showcase</a> - Standardized patterns and best practices</li>
     </ul>
 
     <script>
+      // Use standardized dynamic import and error handling
+      import { handleSignOut } from '../utils/demo-helpers.ts';
+      
       async function signOut() {
-        const { signOut } = await import('astro-stack-auth/client');
-        await signOut();
-        window.location.reload();
+        await handleSignOut({
+          onSuccess: () => {
+            console.log('Sign out successful');
+            window.location.reload();
+          },
+          onError: (error) => {
+            alert(`❌ Sign out error: ${error.message}`);
+          }
+        });
       }
-      (window as any).signOut = signOut;
+      
+      // Use standardized window function setup
+      window.signOut = signOut;
     </script>
   </body>
 </html>

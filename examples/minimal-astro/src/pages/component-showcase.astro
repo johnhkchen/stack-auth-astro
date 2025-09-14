@@ -1,0 +1,404 @@
+---
+import { getUser } from 'astro-stack-auth/server';
+import { SignIn, SignUp, UserButton } from 'astro-stack-auth/components';
+
+const user = await getUser(Astro);
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Component Showcase - Stack Auth + Astro</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+        line-height: 1.6;
+        color: #1f2937;
+      }
+      
+      .showcase-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding-bottom: 2rem;
+        border-bottom: 2px solid #e5e7eb;
+      }
+      
+      .showcase-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+      }
+      
+      .showcase-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+      }
+      
+      .showcase-card h3 {
+        margin: 0 0 1rem 0;
+        color: #1f2937;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      
+      .feature-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        background: #dbeafe;
+        color: #1e40af;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+      }
+      
+      .demo-area {
+        background: #f9fafb;
+        border: 1px dashed #d1d5db;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        text-align: center;
+        min-height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .auth-status {
+        background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+        border: 1px solid #22c55e;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 2rem;
+      }
+      
+      .auth-status.unauthenticated {
+        background: linear-gradient(135deg, #fef2f2 0%, #fff5f5 100%);
+        border-color: #ef4444;
+      }
+      
+      .controls {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+        justify-content: center;
+      }
+      
+      .btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 6px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-block;
+      }
+      
+      .btn-primary {
+        background: #3b82f6;
+        color: white;
+      }
+      
+      .btn-primary:hover {
+        background: #2563eb;
+      }
+      
+      .btn-secondary {
+        background: #6b7280;
+        color: white;
+      }
+      
+      .btn-secondary:hover {
+        background: #4b5563;
+      }
+      
+      .btn-danger {
+        background: #ef4444;
+        color: white;
+      }
+      
+      .btn-danger:hover {
+        background: #dc2626;
+      }
+      
+      .navigation {
+        margin-top: 3rem;
+        padding-top: 2rem;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      
+      .nav-link {
+        padding: 0.75rem 1.5rem;
+        background: #f3f4f6;
+        color: #374151;
+        text-decoration: none;
+        border-radius: 8px;
+        transition: all 0.2s;
+      }
+      
+      .nav-link:hover {
+        background: #e5e7eb;
+        transform: translateY(-1px);
+      }
+      
+      .code-preview {
+        background: #1f2937;
+        color: #f9fafb;
+        padding: 1rem;
+        border-radius: 6px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.875rem;
+        overflow-x: auto;
+        margin: 1rem 0;
+      }
+      
+      .pattern-info {
+        background: #eff6ff;
+        border: 1px solid #3b82f6;
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 1rem 0;
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="showcase-header">
+      <h1>🎨 Stack Auth Component Showcase</h1>
+      <p>Demonstrating standardized React component patterns and best practices</p>
+      
+      <div class={`auth-status ${!user ? 'unauthenticated' : ''}`}>
+        {user ? (
+          <div>
+            <strong>✅ Authenticated as:</strong> {user.displayName || user.primaryEmail}
+            <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; opacity: 0.8;">
+              Server-side authentication working correctly
+            </p>
+          </div>
+        ) : (
+          <div>
+            <strong>❌ Not authenticated</strong>
+            <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; opacity: 0.8;">
+              Sign in to see user-specific components
+            </p>
+          </div>
+        )}
+      </div>
+    </header>
+
+    <div class="showcase-grid">
+      <!-- UserButton Component -->
+      <div class="showcase-card">
+        <h3>
+          👤 UserButton Component
+          <span class="feature-badge">Adaptive UI</span>
+        </h3>
+        
+        <div class="pattern-info">
+          <strong>Pattern:</strong> Smart component that adapts based on authentication state
+          <br />
+          <strong>Hydration:</strong> Multiple strategies supported (immediate, visible, idle)
+        </div>
+        
+        <div class="demo-area">
+          <UserButton client:visible />
+        </div>
+        
+        <div class="code-preview">import { UserButton } from 'astro-stack-auth/components';
+
+&lt;UserButton 
+  client:visible 
+  className="custom-styles"
+/&gt;</div>
+      </div>
+
+      <!-- SignIn Component -->
+      <div class="showcase-card">
+        <h3>
+          🔐 SignIn Component
+          <span class="feature-badge">Form Component</span>
+        </h3>
+        
+        <div class="pattern-info">
+          <strong>Pattern:</strong> Full authentication form with provider support
+          <br />
+          <strong>Usage:</strong> Typically used with client:load for immediate functionality
+        </div>
+        
+        {!user ? (
+          <div class="demo-area">
+            <SignIn client:load />
+          </div>
+        ) : (
+          <div class="demo-area">
+            <p style="color: #059669; font-weight: 500;">
+              ✅ Already signed in! Sign out to see this component.
+            </p>
+          </div>
+        )}
+        
+        <div class="code-preview">import { SignIn } from 'astro-stack-auth/components';
+
+&lt;SignIn 
+  client:load
+  onSuccess={() => window.location.reload()}
+/&gt;</div>
+      </div>
+
+      <!-- SignUp Component -->
+      <div class="showcase-card">
+        <h3>
+          📝 SignUp Component
+          <span class="feature-badge">Registration</span>
+        </h3>
+        
+        <div class="pattern-info">
+          <strong>Pattern:</strong> User registration with validation and provider options
+          <br />
+          <strong>Strategy:</strong> Immediate hydration for critical functionality
+        </div>
+        
+        {!user ? (
+          <div class="demo-area">
+            <SignUp client:load />
+          </div>
+        ) : (
+          <div class="demo-area">
+            <p style="color: #059669; font-weight: 500;">
+              ✅ Already registered and signed in!
+            </p>
+          </div>
+        )}
+        
+        <div class="code-preview">import { SignUp } from 'astro-stack-auth/components';
+
+&lt;SignUp 
+  client:load
+  onSuccess={() => window.location.reload()}
+/&gt;</div>
+      </div>
+
+      <!-- Client-Side Functions -->
+      <div class="showcase-card">
+        <h3>
+          ⚡ Client-Side Functions
+          <span class="feature-badge">Programmatic</span>
+        </h3>
+        
+        <div class="pattern-info">
+          <strong>Pattern:</strong> Programmatic authentication with customizable options
+          <br />
+          <strong>Import:</strong> Dynamic import pattern for optimal performance
+        </div>
+        
+        <div class="demo-area">
+          <div class="controls">
+            {user ? (
+              <button id="signout-basic" class="btn btn-danger">
+                Sign Out
+              </button>
+            ) : (
+              <>
+                <a href="/signin" class="btn btn-primary">
+                  Go to Sign In
+                </a>
+                <a href="/signup" class="btn btn-secondary">
+                  Go to Sign Up
+                </a>
+              </>
+            )}
+          </div>
+        </div>
+        
+        <div class="code-preview">// Standardized dynamic import pattern
+import &#123; handleSignOut &#125; from '../utils/demo-helpers';
+
+await handleSignOut(&#123;
+  onSuccess: () =&gt; window.location.reload()
+&#125;);</div>
+      </div>
+
+      <!-- Pattern Examples -->
+      <div class="showcase-card">
+        <h3>
+          📋 Standardized Patterns
+          <span class="feature-badge">Best Practices</span>
+        </h3>
+        
+        <div class="pattern-info">
+          <strong>Consistent Patterns:</strong> Standardized prop types, error handling, and component initialization
+          <br />
+          <strong>Type Safety:</strong> Full TypeScript support with centralized type definitions
+        </div>
+        
+        <div class="demo-area">
+          <p style="color: #374151;">
+            📁 <strong>/types/demo-types.ts</strong> - Centralized type definitions<br />
+            🛠️ <strong>/utils/demo-helpers.ts</strong> - Reusable utilities<br />
+            🎨 <strong>component-showcase.astro</strong> - Pattern demonstrations
+          </p>
+        </div>
+        
+        <div class="code-preview">// Types and utilities now centralized
+import type &#123; SignInProps &#125; from '../types/demo-types';
+import &#123; handleSignOut &#125; from '../utils/demo-helpers';
+
+// Consistent error handling patterns
+// Standardized dynamic import utilities
+// Window function consolidation</div>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navigation">
+      <a href="/" class="nav-link">← Home</a>
+      <a href="/signin" class="nav-link">Sign In</a>
+      <a href="/signup" class="nav-link">Sign Up</a>
+      {user && (
+        <button onclick="signOutUser()" class="nav-link btn" style="background: #f3f4f6; border: none;">
+          Sign Out
+        </button>
+      )}
+    </nav>
+
+    <!-- JavaScript using standardized patterns -->
+    <script>
+      // Use standardized utilities
+      import { handleSignOut } from '../utils/demo-helpers.ts';
+      
+      // Standardized sign out function
+      async function signOutUser() {
+        await handleSignOut({
+          onSuccess: () => {
+            alert('✅ Signed out successfully!');
+            window.location.reload();
+          },
+          onError: (error) => {
+            alert(`❌ Sign out error: ${error.message}`);
+          }
+        });
+      }
+      
+      // Make function available globally
+      window.signOutUser = signOutUser;
+      
+      // Set up sign out button handler
+      document.getElementById('signout-basic')?.addEventListener('click', signOutUser);
+    </script>
+  </body>
+</html>
