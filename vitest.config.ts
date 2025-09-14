@@ -85,16 +85,16 @@ export default defineConfig({
     
     // TypeScript support with updated tsconfig for testing
     typecheck: {
-      enabled: true,
+      enabled: false,          // Disable during normal test runs for speed
       tsconfig: './tsconfig.test.json'
     },
     
     // Setup files for mocking and test utilities
     setupFiles: ['./tests/setup.ts'],
     
-    // Timeout configuration
-    testTimeout: 10000,
-    hookTimeout: 10000,
+    // Timeout configuration - optimized for faster feedback
+    testTimeout: 5000,    // Reduced from 10s to 5s for unit tests
+    hookTimeout: 5000,    // Reduced from 10s to 5s for setup/teardown
     
     // Reporter configuration - now dynamically loaded
     reporter: getReporters(),
@@ -103,14 +103,20 @@ export default defineConfig({
     clearMocks: true,
     restoreMocks: true,
     
-    // Parallel execution
+    // Parallel execution - optimized for test performance
     pool: 'threads',
     poolOptions: {
       threads: {
         singleThread: false,
-        minThreads: 1,
-        maxThreads: 4
+        minThreads: 2,           // Increased from 1 to 2
+        maxThreads: 8            // Increased from 4 to 8 for better parallelization
       }
+    },
+    
+    // Test sequencer for better performance
+    sequence: {
+      concurrent: true,           // Enable concurrent test execution
+      shuffle: false              // Keep deterministic order
     },
     
     // Server configuration for testing

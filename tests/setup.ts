@@ -35,6 +35,44 @@ try {
       unobserve(target: Element): void {}
       disconnect(): void {}
     };
+    
+    // Mock browser APIs that are missing in jsdom
+    global.BroadcastChannel = global.BroadcastChannel || class BroadcastChannel {
+      constructor(public name: string) {}
+      postMessage(message: any): void {}
+      close(): void {}
+      addEventListener(type: string, listener: EventListener): void {}
+      removeEventListener(type: string, listener: EventListener): void {}
+      dispatchEvent(event: Event): boolean { return true; }
+    };
+    
+    // Enhance localStorage mock for better test compatibility
+    const createStorageMock = () => {
+      let storage: { [key: string]: string } = {};
+      return {
+        getItem: vi.fn((key: string) => storage[key] || null),
+        setItem: vi.fn((key: string, value: string) => { storage[key] = value; }),
+        removeItem: vi.fn((key: string) => { delete storage[key]; }),
+        clear: vi.fn(() => { storage = {}; }),
+        get length() { return Object.keys(storage).length; },
+        key: vi.fn((index: number) => Object.keys(storage)[index] || null)
+      };
+    };
+    
+    // Mock localStorage and sessionStorage if not available
+    if (!global.localStorage) {
+      Object.defineProperty(global, 'localStorage', {
+        value: createStorageMock(),
+        writable: true
+      });
+    }
+    
+    if (!global.sessionStorage) {
+      Object.defineProperty(global, 'sessionStorage', {
+        value: createStorageMock(),
+        writable: true
+      });
+    }
   }
 } catch (e) {
   // Running in Node.js environment
@@ -376,6 +414,14 @@ beforeEach((context) => {
   // Clear all mocks before each test
   vi.clearAllMocks();
   testUtils.clearEnvMocks();
+  
+  // Reset storage mocks if in DOM environment
+  if (isDOMEnvironment && global.localStorage) {
+    global.localStorage.clear();
+  }
+  if (isDOMEnvironment && global.sessionStorage) {
+    global.sessionStorage.clear();
+  }
   
   // Start performance monitoring for this test
   performanceHooks.beforeEach(context);
