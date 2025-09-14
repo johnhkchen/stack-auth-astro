@@ -22,7 +22,7 @@ import {
   SignUp, 
   UserButton, 
   AccountSettings, 
-  AstroStackProvider,
+  StackProvider,
   StackAuthClientError,
   CLIENT_ERROR_CODES
 } from '../../src/components.js';
@@ -131,7 +131,7 @@ describe('Sprint 004 End-to-End Integration Tests', () => {
   describe('Feature #3: SignIn React Component Integration', () => {
     it('should render SignIn component with proper Astro island hydration', async () => {
       const TestApp = () => (
-        React.createElement(AstroStackProvider, {},
+        React.createElement(StackProvider, {},
           React.createElement(SignIn, { 'data-testid': 'signin-island' })
         )
       );
@@ -147,9 +147,9 @@ describe('Sprint 004 End-to-End Integration Tests', () => {
       const onSuccess = vi.fn();
 
       const TestApp = () => (
-        <AstroStackProvider>
+        <StackProvider>
           <SignIn onSuccess={onSuccess} />
-        </AstroStackProvider>
+        </StackProvider>
       );
 
       render(<TestApp />);
@@ -173,9 +173,9 @@ describe('Sprint 004 End-to-End Integration Tests', () => {
       (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
 
       const TestApp = () => (
-        <AstroStackProvider>
+        <StackProvider>
           <SignIn onError={onError} />
-        </AstroStackProvider>
+        </StackProvider>
       );
 
       render(<TestApp />);
@@ -256,9 +256,9 @@ describe('Sprint 004 End-to-End Integration Tests', () => {
       const user = { id: 'test-user', email: 'test@example.com' };
 
       const TestApp = () => (
-        <AstroStackProvider initialUser={user as any}>
+        <StackProvider initialUser={user as any}>
           <UserButton user={user as any} />
-        </AstroStackProvider>
+        </StackProvider>
       );
 
       render(<TestApp />);
@@ -268,9 +268,9 @@ describe('Sprint 004 End-to-End Integration Tests', () => {
 
     it('should display not signed in state when no user', () => {
       const TestApp = () => (
-        <AstroStackProvider>
+        <StackProvider>
           <UserButton />
-        </AstroStackProvider>
+        </StackProvider>
       );
 
       render(<TestApp />);
@@ -285,12 +285,12 @@ describe('Sprint 004 End-to-End Integration Tests', () => {
       
       strategies.forEach(strategy => {
         const TestApp = () => (
-          <AstroStackProvider 
+          <StackProvider 
             hydrationStrategy={strategy}
             initialUser={user as any}
           >
             <UserButton user={user as any} />
-          </AstroStackProvider>
+          </StackProvider>
         );
 
         const { unmount } = render(<TestApp />);
@@ -306,9 +306,9 @@ describe('Sprint 004 End-to-End Integration Tests', () => {
       const onSuccess = vi.fn();
 
       const TestApp = () => (
-        <AstroStackProvider>
+        <StackProvider>
           <SignUp onSuccess={onSuccess} />
-        </AstroStackProvider>
+        </StackProvider>
       );
 
       render(<TestApp />);
@@ -380,10 +380,10 @@ describe('Sprint 004 End-to-End Integration Tests', () => {
 
     it('should provide context-specific error messages', async () => {
       const TestApp = () => (
-        <AstroStackProvider>
+        <StackProvider>
           <SignIn />
           <UserButton />
-        </AstroStackProvider>
+        </StackProvider>
       );
 
       render(<TestApp />);
@@ -416,7 +416,7 @@ describe('Sprint 004 End-to-End Integration Tests', () => {
         }, []);
 
         return (
-          <AstroStackProvider onAuthStateChange={setCurrentAuthState}>
+          <StackProvider onAuthStateChange={setCurrentAuthState}>
             <div data-testid="auth-flow-container">
               {!currentAuthState.isAuthenticated ? (
                 <>
@@ -436,7 +436,7 @@ describe('Sprint 004 End-to-End Integration Tests', () => {
                 </>
               )}
             </div>
-          </AstroStackProvider>
+          </StackProvider>
         );
       };
 
@@ -483,17 +483,17 @@ describe('Sprint 004 End-to-End Integration Tests', () => {
       const TestApp = () => (
         <div>
           {/* Simulate multiple Astro islands */}
-          <AstroStackProvider>
+          <StackProvider>
             <UserButton data-testid="island1-userbutton" />
-          </AstroStackProvider>
+          </StackProvider>
           
-          <AstroStackProvider enableSync={true}>
+          <StackProvider enableSync={true}>
             <UserButton data-testid="island2-userbutton" />
-          </AstroStackProvider>
+          </StackProvider>
           
-          <AstroStackProvider syncAcrossTabs={true}>
+          <StackProvider syncAcrossTabs={true}>
             <AccountSettings data-testid="island3-settings" />
-          </AstroStackProvider>
+          </StackProvider>
         </div>
       );
 
@@ -533,12 +533,12 @@ describe('Sprint 004 End-to-End Integration Tests', () => {
       const initialSession = { id: 'ssr-session' };
 
       const TestApp = () => (
-        <AstroStackProvider 
+        <StackProvider 
           initialUser={initialUser as any}
           initialSession={initialSession as any}
         >
           <UserButton />
-        </AstroStackProvider>
+        </StackProvider>
       );
 
       render(<TestApp />);
@@ -559,9 +559,9 @@ describe('Sprint 004 End-to-End Integration Tests', () => {
         }, []);
 
         return (
-          <AstroStackProvider initialUser={user as any}>
+          <StackProvider initialUser={user as any}>
             <UserButton user={user as any} />
-          </AstroStackProvider>
+          </StackProvider>
         );
       };
 
@@ -579,7 +579,7 @@ describe('Sprint 004 End-to-End Integration Tests', () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       const TestApp = () => (
-        <AstroStackProvider
+        <StackProvider
           errorFallback={({ error, retry }) => (
             <div data-testid="error-fallback">
               Error: {error.message}
@@ -588,7 +588,7 @@ describe('Sprint 004 End-to-End Integration Tests', () => {
           )}
         >
           <UserButton />
-        </AstroStackProvider>
+        </StackProvider>
       );
 
       render(<TestApp />);

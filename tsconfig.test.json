@@ -6,11 +6,15 @@
     "allowJs": true,
     "noEmit": true,
     "rootDir": ".",
-    "jsx": "react"
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "types": ["node", "react", "react-dom", "@testing-library/jest-dom"]
   },
   "include": [
     "src/**/*.test.ts",
+    "src/**/*.test.tsx", 
     "src/**/*.spec.ts",
+    "src/**/*.spec.tsx",
     "test/**/*",
     "tests/**/*",
     "env.d.ts"

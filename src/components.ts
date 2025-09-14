@@ -23,5 +23,8 @@ export {
   StackProvider,
 } from '@stackframe/stack';
 
+// Re-export error handling types and constants from client
+export { StackAuthClientError, CLIENT_ERROR_CODES } from './client.js';
+
 // All components and types are now re-exported from the real Stack Auth packages.
 // The components work seamlessly in Astro with proper hydration support.

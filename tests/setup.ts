@@ -8,6 +8,7 @@
 import { vi, beforeEach, afterEach, afterAll } from 'vitest';
 import type { AstroIntegration } from 'astro';
 import * as React from 'react';
+import '@testing-library/jest-dom';
 import { validateTestEnvironment } from './utils/dependency-helpers.js';
 import { cleanupTempFiles } from './utils/file-helpers.js';
 import { performanceHooks } from './utils/vitest-performance-plugin.js';
