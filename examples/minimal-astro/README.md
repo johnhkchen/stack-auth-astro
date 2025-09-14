@@ -2,7 +2,24 @@
 
 This is a minimal example showing how to integrate Stack Auth with an Astro project.
 
-## Setup
+## 🚀 Quick Start (Automatic Setup)
+
+For the fastest setup experience, run the automated setup script:
+
+```bash
+# One-command setup
+./scripts/setup-example.sh
+```
+
+This will:
+- Install dependencies automatically
+- Create and configure your `.env` file
+- Guide you through Stack Auth credential setup
+- Provide helpful next steps
+
+## 📝 Manual Setup
+
+If you prefer manual setup:
 
 1. **Install dependencies:**
    ```bash
@@ -18,6 +35,25 @@ This is a minimal example showing how to integrate Stack Auth with an Astro proj
    - `STACK_PROJECT_ID` - Your project ID from Stack Auth dashboard
    - `STACK_PUBLISHABLE_CLIENT_KEY` - Your publishable client key
    - `STACK_SECRET_SERVER_KEY` - Your secret server key
+
+## ⚡ Zero-Config Testing
+
+**New!** This example now works out-of-the-box without any manual setup:
+
+```bash
+npm install
+npm run build    # Works immediately with test defaults!
+```
+
+When no `.env` file exists, the integration automatically:
+- ✅ Provides test environment variables
+- ✅ Enables test mode to bypass validation
+- ✅ Allows building and development without configuration
+
+Perfect for:
+- 📦 Fresh repository clones
+- 🔄 CI/CD pipelines  
+- 👀 Quick evaluation and testing
 
 ## Testing
 
