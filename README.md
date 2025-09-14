@@ -1,8 +1,12 @@
 # astro-stack-auth
 
-Community Astro integration for [Stack Auth](https://stack-auth.com) - Complete authentication for Astro projects.
+Community Astro integration for [Stack Auth](https://stack-auth.com) - Server-side authentication for Astro projects.
 
-## Quick Start
+> **🚧 Current Status**: This integration provides **server-side authentication** (Sprint 003 complete). Client-side functions and React components coming in Sprint 004.
+
+## 5-Minute Quick Start
+
+Get working server-side authentication in under 5 minutes:
 
 ```bash
 # 1. Install the integration
@@ -17,14 +21,57 @@ export default defineConfig({
   integrations: [stackAuth()] // Uses environment variables
 });
 
-# 3. Configure environment variables (see below)
+# 3. Configure environment variables
+# Get these from your Stack Auth Dashboard: https://app.stack-auth.com
+# .env
+STACK_PROJECT_ID=your_project_id
+STACK_PUBLISHABLE_CLIENT_KEY=your_publishable_client_key
+STACK_SECRET_SERVER_KEY=your_secret_server_key
+
+# 4. Test with a protected page
+# src/pages/protected.astro
+---
+import { requireAuth } from 'astro-stack-auth/server';
+const user = await requireAuth(Astro);
+---
+<html>
+  <body>
+    <h1>Welcome, {user.displayName}!</h1>
+    <p>User ID: {user.id}</p>
+  </body>
+</html>
+
+# 5. Start your dev server
+npm run dev
+# Visit /protected - you'll be redirected to Stack Auth sign-in
 ```
+
+## What Works Right Now ✅
+
+**Server-Side Authentication (Sprint 003 Complete)**
+- ✅ `getUser(context)` - Get authenticated user in pages/API routes
+- ✅ `getSession(context)` - Get current session information  
+- ✅ `requireAuth(context)` - Enforce authentication with automatic redirects
+- ✅ `Astro.locals.user` and `Astro.locals.session` - Middleware-populated auth state
+- ✅ Environment variable configuration with validation
+- ✅ Custom authentication endpoint prefixes
+- ✅ Automatic Stack Auth route injection (`/handler/*` by default)
+- ✅ TypeScript support with full type safety
+- ✅ Production-ready with performance monitoring
+
+## Coming in Sprint 004 🚧
+
+**Client-Side & React Components (In Development)**
+- 🚧 `signIn()`, `signOut()` - Browser authentication functions  
+- 🚧 `<SignIn />`, `<SignUp />`, `<UserButton />` - React UI components
+- 🚧 Client-side authentication state management
+- 🚧 Cross-tab authentication synchronization
 
 ## Environment Configuration
 
 ### Required Environment Variables
 
-To use this integration, you must set these environment variables from your [Stack Auth Dashboard](https://app.stack-auth.com/dashboard):
+Get these from your [Stack Auth Dashboard](https://app.stack-auth.com/dashboard):
 
 ```bash
 # .env
@@ -35,7 +82,7 @@ STACK_SECRET_SERVER_KEY=your_secret_server_key
 
 **Where to get these values:**
 1. Sign up at [Stack Auth](https://app.stack-auth.com)
-2. Create a new project or select an existing one
+2. Create a new project or select an existing one  
 3. Navigate to your project dashboard
 4. Copy the keys from the "API Keys" section
 
@@ -49,382 +96,275 @@ STACK_AUTH_PREFIX=/api/auth
 NODE_ENV=development
 ```
 
-### Zero Configuration Setup
+## Working Examples
 
-The integration works with **zero configuration** when environment variables are properly set:
+### Basic Protected Page
 
-```javascript
-// astro.config.mjs - Minimal setup
-export default defineConfig({
-  integrations: [stackAuth()] // That's it!
-});
+```astro
+---
+// src/pages/dashboard.astro
+import { requireAuth } from 'astro-stack-auth/server';
+
+// This automatically redirects unauthenticated users to sign-in
+const user = await requireAuth(Astro);
+---
+<html>
+  <head>
+    <title>Dashboard - {user.displayName}</title>
+  </head>
+  <body>
+    <h1>Welcome back, {user.displayName}!</h1>
+    <p>Email: {user.primaryEmail}</p>
+    <p>Signed in at: {new Date().toLocaleString()}</p>
+  </body>
+</html>
 ```
 
-### Advanced Configuration
+### Optional Authentication (Public Page)
 
-```javascript
-// astro.config.mjs - Custom configuration
-export default defineConfig({
-  integrations: [stackAuth({
-    prefix: '/api/auth',        // Custom endpoint prefix
-    injectRoutes: true,         // Auto-inject Stack Auth routes (default: true)
-    addReactRenderer: true      // Add React renderer for components (default: true)
-  })]
-});
+```astro
+---
+// src/pages/welcome.astro
+import { getUser } from 'astro-stack-auth/server';
+
+// Optional - won't redirect if not authenticated
+const user = await getUser(Astro);
+---
+<html>
+  <body>
+    {user ? (
+      <h1>Welcome back, {user.displayName}!</h1>
+    ) : (
+      <h1>Welcome! Please sign in to continue.</h1>
+    )}
+  </body>
+</html>
 ```
 
-## Setup Guides
-
-### Local Development Setup
-
-1. **Install dependencies:**
-   ```bash
-   npm install astro-stack-auth
-   ```
-
-2. **Create environment file:**
-   ```bash
-   # Create .env file in your project root
-   touch .env
-   ```
-
-3. **Add Stack Auth credentials:**
-   ```bash
-   # .env
-   STACK_PROJECT_ID=your_project_id
-   STACK_PUBLISHABLE_CLIENT_KEY=your_publishable_client_key
-   STACK_SECRET_SERVER_KEY=your_secret_server_key
-   
-   # Optional: Custom auth endpoint
-   STACK_AUTH_PREFIX=/api/auth
-   ```
-
-4. **Configure Astro:**
-   ```javascript
-   // astro.config.mjs
-   import { defineConfig } from 'astro/config';
-   import stackAuth from 'astro-stack-auth';
-
-   export default defineConfig({
-     integrations: [stackAuth()]
-   });
-   ```
-
-5. **Start development server:**
-   ```bash
-   npm run dev
-   ```
-
-### Production Deployment
-
-#### Vercel
-
-```bash
-# Set environment variables in Vercel dashboard
-vercel env add STACK_PROJECT_ID
-vercel env add STACK_PUBLISHABLE_CLIENT_KEY  
-vercel env add STACK_SECRET_SERVER_KEY
-```
-
-#### Netlify
-
-```bash
-# Set environment variables in Netlify dashboard or netlify.toml
-[build.environment]
-STACK_PROJECT_ID = "your_project_id"
-STACK_PUBLISHABLE_CLIENT_KEY = "your_publishable_client_key"
-STACK_SECRET_SERVER_KEY = "your_secret_server_key"
-```
-
-#### Docker
-
-```dockerfile
-# Dockerfile
-ENV STACK_PROJECT_ID=your_project_id
-ENV STACK_PUBLISHABLE_CLIENT_KEY=your_publishable_client_key
-ENV STACK_SECRET_SERVER_KEY=your_secret_server_key
-```
-
-#### Other Platforms
-
-For other deployment platforms, set the environment variables in your platform's configuration:
-- **Railway**: Environment tab in project settings
-- **Render**: Environment tab in service settings  
-- **Heroku**: Config Vars in app settings
-- **Digital Ocean**: Environment Variables in app settings
-
-## Requirements
-
-### TypeScript Support
-
-This package includes full TypeScript support out of the box:
+### Protected API Route
 
 ```typescript
-// Automatically extends Astro.locals with auth state
-declare namespace App {
-  interface Locals {
-    user: import('@stackframe/stack').User | null;
-    session: import('@stackframe/stack').Session | null;
-  }
-}
+// src/pages/api/user-data.ts
+import type { APIRoute } from 'astro';
+import { requireAuth } from 'astro-stack-auth/server';
+
+export const GET: APIRoute = async (context) => {
+  // Returns 401 JSON response if not authenticated
+  const user = await requireAuth(context);
+  
+  return new Response(JSON.stringify({
+    success: true,
+    user: {
+      id: user.id,
+      name: user.displayName,
+      email: user.primaryEmail
+    }
+  }), {
+    headers: { 'Content-Type': 'application/json' }
+  });
+};
 ```
 
-#### TypeScript Configuration Requirements
+### Using Middleware Data
 
-**Minimum Requirements:**
-- **TypeScript 5.0+** is required
-- **`moduleResolution`: `"bundler"` or `"node"`** (recommended: `"bundler"`)
-- **`target`: `"ES2020"` or higher** (recommended: `"ES2022"`)
+```astro
+---
+// src/pages/profile.astro
+// Access user data populated by middleware (no async needed)
+const { user, session } = Astro.locals;
 
-#### Recommended TypeScript Configuration
+if (!user) {
+  return Astro.redirect('/signin');
+}
+---
+<html>
+  <body>
+    <h1>Profile: {user.displayName}</h1>
+    <p>Session ID: {session.id}</p>
+    <p>Last active: {new Date(session.lastActiveAt).toLocaleString()}</p>
+  </body>
+</html>
+```
 
+## User Testing Guide
+
+### What You Can Test Right Now ✅
+
+1. **Server-Side Authentication**
+   - Create protected pages using `requireAuth()`
+   - Build public pages with optional auth using `getUser()`
+   - Create protected API endpoints
+   - Test automatic redirects to Stack Auth sign-in
+   - Verify user data access in pages and API routes
+
+2. **Environment Configuration**
+   - Test with your Stack Auth project credentials
+   - Try custom endpoint prefixes with `STACK_AUTH_PREFIX`
+   - Validate environment variable error handling
+
+3. **Integration Features**
+   - Middleware population of `Astro.locals.user` and `Astro.locals.session`
+   - TypeScript support and type safety
+   - Production deployment with your hosting platform
+
+### What to Skip for Now 🚧
+
+- Don't try to use `signIn()` or `signOut()` functions (Sprint 004)
+- Don't try to import React components like `<SignIn />` (Sprint 004)
+- Don't expect client-side authentication state management (Sprint 004)
+
+### How to Provide Feedback
+
+**Found an issue or have suggestions?**
+1. **GitHub Issues**: [Report bugs or request features](https://github.com/johnhkchen/stack-auth-astro/issues)
+2. **Documentation Issues**: If setup instructions don't work, please let us know
+3. **Feature Requests**: What client-side features are most important for Sprint 004?
+
+### Quick Test Checklist
+
+```bash
+# 1. Clone or copy the basic example
+cp -r examples/minimal-astro my-test-app
+cd my-test-app && npm install
+
+# 2. Set up environment variables
+cp .env.example .env
+# Edit .env with your Stack Auth credentials
+
+# 3. Test basic functionality
+npm run dev
+# Visit /protected - should redirect to Stack Auth
+# Sign in and verify you see user data
+
+# 4. Test API endpoint
+curl http://localhost:4321/api/user
+# Should return 401 when not authenticated
+```
+
+
+## Project Status & Roadmap
+
+### Current Status: Sprint 003 Complete ✅
+
+**What's Production-Ready:**
+- ✅ Server-side authentication functions (`getUser`, `getSession`, `requireAuth`)
+- ✅ Middleware integration with `Astro.locals`
+- ✅ Environment configuration and validation
+- ✅ TypeScript support with full type safety
+- ✅ Performance monitoring and security features
+- ✅ Production deployment support
+
+### Sprint 004: Client-Side & React Components 🚧
+
+**Coming Soon:**
+- 🚧 Client-side authentication functions (`signIn`, `signOut`)
+- 🚧 React UI components (`<SignIn />`, `<SignUp />`, `<UserButton />`)
+- 🚧 Browser authentication state management
+- 🚧 Cross-tab authentication synchronization
+
+**Expected Timeline:** Sprint 004 features coming soon
+
+### Contributing to Testing
+
+**Help us improve by testing Sprint 003 features:**
+1. Try the server-side authentication in your projects
+2. Test with different Astro adapters (Vercel, Netlify, etc.)
+3. Report any issues or suggest improvements
+4. Share feedback on what Sprint 004 features are most important
+
+**GitHub Repository:** [stack-auth-astro](https://github.com/johnhkchen/stack-auth-astro)
+
+This integration is built by the community, inspired by auth-astro patterns, and designed to provide the best Stack Auth experience for Astro developers.
+
+## Troubleshooting Common Issues
+
+### Setup Issues
+
+#### "Stack Auth configuration error: STACK_PROJECT_ID is required"
+
+**Cause**: Missing or incorrect environment variables
+
+**Solution**:
+```bash
+# 1. Check your .env file exists in project root
+ls -la .env
+
+# 2. Verify all required variables are set
+cat .env | grep STACK_
+
+# 3. Restart dev server after adding variables
+npm run dev
+```
+
+#### "Cannot resolve module 'astro-stack-auth/server'"
+
+**Cause**: TypeScript module resolution issues
+
+**Solution**:
 ```json
+// tsconfig.json - Use bundler resolution (recommended)
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext", 
-    "moduleResolution": "bundler",
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "strict": true,
-    "skipLibCheck": true,
-    "lib": ["ES2022", "DOM"],
-    "types": ["node", "react", "react-dom"],
-    "resolveJsonModule": true,
-    "isolatedModules": true
+    "moduleResolution": "bundler"
   }
 }
 ```
 
-#### Module Resolution Compatibility
+#### "User is null" or authentication not working
 
-| moduleResolution | Status | Import Style | Notes |
-|------------------|---------|--------------|-------|
-| `bundler` | ✅ **Recommended** | `'astro-stack-auth/server'` | Best compatibility |
-| `node` | ✅ Compatible | `'astro-stack-auth/server'` | Standard Node.js |
-| `node16` | ⚠️ Requires Extensions | `'astro-stack-auth/server.js'` | Must use .js |
-| `classic` | ❌ Not Compatible | N/A | Conflicts with JSON modules |
+**Possible causes & solutions**:
 
-### React Requirements
-
-React components are available but optional:
+1. **Wrong credentials**: Double-check your Stack Auth dashboard keys
+2. **Environment variables not loaded**: Restart dev server after changes
+3. **HTTPS issues in production**: Ensure your site uses HTTPS
+4. **Custom prefix conflicts**: If using `STACK_AUTH_PREFIX`, ensure no conflicts
 
 ```bash
-# Peer dependencies (install if using React components)
-npm install react react-dom
-npm install --save-dev @types/react @types/react-dom
+# Test your configuration
+echo $STACK_PROJECT_ID  # Should output your project ID
+echo $STACK_SECRET_SERVER_KEY  # Should output your secret key
 ```
 
-**React version requirements:**
-- React 18.0+ or React 19.0+
-- React DOM 18.0+ or React DOM 19.0+
-
-**Note:** React is only required if you use the pre-built UI components from `astro-stack-auth/components`. Server-side auth functionality works without React.
-
-### Astro Requirements
-
-- **Astro 5.0+** is required
-- Compatible with all Astro adapters (static, Node.js, Vercel, Netlify, etc.)
-- Works with SSR and SSG modes
-
-### Browser & Environment Support
-
-- **Node.js 18+** for development and server-side rendering
-- **Modern browsers** with ES2020+ support
-- **All major bundlers:** Vite, Webpack, Rollup, esbuild
-
-## Troubleshooting
-
-### Common Configuration Issues
-
-#### Missing Environment Variables
-
-**Error:** `Stack Auth configuration error: STACK_PROJECT_ID is required`
-
-**Solution:**
-1. Verify your `.env` file exists in your project root
-2. Check that all required environment variables are set:
-   ```bash
-   # .env
-   STACK_PROJECT_ID=your_project_id
-   STACK_PUBLISHABLE_CLIENT_KEY=your_publishable_client_key
-   STACK_SECRET_SERVER_KEY=your_secret_server_key
-   ```
-3. Restart your development server after adding environment variables
-4. Verify credentials are correct in your [Stack Auth Dashboard](https://app.stack-auth.com/dashboard)
-
-#### Module Resolution Issues
-
-**Error:** `Cannot resolve module 'astro-stack-auth/server'`
-
-**Solution:**
-1. Check your `moduleResolution` setting in `tsconfig.json`:
-   ```json
-   {
-     "compilerOptions": {
-       "moduleResolution": "bundler"  // ✅ Recommended
-     }
-   }
-   ```
-
-2. For `node16`/`nodenext`, use explicit file extensions:
-   ```typescript
-   // ✅ Correct for node16/nodenext
-   import { getUser } from 'astro-stack-auth/server.js';
-   
-   // ❌ Wrong for node16/nodenext  
-   import { getUser } from 'astro-stack-auth/server';
-   ```
-
-3. Avoid `classic` module resolution (not compatible):
-   ```json
-   {
-     "compilerOptions": {
-       "moduleResolution": "classic"  // ❌ Will fail
-     }
-   }
-   ```
-
-#### TypeScript Strict Mode Issues
-
-**Error:** `Type 'undefined' is not assignable to type 'string'` (with `exactOptionalPropertyTypes`)
-
-**Solution:**
-1. **Recommended:** Disable `exactOptionalPropertyTypes`:
-   ```json
-   {
-     "compilerOptions": {
-       "strict": true
-       // Remove: "exactOptionalPropertyTypes": true
-     }
-   }
-   ```
-
-2. **Alternative:** Use type assertions:
-   ```typescript
-   const config: StackAuthConfig = {
-     projectId: 'test',
-     publishableClientKey: 'key', 
-     secretServerKey: 'secret',
-     baseUrl: process.env.STACK_BASE_URL
-   } as StackAuthConfig;
-   ```
-
-#### Invalid Credentials
-
-**Error:** `Authentication failed` or `Invalid API key`
-
-**Solution:**
-1. Double-check your API keys in the Stack Auth Dashboard
-2. Ensure you're using the correct project ID
-3. Verify the secret server key matches your project
-4. Check if your Stack Auth project is properly configured
-
-#### Build Errors
-
-**Error:** TypeScript errors or build failures
-
-**Solution:**
-1. Ensure TypeScript version is 5.0+:
-   ```bash
-   npm install typescript@^5.0.0
-   ```
-2. Verify Astro version is 5.0+:
-   ```bash
-   npm install astro@^5.0.0
-   ```
-3. Check that peer dependencies are installed if using React components:
-   ```bash
-   npm install react react-dom @types/react @types/react-dom
-   ```
-4. Validate your TypeScript configuration:
-   ```bash
-   npx tsc --noEmit --showConfig
-   ```
-
-#### Import Errors with Stack Auth Packages
-
-**Error:** `Cannot resolve module '@stackframe/stack'`
-
-**Solution:**
-1. Validate Stack Auth packages:
-   ```bash
-   npm run stack:validate
-   ```
-2. Reinstall Stack Auth packages if needed:
-   ```bash
-   npm run stack:reinstall
-   ```
-3. Clear npm cache and reinstall:
-   ```bash
-   npm cache clean --force
-   npm ci
-   ```
-
-### Quick Diagnostics
-
-Run these commands to diagnose issues:
-
-```bash
-# Check versions
-npx astro --version
-npx tsc --version
-npm list astro-stack-auth react typescript
-
-# Validate TypeScript config
-npx tsc --noEmit --showConfig
-
-# Test basic imports
-npm run type:check
-
-# Validate Stack Auth packages
-npm run stack:validate
-```
-
-### Advanced Troubleshooting
-
-For complex issues, see our comprehensive guides:
-
-- **[Consumer Compatibility Guide](./docs/consumer-compatibility.md)** - Detailed TypeScript configurations
-- **[Compatibility Matrix](./docs/compatibility-matrix.md)** - Version compatibility charts  
-- **[Troubleshooting Guide](./docs/troubleshooting-guide.md)** - In-depth problem solving
-
-#### Development vs Production Issues
+### Development vs Production
 
 **Development:**
-- More detailed error messages
-- `.env` file detection
-- Hot reload support
+- Uses `.env` file automatically
+- Detailed error messages
+- Stack Auth dashboard shows "Development" environment
 
 **Production:**
-- Concise error messages
-- Environment variables from hosting platform
-- Optimized builds
+- Set environment variables in your hosting platform:
+  - **Vercel**: Environment Variables tab
+  - **Netlify**: Site settings → Environment variables
+  - **Railway**: Environment tab
+  - **Render**: Environment tab
+- Stack Auth dashboard shows "Production" environment
 
 ### Getting Help
 
-1. **Check the error message** - Development mode provides detailed guidance
-2. **Run diagnostics** - Use the commands above to gather information
-3. **Check compatibility** - Verify your versions against our compatibility matrix
-4. **Review documentation** - Check our detailed guides for specific issues
-5. **Verify environment variables** - Use `npm run stack:validate` to check package installation
-6. **Check Stack Auth Dashboard** - Ensure your project is properly configured
-
-## 📚 Examples and Templates
-
-Get started quickly with our comprehensive examples and templates:
-
-### 🚀 Quick Start Examples
-
-#### Minimal Astro Project
-Perfect for getting started and understanding the basics:
+1. **Check error messages**: Development mode provides detailed guidance
+2. **Verify Stack Auth setup**: Ensure your project is configured correctly
+3. **Test with minimal example**: Use `examples/minimal-astro` to isolate issues
+4. **GitHub Issues**: Report bugs with error details and configuration
 
 ```bash
-# Copy the minimal example
-cp -r examples/minimal-astro my-astro-auth-app
-cd my-astro-auth-app && npm install
+# Helpful diagnostic commands
+npx astro --version
+node --version
+npm list astro-stack-auth
+cat .env | grep STACK_  # Don't include in bug reports!
+```
 
-# Configure environment variables
+## Examples
+
+### Available Examples
+
+```bash
+# Minimal working example (recommended for testing)
+cp -r examples/minimal-astro my-app
+cd my-app && npm install
+
+# Copy environment template and configure
 cp .env.example .env
 # Edit .env with your Stack Auth credentials
 
@@ -432,105 +372,56 @@ cp .env.example .env
 npm run dev
 ```
 
-**Features:** Basic Stack Auth integration, sign-in/sign-up pages, protected routes, server-side authentication
+**What's included in minimal-astro:**
+- ✅ Basic Astro configuration with Stack Auth
+- ✅ Protected page example (`/protected`)
+- ✅ Optional auth page example (`/welcome`)
+- ✅ Protected API route example (`/api/user`)
+- ✅ Middleware demonstration (`/middleware-demo`)
+- ✅ Working TypeScript configuration
 
-#### Full-Featured Example
-Complete authentication flows with styled UI:
-
-```bash
-# Copy the full-featured example
-cp -r examples/full-featured my-production-app
-cd my-production-app && npm install
-
-# Configure environment and start
-cp .env.example .env && npm run dev
-```
-
-**Features:** Dashboard, user management, Tailwind CSS styling, custom React components, production-ready structure
-
-### 📁 Available Examples
+### File Structure
 
 ```
-examples/
-├── minimal-astro/          # Basic integration example
-├── full-featured/          # Complete authentication flows
-├── components/             # React component examples
-├── pages/                  # Astro page examples  
-├── configs/                # TypeScript configuration templates
-├── deployments/            # Platform deployment guides
-└── README.md              # Complete examples documentation
+examples/minimal-astro/
+├── astro.config.mjs        # Stack Auth integration setup
+├── src/
+│   ├── pages/
+│   │   ├── protected.astro # requireAuth() example
+│   │   ├── welcome.astro   # getUser() example  
+│   │   └── api/user.ts     # Protected API route
+│   └── middleware.ts       # Auth middleware setup
+├── .env.example           # Environment template
+└── package.json          # Dependencies
 ```
 
-### 🧩 Component Examples
+### Testing Your Setup
 
-Copy and customize React components with proper hydration:
+1. **Start the example**: `npm run dev`
+2. **Visit `/protected`**: Should redirect to Stack Auth sign-in
+3. **Sign in with Stack Auth**: Use any provider (Google, GitHub, etc.)
+4. **Return to `/protected`**: Should show your user information
+5. **Test API route**: `curl http://localhost:4321/api/user` (requires auth)
+6. **Check `/welcome`**: Shows optional authentication pattern
 
-```tsx
-// Authentication components
-import { SignInButton, SignOutButton } from './examples/components';
+## Requirements
 
-<SignInButton client:load provider="google" />
-<SignOutButton client:visible redirectTo="/goodbye" />
+### Astro Version
+- **Astro 5.0+** is required
+- Compatible with all Astro adapters (Vercel, Netlify, Node.js, etc.)
+- Works with SSR and SSG modes
 
-// Status and conditional content
-import { AuthStatus, ConditionalContent } from './examples/components';
-
-<AuthStatus client:visible showDetails={true} />
-<ConditionalContent client:idle requireAuth={true}>
-  <ProtectedFeature />
-</ConditionalContent>
-```
-
-### ⚙️ Configuration Templates
-
-Choose the TypeScript configuration for your project:
-
-```bash
-# Recommended for most projects  
-cp examples/configs/tsconfig.recommended.json tsconfig.json
-
-# Maximum type safety for production
-cp examples/configs/tsconfig.strict.json tsconfig.json
-
-# Rapid prototyping with minimal type checking
-cp examples/configs/tsconfig.loose.json tsconfig.json
-```
-
-### 🚀 Deployment Guides
-
-Platform-specific deployment instructions:
-
-- **[Netlify](./examples/deployments/netlify.md)** - Serverless with automatic Git deployments
-- **[Vercel](./examples/deployments/vercel.md)** - Edge functions with analytics integration  
-- **[Node.js](./examples/deployments/nodejs.md)** - Self-hosted with Docker, PM2, systemd
-
-### 📄 Page Examples
-
-Learn authentication patterns with example Astro pages:
-
-- `middleware-example.astro` - Comparing `Astro.locals` vs `getUser()`
-- `api-integration.astro` - Custom API routes and Stack Auth endpoints
-- `hydration-patterns.astro` - Complete guide to React component hydration
-
-### 🎯 Use Case Examples
-
-| Project Type | Recommended Examples | Configuration |
-|--------------|---------------------|---------------|
-| **Small Business** | minimal-astro + Netlify | tsconfig.recommended.json |
-| **SaaS Application** | full-featured + Vercel | tsconfig.strict.json |
-| **Enterprise App** | full-featured + Node.js | tsconfig.strict.json + Docker |
-| **Rapid Prototype** | minimal-astro + local dev | tsconfig.loose.json |
-
-**👉 [View Complete Examples Documentation](./examples/README.md)**
-
-## Stack Auth Compatibility
-
-This integration is compatible with Stack Auth version `^2.8.36`.
-
-### Dependencies
+### Stack Auth Compatibility
+This integration works with Stack Auth version `^2.8.36`:
 - `@stackframe/stack`: ^2.8.36 - Core Stack Auth SDK
-- `@stackframe/stack-ui`: ^2.8.36 - Stack Auth React UI components
+- `@stackframe/stack-ui`: ^2.8.36 - UI components (Sprint 004)
 
-### Development Commands
-- `npm run stack:validate` - Validate Stack Auth packages are properly installed
-- `npm run stack:reinstall` - Reinstall Stack Auth packages if needed
+### TypeScript Support
+- **TypeScript 5.0+** required
+- **Module resolution**: `"bundler"` recommended
+- Full type safety for `Astro.locals.user` and `Astro.locals.session`
+
+### Node.js & Browser Support
+- **Node.js 18+** for development and SSR
+- **Modern browsers** with ES2020+ support
+- Works with all major bundlers
