@@ -24,10 +24,9 @@ export default defineConfig((options) => ({
       js: format === 'cjs' ? '.cjs' : '.mjs'
     }
   },
-  // Configure Rollup output options to suppress mixed exports warnings
+  // Configure Rollup output options for optimal bundling
   rollupOptions: {
     output: {
-      exports: 'named',
       // Improve tree-shaking by ensuring consistent format
       interop: 'compat',
       // Optimize chunk generation for better tree-shaking

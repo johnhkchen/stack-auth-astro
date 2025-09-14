@@ -17,6 +17,15 @@ import {
   addSecurityHeaders,
   SecurityError,
   ValidationError,
+  generateSecureToken,
+  generateCSRFToken,
+  validateCSRFToken,
+  generateSecureHash,
+  validateOrigin,
+  getClientIP,
+  validateAuthMethod,
+  isBot,
+  generateRateLimitKey,
   type SecurityValidationOptions
 } from './server/security.js';
 import { 
@@ -419,3 +428,22 @@ export function clearPerformanceData(): void {
 export function recordHealthCheck(responseTime: number, success: boolean): void {
   recordProviderHealthCheck(responseTime, success);
 }
+
+// Re-export security utility functions for public API
+export {
+  generateSecureToken,
+  generateCSRFToken,
+  validateCSRFToken,
+  generateSecureHash,
+  sanitizeInput,
+  validateRedirectURL,
+  validateOrigin,
+  getClientIP,
+  validateAuthMethod,
+  isBot,
+  generateRateLimitKey,
+  addSecurityHeaders,
+  SecurityError,
+  ValidationError,
+  type SecurityValidationOptions
+};

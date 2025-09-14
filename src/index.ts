@@ -76,7 +76,7 @@ export interface StackAuthOptions {
  * with route injection, middleware, and React component support.
  * Includes comprehensive validation and error handling.
  */
-export default function astroStackAuth(options: StackAuthOptions = {}): AstroIntegration {
+export function astroStackAuth(options: StackAuthOptions = {}): AstroIntegration {
   const {
     prefix = process.env.STACK_AUTH_PREFIX || '/handler',
     addReactRenderer = true,
@@ -251,9 +251,15 @@ export default function astroStackAuth(options: StackAuthOptions = {}): AstroInt
 // Re-export basic integration for backward compatibility
 export { 
   createBasicStackAuthIntegration,
-  default as basicIntegration,
   type BasicStackAuthOptions
 } from './integration.js';
+
+// Export basic integration as named export to avoid mixing patterns
+import { default as basicStackAuth } from './integration.js';
+export { basicStackAuth as basicIntegration };
+
+// Note: Default export removed to eliminate mixed export pattern warnings
+// For backward compatibility, consumers should import { astroStackAuth } or { astroStackAuth as default }
 
 // Re-export types for convenience  
 export type { StackAuthConfig } from './types.js';
