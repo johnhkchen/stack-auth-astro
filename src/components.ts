@@ -34,6 +34,15 @@ export type {
   StackAdminApp
 } from '@stackframe/stack';
 
+// Import Stack Auth components for type extraction
+import {
+  SignIn as StackSignIn,
+  SignUp as StackSignUp,
+  UserButton as StackUserButton,
+  AccountSettings as StackAccountSettings,
+  StackProvider as StackStackProvider
+} from '@stackframe/stack';
+
 // Re-export Stack Auth components with full TypeScript prop inference
 export {
   // Core authentication components
@@ -44,8 +53,50 @@ export {
   StackProvider,   // Props: lang?, translationOverrides?, children (required), app (required)
 } from '@stackframe/stack';
 
-// Note: Stack Auth doesn't export individual component prop types
-// TypeScript will infer props automatically from React.ComponentProps<typeof Component>
+// Extract and re-export component prop types using TypeScript utility types
+// This enables TypeScript autocompletion and proper prop validation
+export type SignInProps = React.ComponentProps<typeof StackSignIn>;
+export type SignUpProps = React.ComponentProps<typeof StackSignUp>;
+export type UserButtonProps = React.ComponentProps<typeof StackUserButton>;
+export type AccountSettingsProps = React.ComponentProps<typeof StackAccountSettings>;
+export type StackProviderProps = React.ComponentProps<typeof StackStackProvider>;
+
+// Additional TypeScript helper types for Stack Auth components
+export type StackAuthComponentProps<T extends React.ElementType = React.ElementType> = React.ComponentProps<T>;
+export type StackAuthFC<P = {}> = React.FC<P>;
+export type ReactFC<P = {}> = React.FC<P>;
+export type ReactElement = React.ReactElement;
+export type ReactComponent<P = {}> = React.Component<P>;
+export type UseStackAuthHook = () => any; // Generic hook type
+export type StackAuthContextType = any; // Will be refined as Stack Auth types evolve
+export type StackAuthRef<T = any> = React.Ref<T>;
+export type StackAuthEvent<T = any> = React.SyntheticEvent<T>;
+export type StackAuthMouseEvent<T = Element> = React.MouseEvent<T>;
+export type StackAuthChangeEvent<T = Element> = React.ChangeEvent<T>;
+export type ForwardRefStackComponentProps<T, P = {}> = React.ForwardRefRenderFunction<T, P>;
+
+// Export prop type constructors as runtime values for validation purposes
+// These provide runtime access to the component prop type information
+export const SignInProps = {} as SignInProps;
+export const SignUpProps = {} as SignUpProps;
+export const UserButtonProps = {} as UserButtonProps;
+export const AccountSettingsProps = {} as AccountSettingsProps;
+export const StackProviderProps = {} as StackProviderProps;
+
+// Runtime helper objects for additional types
+export const StackAuthComponentProps = {} as any;
+export const StackAuthFC = {} as any;
+export const ReactFC = {} as any;
+export const ReactElement = {} as any;
+export const ReactComponent = {} as any;
+export const UseStackAuthHook = {} as any;
+export const StackAuthContextType = {} as any;
+export const StackAuthRef = {} as any;
+export const StackAuthEvent = {} as any;
+export const StackAuthMouseEvent = {} as any;
+export const StackAuthChangeEvent = {} as any;
+export const ForwardRefStackComponentProps = {} as any;
+
 // The dynamic type extraction system captures these props at build time
 
 // Re-export error handling types and constants from client

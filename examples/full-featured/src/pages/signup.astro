@@ -11,7 +11,22 @@ import { SignUp } from 'astro-stack-auth/components';
           Create Your Account
         </h1>
         
-        <SignUp client:load />
+        <SignUp 
+          client:load 
+          onSuccess={(user) => {
+            console.log('Account created successfully!', user);
+            // Redirect to onboarding or dashboard
+            window.location.href = '/welcome';
+          }}
+          onError={(error) => {
+            console.error('Sign up error:', error);
+            alert('Account creation failed: ' + error.message);
+          }}
+          extraInfo="Join thousands of developers building amazing apps."
+          providers={['google', 'github']}
+          className="signup-form"
+          style={{ fontFamily: 'system-ui' }}
+        />
         
         <div class="mt-6 text-center">
           <p class="text-sm text-gray-600">
