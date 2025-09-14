@@ -1,6 +1,5 @@
 ---
 import { requireAuth } from 'astro-stack-auth/server';
-import { AccountSettings } from 'astro-stack-auth/components';
 
 const user = await requireAuth(Astro);
 ---
@@ -10,11 +9,65 @@ const user = await requireAuth(Astro);
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <title>Account Settings - Minimal Astro + Stack Auth</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 1rem;
+        line-height: 1.6;
+      }
+      .user-info {
+        padding: 1rem;
+        margin: 1rem 0;
+        border-radius: 8px;
+        background: #fef3c7;
+        border: 1px solid #f59e0b;
+      }
+      button {
+        padding: 0.5rem 1rem;
+        background: #dc2626;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #b91c1c;
+      }
+      a {
+        color: #0ea5e9;
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+    </style>
   </head>
   <body>
-    <h1>Account Settings</h1>
-    <p>Welcome, {user.displayName || user.primaryEmail}!</p>
-    <AccountSettings client:load />
+    <h1>👤 Account Settings</h1>
+    <div class="user-info">
+      <p><strong>Display Name:</strong> {user.displayName || 'Not set'}</p>
+      <p><strong>Email:</strong> {user.primaryEmail}</p>
+      <p><strong>User ID:</strong> {user.id}</p>
+    </div>
+    
+    <h2>Actions</h2>
+    <button onclick="handleSignOut()">Sign Out</button>
+    
     <p><a href="/">← Back to Home</a></p>
+
+    <script>
+      async function handleSignOut() {
+        try {
+          const { signOut } = await import('astro-stack-auth/client');
+          await signOut();
+          window.location.href = '/';
+        } catch (error) {
+          alert(`Sign out error: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      }
+      (window as any).handleSignOut = handleSignOut;
+    </script>
   </body>
 </html>

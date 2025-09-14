@@ -7,447 +7,74 @@ const user = await getUser(Astro);
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width" />
-    <meta name="generator" content={Astro.generator} />
-    <title>Minimal Astro + Stack Auth - Sprint 004 Features</title>
+    <title>Minimal Astro + Stack Auth</title>
     <style>
       body {
-        font-family: Arial, sans-serif;
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 20px;
+        font-family: system-ui, sans-serif;
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 1rem;
         line-height: 1.6;
       }
-      
-      .feature-section {
-        margin: 30px 0;
-        padding: 20px;
-        border: 1px solid #ddd;
+      .auth-state {
+        padding: 1rem;
+        margin: 1rem 0;
         border-radius: 8px;
-        background: #f9f9f9;
+        background: #f0f9ff;
+        border: 1px solid #0ea5e9;
       }
-      
-      .feature-title {
-        color: #333;
-        border-bottom: 2px solid #4CAF50;
-        padding-bottom: 10px;
-      }
-      
-      .component-island {
-        margin: 15px 0;
-        padding: 15px;
-        background: white;
-        border-radius: 4px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      }
-      
-      .auth-actions {
+      .nav-links {
         display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin: 10px 0;
+        gap: 1rem;
+        margin: 2rem 0;
       }
-      
-      button, .btn {
-        padding: 8px 16px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
+      .nav-links a {
+        padding: 0.5rem 1rem;
+        background: #0ea5e9;
+        color: white;
         text-decoration: none;
-        display: inline-block;
-        font-size: 14px;
+        border-radius: 6px;
       }
-      
-      .primary { background: #4CAF50; color: white; }
-      .secondary { background: #008CBA; color: white; }
-      .warning { background: #ff9800; color: white; }
-      .danger { background: #f44336; color: white; }
-      
-      .status-display {
-        padding: 10px;
-        margin: 10px 0;
-        border-radius: 4px;
-        background: #e8f5e8;
-        border-left: 4px solid #4CAF50;
-      }
-      
-      .error-display {
-        padding: 10px;
-        margin: 10px 0;
-        border-radius: 4px;
-        background: #fee;
-        border-left: 4px solid #f44336;
+      .nav-links a:hover {
+        background: #0284c7;
       }
     </style>
   </head>
   <body>
-    <h1>🚀 Astro + Stack Auth - Sprint 004 Demo</h1>
-    <p>This page demonstrates all Sprint 004 features working together in a real Astro application.</p>
+    <h1>Minimal Astro + Stack Auth</h1>
+    <p>A simple example showing basic Stack Auth integration with Astro.</p>
     
-    <!-- Feature #7: UserButton Component -->
-    <div class="feature-section">
-      <h2 class="feature-title">Feature #7: UserButton Component</h2>
-      <p>The UserButton component shows user info and provides account management:</p>
-      <div class="component-island">
-        {user && (
-          <div class="status-display">
-            <strong>Server-side user data:</strong> {user.displayName || user.primaryEmail}
-          </div>
-        )}
-        
-        <div id="userbutton-island">
-          <script>
-            import React from 'react';
-            import { UserButton, StackProvider } from 'astro-stack-auth/components';
-            import { createRoot } from 'react-dom/client';
-            
-            const container = document.getElementById('userbutton-island');
-            if (container) {
-              const root = createRoot(container);
-              
-              root.render(
-                React.createElement(StackProvider, {},
-                  React.createElement(UserButton)
-                )
-              );
-            }
-          </script>
+    <div class="auth-state">
+      {user ? (
+        <div>
+          <p><strong>✅ Signed in as:</strong> {user.displayName || user.primaryEmail}</p>
         </div>
-      </div>
+      ) : (
+        <p><strong>❌ Not signed in</strong></p>
+      )}
     </div>
 
-    <!-- Feature #3: SignIn Component -->
-    <div class="feature-section">
-      <h2 class="feature-title">Feature #3: SignIn React Component</h2>
-      <p>React-based sign in component with multiple providers and error handling:</p>
-      <div class="component-island">
-        {!user && (
-          <div id="signin-island">
-            <script>
-              import React from 'react';
-              import { SignIn, StackProvider } from 'astro-stack-auth/components';
-              import { createRoot } from 'react-dom/client';
-              
-              const container = document.getElementById('signin-island');
-              if (container) {
-                const root = createRoot(container);
-                
-                root.render(
-                  React.createElement(StackProvider, {},
-                    React.createElement(SignIn)
-                  )
-                );
-              }
-            </script>
-          </div>
-        )}
-        
-        {user && (
-          <div class="status-display">
-            ✅ Already signed in! UserButton component above shows account management options.
-          </div>
-        )}
-      </div>
+    <div class="nav-links">
+      {!user ? (
+        <>
+          <a href="/signin">Sign In</a>
+          <a href="/signup">Sign Up</a>
+        </>
+      ) : (
+        <>
+          <a href="/account">Account</a>
+          <a href="/protected">Protected Page</a>
+        </>
+      )}
     </div>
 
-    <!-- Feature #8: SignUp Component -->
-    <div class="feature-section">
-      <h2 class="feature-title">Feature #8: SignUp Component</h2>
-      <p>React-based sign up component for new user registration:</p>
-      <div class="component-island">
-        {!user && (
-          <div id="signup-island">
-            <script>
-              import React from 'react';
-              import { SignUp, StackProvider } from 'astro-stack-auth/components';
-              import { createRoot } from 'react-dom/client';
-              
-              const container = document.getElementById('signup-island');
-              if (container) {
-                const root = createRoot(container);
-                
-                root.render(
-                  React.createElement(StackProvider, {},
-                    React.createElement(SignUp)
-                  )
-                );
-              }
-            </script>
-          </div>
-        )}
-        
-        {user && (
-          <div class="status-display">
-            ✅ Account already exists! Use the UserButton above to manage your account.
-          </div>
-        )}
-      </div>
-    </div>
-
-    <!-- Feature #5: Client-side signOut Function -->
-    <div class="feature-section">
-      <h2 class="feature-title">Feature #5: Client-side signOut Function</h2>
-      <p>Programmatic sign out with customizable options and error handling:</p>
-      <div class="component-island">
-        {user && (
-          <div class="auth-actions">
-            <button class="danger" onclick="handleSignOut()">
-              Sign Out (Basic)
-            </button>
-            <button class="warning" onclick="handleSignOutWithClear()">
-              Sign Out + Clear Storage
-            </button>
-            <button class="secondary" onclick="handleSignOutWithRedirect()">
-              Sign Out + Custom Redirect
-            </button>
-          </div>
-        )}
-        
-        {!user && (
-          <div class="status-display">
-            ℹ️ Sign in first to see client-side sign out options.
-          </div>
-        )}
-        
-        <script>
-          import { signOut, redirectToSignIn, redirectToAccount } from 'astro-stack-auth/client';
-          
-          async function handleSignOut() {
-            try {
-              await signOut({
-                onSuccess: () => {
-                  alert('✅ Signed out successfully!');
-                  window.location.reload();
-                }
-              });
-            } catch (error) {
-              alert(`❌ Sign out error: ${error.message}`);
-            }
-          }
-          
-          async function handleSignOutWithClear() {
-            try {
-              await signOut({
-                clearLocalStorage: true,
-                onSuccess: () => {
-                  alert('✅ Signed out and cleared local storage!');
-                  window.location.reload();
-                }
-              });
-            } catch (error) {
-              alert(`❌ Sign out error: ${error.message}`);
-            }
-          }
-          
-          async function handleSignOutWithRedirect() {
-            try {
-              await signOut({
-                redirectTo: '/goodbye',
-                onSuccess: () => {
-                  alert('✅ Signing out with custom redirect...');
-                }
-              });
-            } catch (error) {
-              alert(`❌ Sign out error: ${error.message}`);
-              // Fallback redirect
-              window.location.href = '/goodbye';
-            }
-          }
-          
-          // Make functions globally available
-          window.handleSignOut = handleSignOut;
-          window.handleSignOutWithClear = handleSignOutWithClear;  
-          window.handleSignOutWithRedirect = handleSignOutWithRedirect;
-        </script>
-      </div>
-    </div>
-
-    <!-- Feature #10: Helpful Error Messages -->
-    <div class="feature-section">
-      <h2 class="feature-title">Feature #10: Helpful Error Messages</h2>
-      <p>Comprehensive error handling with user-friendly messages and recovery options:</p>
-      <div class="component-island">
-        <div class="auth-actions">
-          <button class="warning" onclick="simulateNetworkError()">
-            Simulate Network Error
-          </button>
-          <button class="warning" onclick="simulateRateLimit()">
-            Simulate Rate Limit
-          </button>
-          <button class="warning" onclick="simulateOfflineError()">
-            Simulate Offline Error
-          </button>
-        </div>
-        
-        <div id="error-display"></div>
-        
-        <script>
-          import { signIn, StackAuthClientError } from 'astro-stack-auth/client';
-          
-          function displayError(error) {
-            const errorDisplay = document.getElementById('error-display');
-            errorDisplay.innerHTML = `
-              <div class="error-display">
-                <h4>🚨 Error Demonstration</h4>
-                <p><strong>Error Type:</strong> ${error.code}</p>
-                <p><strong>Message:</strong> ${error.message}</p>
-                <p><strong>Recovery Guidance:</strong> ${error.recovery}</p>
-                <button class="primary" onclick="clearErrorDisplay()">Clear Error</button>
-              </div>
-            `;
-          }
-          
-          async function simulateNetworkError() {
-            try {
-              // This will fail and demonstrate error handling
-              await fetch('/non-existent-endpoint');
-            } catch (originalError) {
-              const error = new StackAuthClientError(
-                'Failed to connect to authentication service',
-                'NETWORK_ERROR', 
-                'Check your internet connection and try again. If the problem persists, please contact support.'
-              );
-              displayError(error);
-            }
-          }
-          
-          async function simulateRateLimit() {
-            const error = new StackAuthClientError(
-              'Too many authentication requests',
-              'RATE_LIMITED',
-              'You have made too many requests. Please wait a few minutes before trying again.'
-            );
-            displayError(error);
-          }
-          
-          async function simulateOfflineError() {
-            const error = new StackAuthClientError(
-              'You appear to be offline',
-              'OFFLINE',
-              'Please check your internet connection and try again. Some features may work in offline mode.'
-            );
-            displayError(error);
-          }
-          
-          function clearErrorDisplay() {
-            document.getElementById('error-display').innerHTML = '';
-          }
-          
-          // Make functions globally available
-          window.simulateNetworkError = simulateNetworkError;
-          window.simulateRateLimit = simulateRateLimit;
-          window.simulateOfflineError = simulateOfflineError;
-          window.clearErrorDisplay = clearErrorDisplay;
-        </script>
-      </div>
-    </div>
-
-    <!-- Cross-Component State Synchronization Demo -->
-    <div class="feature-section">
-      <h2 class="feature-title">🔄 Cross-Component State Synchronization</h2>
-      <p>Multiple component islands that stay in sync:</p>
-      
-      <div class="component-island">
-        <h4>Island 1: Primary UserButton</h4>
-        <div id="sync-island-1">
-          <script>
-            import React from 'react';
-            import { UserButton, StackProvider } from 'astro-stack-auth/components';
-            import { createRoot } from 'react-dom/client';
-            
-            const container = document.getElementById('sync-island-1');
-            if (container) {
-              const root = createRoot(container);
-              
-              root.render(
-                React.createElement(StackProvider, {},
-                  React.createElement('div', null,
-                    React.createElement(UserButton),
-                    React.createElement('p', { style: { fontSize: '12px', color: '#666' } }, 
-                      'Island 1 - Syncs across tabs'
-                    )
-                  )
-                )
-              );
-            }
-          </script>
-        </div>
-      </div>
-      
-      <div class="component-island">
-        <h4>Island 2: Secondary UserButton</h4>
-        <div id="sync-island-2">
-          <script>
-            import React from 'react';
-            import { UserButton, StackProvider } from 'astro-stack-auth/components';
-            import { createRoot } from 'react-dom/client';
-            
-            const container = document.getElementById('sync-island-2');
-            if (container) {
-              const root = createRoot(container);
-              
-              root.render(
-                React.createElement(StackProvider, {},
-                  React.createElement('div', null,
-                    React.createElement(UserButton),
-                    React.createElement('p', { style: { fontSize: '12px', color: '#666' } }, 
-                      'Island 2 - Lazy hydration'
-                    )
-                  )
-                )
-              );
-            }
-          </script>
-        </div>
-      </div>
-    </div>
-
-    <!-- Navigation and Additional Features -->
-    <div class="feature-section">
-      <h2 class="feature-title">🧭 Navigation & Additional Features</h2>
-      <div class="auth-actions">
-        <a href="/account" class="btn primary">Account Settings Page</a>
-        <a href="/protected" class="btn secondary">Protected Content</a>
-        <a href="/component-showcase" class="btn secondary">Component Showcase</a>
-        <button class="secondary" onclick="redirectToAccount()">
-          Programmatic Account Redirect
-        </button>
-      </div>
-      
-      <script>
-        import { redirectToAccount, redirectToSignIn } from 'astro-stack-auth/client';
-        
-        window.redirectToAccount = function() {
-          redirectToAccount('/profile');
-        };
-      </script>
-    </div>
-
-    <!-- Performance and Development Info -->
-    <div class="feature-section">
-      <h2 class="feature-title">⚡ Performance & Development</h2>
-      <div class="status-display">
-        <p><strong>Rendering Mode:</strong> SSR with client-side hydration</p>
-        <p><strong>Hydration Strategies:</strong> immediate, lazy, onVisible demonstrated</p>
-        <p><strong>Bundle Impact:</strong> Components loaded on-demand</p>
-        <p><strong>Error Boundaries:</strong> Isolated component failures</p>
-        <p><strong>Cross-tab Sync:</strong> BroadcastChannel + localStorage</p>
-      </div>
-      
-      <div class="auth-actions">
-        <button class="secondary" onclick="console.log('Check browser console for auth state logs')">
-          View Console Logs
-        </button>
-        <button class="secondary" onclick="localStorage.clear(); alert('Local storage cleared!')">
-          Clear Local Storage
-        </button>
-      </div>
-    </div>
-
-    <footer style="margin-top: 40px; text-align: center; color: #666;">
-      <p>🚀 Sprint 004 Complete - All features integrated and working!</p>
-      <p>Check the browser console for detailed authentication event logs.</p>
-    </footer>
+    <h2>Features Demonstrated</h2>
+    <ul>
+      <li>Server-side auth state with <code>getUser()</code></li>
+      <li>Simple sign in and sign up pages</li>
+      <li>Protected routes requiring authentication</li>
+      <li>Account page with user details</li>
+    </ul>
   </body>
 </html>
