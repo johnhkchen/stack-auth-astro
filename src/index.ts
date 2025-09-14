@@ -258,8 +258,8 @@ export {
 import { default as basicStackAuth } from './integration.js';
 export { basicStackAuth as basicIntegration };
 
-// Note: Default export removed to eliminate mixed export pattern warnings
-// For backward compatibility, consumers should import { astroStackAuth } or { astroStackAuth as default }
+// Default export for convenience (standard Astro integration pattern)
+export default astroStackAuth;
 
 // Re-export types for convenience  
 export type { StackAuthConfig } from './types.js';
