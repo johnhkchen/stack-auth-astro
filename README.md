@@ -4,15 +4,53 @@ Community Astro integration for [Stack Auth](https://stack-auth.com) - Server-si
 
 > **✅ Current Status**: Full-featured authentication integration with **server-side authentication** (Sprint 003) and **client-side functions & React components** (Sprint 004) complete.
 
+## Installation (Alpha Testing)
+
+⚠️ **Alpha Status**: This package is in active development and not yet published to npm. Choose one of the alpha installation methods below:
+
+### Option 1: Install from GitHub (Recommended)
+```bash
+# Install directly from GitHub repository
+npm install github:johnhkchen/stack-auth-astro
+```
+
+### Option 2: Local Development (Contributors)
+```bash
+# Clone and link for local development
+git clone https://github.com/johnhkchen/stack-auth-astro.git
+cd stack-auth-astro
+npm install
+npm run build
+npm link
+
+# In your Astro project directory
+npm link astro-stack-auth
+```
+
+### Option 3: Local Tarball
+```bash
+# In the cloned repository
+npm run package  # Creates astro-stack-auth-0.1.0.tgz
+
+# In your Astro project directory
+npm install /path/to/astro-stack-auth-0.1.0.tgz
+```
+
+### Option 4: Alpha Test Project (Easy Testing)
+```bash
+# Clone and use the standalone test project
+git clone https://github.com/johnhkchen/stack-auth-astro.git
+cd stack-auth-astro/examples/alpha-test-project
+npm install
+# Follow setup guide in README
+```
+
 ## 5-Minute Quick Start
 
-Get working server-side authentication in under 5 minutes:
+After installing with any method above:
 
 ```bash
-# 1. Install the integration
-npm install astro-stack-auth
-
-# 2. Add to your Astro config
+# 1. Add to your Astro config
 # astro.config.mjs
 import { defineConfig } from 'astro/config';
 import stackAuth from 'astro-stack-auth';
@@ -21,14 +59,14 @@ export default defineConfig({
   integrations: [stackAuth()] // Uses environment variables
 });
 
-# 3. Configure environment variables
+# 2. Configure environment variables
 # Get these from your Stack Auth Dashboard: https://app.stack-auth.com
 # .env
 STACK_PROJECT_ID=your_project_id
 STACK_PUBLISHABLE_CLIENT_KEY=your_publishable_client_key
 STACK_SECRET_SERVER_KEY=your_secret_server_key
 
-# 4. Test with a protected page
+# 3. Test with a protected page
 # src/pages/protected.astro
 ---
 import { requireAuth } from 'astro-stack-auth/server';
@@ -41,7 +79,7 @@ const user = await requireAuth(Astro);
   </body>
 </html>
 
-# 5. Start your dev server
+# 4. Start your dev server
 npm run dev
 # Visit /protected - you'll be redirected to Stack Auth sign-in
 ```

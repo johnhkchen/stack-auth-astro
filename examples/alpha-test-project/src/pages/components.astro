@@ -1,0 +1,147 @@
+---
+import { SignIn, SignUp, UserButton } from 'astro-stack-auth/components';
+import { getUser } from 'astro-stack-auth/server';
+
+const user = await getUser(Astro);
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>React Components - Stack Auth Alpha Test</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 1rem;
+        background: linear-gradient(45deg, #f0f4f8, #e2e8f0);
+        min-height: 100vh;
+      }
+      .container {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      }
+      .component-section {
+        margin: 2rem 0;
+        padding: 1.5rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        background: #f9fafb;
+      }
+      .component-section h3 {
+        margin-top: 0;
+        color: #374151;
+      }
+      .hydration-demo {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        margin-top: 1rem;
+      }
+      .hydration-demo > div {
+        padding: 1rem;
+        border: 1px dashed #d1d5db;
+        border-radius: 4px;
+        text-align: center;
+      }
+      .hydration-demo h4 {
+        margin: 0 0 0.5rem 0;
+        font-size: 0.9rem;
+        color: #6b7280;
+      }
+      .status {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-weight: bold;
+        margin-bottom: 1rem;
+      }
+      .authenticated {
+        background: #d1fae5;
+        color: #065f46;
+      }
+      .unauthenticated {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      a {
+        color: #3b82f6;
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      .nav {
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid #e5e7eb;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>⚛️ React Components Demo</h1>
+      
+      {user ? (
+        <div class="status authenticated">✅ Authenticated as {user.displayName}</div>
+      ) : (
+        <div class="status unauthenticated">🔐 Not Authenticated</div>
+      )}
+
+      {user ? (
+        <div class="component-section">
+          <h3>User Button Component</h3>
+          <p>For authenticated users, shows a dropdown with account options and sign out.</p>
+          <UserButton client:load />
+        </div>
+      ) : (
+        <div class="component-section">
+          <h3>Authentication Components</h3>
+          <p>Choose to sign in or sign up with Stack Auth's pre-built components.</p>
+          
+          <div class="hydration-demo">
+            <div>
+              <h4>Sign In (client:load)</h4>
+              <SignIn client:load />
+            </div>
+            <div>
+              <h4>Sign Up (client:visible)</h4>
+              <SignUp client:visible />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div class="component-section">
+        <h3>🏝️ Astro Island Hydration</h3>
+        <p>Stack Auth components work with all Astro hydration strategies:</p>
+        <ul>
+          <li><code>client:load</code> - Hydrates immediately on page load</li>
+          <li><code>client:visible</code> - Hydrates when component becomes visible</li>
+          <li><code>client:idle</code> - Hydrates when main thread is idle</li>
+          <li><code>client:media</code> - Hydrates based on media query</li>
+        </ul>
+      </div>
+
+      <div class="component-section">
+        <h3>🔍 What This Tests:</h3>
+        <ul>
+          <li><strong>React Integration:</strong> Stack Auth UI components in Astro</li>
+          <li><strong>Island Architecture:</strong> Components hydrated with different strategies</li>
+          <li><strong>State Synchronization:</strong> Authentication state across components</li>
+          <li><strong>Error Handling:</strong> Graceful fallbacks for configuration issues</li>
+        </ul>
+      </div>
+
+      <div class="nav">
+        <a href="/">← Back to Home</a> | 
+        <a href="/protected">Test Protected Page</a> | 
+        <a href="/api/user">Test API Route</a>
+      </div>
+    </div>
+  </body>
+</html>

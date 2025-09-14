@@ -1,0 +1,57 @@
+# Development files
+.git
+.github
+node_modules
+*.log
+*.lock
+.DS_Store
+Thumbs.db
+
+# Source files (dist contains built files)
+src/
+tsconfig*.json
+tsup.config.ts
+.eslintrc*
+.prettierrc*
+
+# Testing files
+tests/
+test-configs/
+spec/
+__tests__
+*.test.*
+*.spec.*
+coverage/
+.nyc_output/
+
+# Development scripts
+scripts/
+sprints/
+performance-data/
+baselines/
+
+# Examples and docs (except README)
+examples/
+docs/
+*.md
+!README.md
+
+# Configuration files
+.env*
+.vscode/
+.idea/
+*.config.js
+*.config.ts
+*.config.mjs
+!astro.config.mjs
+
+# Build artifacts
+.astro/
+dist-examples/
+temp/
+tmp/
+
+# Development dependencies
+.markdown-doctest-setup.cjs
+vitest.config.ts
+playwright.config.ts

@@ -1,0 +1,104 @@
+---
+import { requireAuth } from 'astro-stack-auth/server';
+
+// This will automatically redirect to Stack Auth if not authenticated
+const user = await requireAuth(Astro);
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Protected Page - Stack Auth Alpha Test</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 1rem;
+        background: linear-gradient(45deg, #f0f4f8, #e2e8f0);
+        min-height: 100vh;
+      }
+      .container {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      }
+      .success {
+        background: #d1fae5;
+        color: #065f46;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+      }
+      .user-info {
+        background: #f3f4f6;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 1rem 0;
+      }
+      .user-info dt {
+        font-weight: bold;
+        color: #374151;
+      }
+      .user-info dd {
+        margin: 0 0 0.5rem 1rem;
+        color: #6b7280;
+      }
+      a {
+        color: #3b82f6;
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      .nav {
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid #e5e7eb;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="success">
+        ✅ Authentication successful! You have access to this protected page.
+      </div>
+      
+      <h1>🛡️ Protected Page</h1>
+      <p>This page demonstrates the <code>requireAuth()</code> function. If you weren't authenticated, you would have been automatically redirected to Stack Auth's sign-in page.</p>
+
+      <div class="user-info">
+        <h3>User Information:</h3>
+        <dl>
+          <dt>Display Name:</dt>
+          <dd>{user.displayName || 'Not provided'}</dd>
+          
+          <dt>User ID:</dt>
+          <dd><code>{user.id}</code></dd>
+          
+          <dt>Primary Email:</dt>
+          <dd>{user.primaryEmail || 'Not provided'}</dd>
+          
+          <dt>Profile Image:</dt>
+          <dd>{user.profileImageUrl ? 'Available' : 'Not provided'}</dd>
+        </dl>
+      </div>
+
+      <h3>🔍 What This Tests:</h3>
+      <ul>
+        <li><strong>Server-side Authentication:</strong> User data fetched on the server</li>
+        <li><strong>Automatic Redirects:</strong> Unauthenticated users redirected to sign-in</li>
+        <li><strong>Type Safety:</strong> Full TypeScript support for user object</li>
+        <li><strong>Stack Auth Integration:</strong> Direct SDK integration with secure token handling</li>
+      </ul>
+
+      <div class="nav">
+        <a href="/">← Back to Home</a> | 
+        <a href="/components">Test React Components</a> | 
+        <a href="/api/user">Test API Route</a>
+      </div>
+    </div>
+  </body>
+</html>

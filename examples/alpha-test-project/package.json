@@ -1,0 +1,28 @@
+{
+  "name": "alpha-test-stack-auth",
+  "type": "module",
+  "version": "0.0.1",
+  "description": "Alpha test project for astro-stack-auth integration",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro check && astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "setup": "echo 'Please copy .env.example to .env and configure your Stack Auth credentials'"
+  },
+  "dependencies": {
+    "@astrojs/node": "^9.4.3",
+    "@astrojs/react": "^4.3.1",
+    "astro": "^5.13.7",
+    "astro-stack-auth": "file:../../astro-stack-auth-0.1.0.tgz",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.4",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "typescript": "^5.9.2"
+  }
+}

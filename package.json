@@ -151,6 +151,7 @@
     "build:ci:perf": "node scripts/ci-build-performance.js",
     "build:ci:perf:json": "node scripts/ci-build-performance.js --json",
     "build:ci:perf:strict": "node scripts/ci-build-performance.js --fail-on-regression",
+    "package": "npm run build && npm pack",
     "build:watch": "npm run dev",
     "prebuild": "npm run build:clean",
     "prepare": "npm run docs:generate",
@@ -160,8 +161,7 @@
     "deps:check:verbose": "node scripts/check-optional-deps.js --verbose",
     "deps:detect": "node scripts/smart-dependency-detector.js",
     "deps:detect:verbose": "STACK_AUTH_DEBUG=true node scripts/smart-dependency-detector.js",
-    "test:user-ready": "node scripts/user-testing-validation.js",
-    "postinstall": "npm run stack:validate"
+    "test:user-ready": "node scripts/user-testing-validation.js"
   },
   "keywords": [
     "astro",
@@ -171,6 +171,14 @@
   ],
   "author": "Your Name",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/johnhkchen/stack-auth-astro.git"
+  },
+  "bugs": {
+    "url": "https://github.com/johnhkchen/stack-auth-astro/issues"
+  },
+  "homepage": "https://github.com/johnhkchen/stack-auth-astro#readme",
   "peerDependencies": {
     "astro": "^5.0.0",
     "react": "^18.0.0 || ^19.0.0",

@@ -1,0 +1,174 @@
+---
+// This page demonstrates Astro.locals data populated by middleware
+// No need to call getUser() - data is already available in Astro.locals
+
+const { user, session } = Astro.locals;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Middleware Demo - Stack Auth Alpha Test</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 700px;
+        margin: 2rem auto;
+        padding: 1rem;
+        background: linear-gradient(45deg, #f0f4f8, #e2e8f0);
+        min-height: 100vh;
+      }
+      .container {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      }
+      .status {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-weight: bold;
+        margin-bottom: 1rem;
+      }
+      .authenticated {
+        background: #d1fae5;
+        color: #065f46;
+      }
+      .unauthenticated {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .data-section {
+        margin: 1.5rem 0;
+        padding: 1rem;
+        background: #f3f4f6;
+        border-radius: 8px;
+        border-left: 4px solid #3b82f6;
+      }
+      .data-section h3 {
+        margin-top: 0;
+        color: #374151;
+      }
+      .data-item {
+        margin: 0.5rem 0;
+        display: grid;
+        grid-template-columns: 150px 1fr;
+        gap: 1rem;
+        align-items: start;
+      }
+      .data-item dt {
+        font-weight: bold;
+        color: #374151;
+      }
+      .data-item dd {
+        margin: 0;
+        color: #6b7280;
+        word-break: break-all;
+      }
+      .code {
+        background: #1f2937;
+        color: #f3f4f6;
+        padding: 1rem;
+        border-radius: 6px;
+        font-family: 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+        font-size: 0.9rem;
+        overflow-x: auto;
+        margin: 1rem 0;
+      }
+      .highlight {
+        color: #fbbf24;
+      }
+      a {
+        color: #3b82f6;
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      .nav {
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid #e5e7eb;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🚀 Middleware Demo</h1>
+      
+      {user ? (
+        <div class="status authenticated">✅ Middleware populated user data</div>
+      ) : (
+        <div class="status unauthenticated">🔐 No user data in middleware</div>
+      )}
+
+      <p>This page demonstrates authentication data automatically populated by the Stack Auth middleware. The data is available in <code>Astro.locals</code> without needing to call any functions.</p>
+
+      <div class="code">
+<span class="highlight">// No API calls needed - data is pre-populated</span>
+const &#123; user, session &#125; = Astro.locals;
+      </div>
+
+      {user ? (
+        <div class="data-section">
+          <h3>👤 User Data (Astro.locals.user)</h3>
+          <dl class="data-item">
+            <dt>ID:</dt>
+            <dd><code>{user.id}</code></dd>
+            
+            <dt>Display Name:</dt>
+            <dd>{user.displayName || 'Not provided'}</dd>
+            
+            <dt>Primary Email:</dt>
+            <dd>{user.primaryEmail || 'Not provided'}</dd>
+            
+            <dt>Profile Image:</dt>
+            <dd>{user.profileImageUrl ? 'Available' : 'Not provided'}</dd>
+            
+            <dt>Has Password:</dt>
+            <dd>{user.hasPassword ? 'Yes' : 'No'}</dd>
+          </dl>
+        </div>
+      ) : (
+        <div class="data-section">
+          <h3>👤 User Data</h3>
+          <p><code>Astro.locals.user</code> is <code>null</code> - user is not authenticated.</p>
+        </div>
+      )}
+
+      {session ? (
+        <div class="data-section">
+          <h3>🔐 Session Data (Astro.locals.session)</h3>
+          <dl class="data-item">
+            <dt>Session Data:</dt>
+            <dd>Session information available</dd>
+          </dl>
+        </div>
+      ) : (
+        <div class="data-section">
+          <h3>🔐 Session Data</h3>
+          <p><code>Astro.locals.session</code> is <code>null</code> - no active session.</p>
+        </div>
+      )}
+
+      <div class="data-section">
+        <h3>🔍 What This Tests:</h3>
+        <ul>
+          <li><strong>Middleware Integration:</strong> Automatic population of authentication data</li>
+          <li><strong>Performance:</strong> No additional API calls needed on each page</li>
+          <li><strong>Type Safety:</strong> Full TypeScript support for <code>Astro.locals</code></li>
+          <li><strong>Caching:</strong> Efficient session caching with 5-minute TTL</li>
+          <li><strong>Error Handling:</strong> Graceful degradation when Stack Auth is unavailable</li>
+        </ul>
+      </div>
+
+      <div class="nav">
+        <a href="/">← Back to Home</a> | 
+        <a href="/protected">Test Protected Page</a> | 
+        <a href="/components">Test Components</a>
+      </div>
+    </div>
+  </body>
+</html>

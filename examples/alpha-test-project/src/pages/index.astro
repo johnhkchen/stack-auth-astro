@@ -1,0 +1,142 @@
+---
+import { getUser } from 'astro-stack-auth/server';
+
+// Optional authentication - won't redirect if not authenticated
+const user = await getUser(Astro);
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Alpha Test - Stack Auth for Astro</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 0;
+        padding: 2rem;
+        background: linear-gradient(45deg, #f0f4f8, #e2e8f0);
+        min-height: 100vh;
+      }
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      }
+      .status {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-weight: bold;
+        margin-bottom: 1rem;
+      }
+      .authenticated {
+        background: #d1fae5;
+        color: #065f46;
+      }
+      .unauthenticated {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .nav {
+        margin: 2rem 0;
+      }
+      .nav a {
+        display: inline-block;
+        margin-right: 1rem;
+        padding: 0.5rem 1rem;
+        background: #3b82f6;
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+      }
+      .nav a:hover {
+        background: #2563eb;
+      }
+      .features {
+        margin-top: 2rem;
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      }
+      .feature {
+        padding: 1rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        background: #f9fafb;
+      }
+      .feature h3 {
+        margin: 0 0 0.5rem 0;
+        color: #374151;
+      }
+      .feature p {
+        margin: 0;
+        color: #6b7280;
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🚀 Stack Auth for Astro - Alpha Test</h1>
+      
+      {user ? (
+        <div>
+          <div class="status authenticated">✅ Authenticated</div>
+          <p>Welcome back, <strong>{user.displayName}!</strong></p>
+          <p>User ID: <code>{user.id}</code></p>
+          <p>Email: <strong>{user.primaryEmail}</strong></p>
+        </div>
+      ) : (
+        <div>
+          <div class="status unauthenticated">🔐 Not Authenticated</div>
+          <p>You are not currently signed in. Test authentication using the links below.</p>
+        </div>
+      )}
+
+      <div class="nav">
+        <a href="/protected">Protected Page</a>
+        <a href="/components">React Components</a>
+        <a href="/api/user">API Test</a>
+        <a href="/middleware-demo">Middleware Demo</a>
+      </div>
+
+      <div class="features">
+        <div class="feature">
+          <h3>🛡️ Protected Pages</h3>
+          <p>Test server-side authentication with automatic redirects to Stack Auth.</p>
+        </div>
+        
+        <div class="feature">
+          <h3>⚛️ React Components</h3>
+          <p>Pre-built UI components with Astro island hydration support.</p>
+        </div>
+        
+        <div class="feature">
+          <h3>🔌 API Routes</h3>
+          <p>Protected API endpoints with JSON error responses.</p>
+        </div>
+        
+        <div class="feature">
+          <h3>🚀 Middleware</h3>
+          <p>Automatic user data population in Astro.locals for all pages.</p>
+        </div>
+      </div>
+
+      <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #e5e7eb;">
+        <h3>📖 Getting Started</h3>
+        <ol>
+          <li>Copy <code>.env.example</code> to <code>.env</code></li>
+          <li>Get your Stack Auth credentials from <a href="https://app.stack-auth.com/dashboard" target="_blank">your dashboard</a></li>
+          <li>Configure the environment variables</li>
+          <li>Restart the dev server: <code>npm run dev</code></li>
+          <li>Test the protected pages above</li>
+        </ol>
+      </div>
+    </div>
+  </body>
+</html>
