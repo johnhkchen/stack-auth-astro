@@ -257,68 +257,60 @@ const user = await getUser(Astro);
             </div>
             
             <script>
-              import { UserButton, AstroStackProvider } from 'astro-stack-auth/components';
+              import React from 'react';
+              import { UserButton, StackProvider } from 'astro-stack-auth/components';
               import { createRoot } from 'react-dom/client';
               
               // Immediate hydration
               const immediateContainer = document.getElementById('userbutton-immediate');
               const immediateRoot = createRoot(immediateContainer);
               
-              immediateRoot.render(
-                React.createElement(AstroStackProvider, {
-                  initialUser: {user && JSON.stringify(user)},
-                  hydrationStrategy: 'immediate',
-                  onHydrationComplete: () => {
-                    const status = immediateContainer.querySelector('.status-indicator');
-                    status.textContent = 'Hydrated (Immediate)';
-                    status.className = 'status-indicator status-ready';
-                  }
-                },
-                  React.createElement(UserButton, {
-                    className: 'btn-success'
-                  })
-                )
-              );
+              if (immediateContainer) {
+                immediateRoot.render(
+                  React.createElement(StackProvider, {},
+                    React.createElement(UserButton)
+                  )
+                );
+                const status = immediateContainer.querySelector('.status-indicator');
+                if (status) {
+                  status.textContent = 'Hydrated (Immediate)';
+                  status.className = 'status-indicator status-ready';
+                }
+              }
               
               // Lazy hydration
               const lazyContainer = document.getElementById('userbutton-lazy');
               const lazyRoot = createRoot(lazyContainer);
               
-              lazyRoot.render(
-                React.createElement(AstroStackProvider, {
-                  initialUser: {user && JSON.stringify(user)},
-                  hydrationStrategy: 'lazy',
-                  onHydrationComplete: () => {
-                    const status = lazyContainer.querySelector('.status-indicator');
-                    status.textContent = 'Hydrated (Lazy)';
-                    status.className = 'status-indicator status-ready';
-                  }
-                },
-                  React.createElement(UserButton, {
-                    className: 'btn-info'
-                  })
-                )
-              );
+              if (lazyContainer) {
+                lazyRoot.render(
+                  React.createElement(StackProvider, {},
+                    React.createElement(UserButton)
+                  )
+                );
+                const status = lazyContainer.querySelector('.status-indicator');
+                if (status) {
+                  status.textContent = 'Hydrated (Lazy)';
+                  status.className = 'status-indicator status-ready';
+                }
+              }
               
               // Visible hydration
               const visibleContainer = document.getElementById('userbutton-visible');
               const visibleRoot = createRoot(visibleContainer);
               
-              visibleRoot.render(
-                React.createElement(AstroStackProvider, {
-                  initialUser: {user && JSON.stringify(user)},
-                  hydrationStrategy: 'onVisible',
-                  onHydrationComplete: () => {
-                    const status = visibleContainer.querySelector('.status-indicator');
-                    status.textContent = 'Hydrated (Visible)';
-                    status.className = 'status-indicator status-ready';
-                  }
-                },
-                  React.createElement(UserButton, {
-                    className: 'btn-warning'
-                  })
-                )
-              );
+              if (visibleContainer) {
+                visibleRoot.render(
+                  React.createElement(StackProvider, {},
+                    React.createElement(UserButton)
+                  )
+                );
+                const status = visibleContainer.querySelector('.status-indicator');
+                if (status) {
+                  status.textContent = 'Hydrated (Visible)';
+                  status.className = 'status-indicator status-ready';
+                }
+              }
             </script>
           </div>
         </div>

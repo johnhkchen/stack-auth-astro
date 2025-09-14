@@ -13,6 +13,7 @@ const user = await requireAuth(Astro);
   </head>
   <body>
     <h1>Account Settings</h1>
+    <p>Welcome, {user.displayName || user.primaryEmail}!</p>
     <AccountSettings client:load />
     <p><a href="/">← Back to Home</a></p>
   </body>

@@ -98,25 +98,20 @@ const user = await getUser(Astro);
         
         <div id="userbutton-island">
           <script>
-            import { UserButton, AstroStackProvider } from 'astro-stack-auth/components';
+            import React from 'react';
+            import { UserButton, StackProvider } from 'astro-stack-auth/components';
             import { createRoot } from 'react-dom/client';
             
             const container = document.getElementById('userbutton-island');
-            const root = createRoot(container);
-            
-            root.render(
-              React.createElement(AstroStackProvider, {
-                initialUser: {user && JSON.stringify(user)},
-                hydrationStrategy: 'immediate',
-                onAuthStateChange: (state) => {
-                  console.log('UserButton auth state changed:', state);
-                }
-              },
-                React.createElement(UserButton, {
-                  className: 'primary'
-                })
-              )
-            );
+            if (container) {
+              const root = createRoot(container);
+              
+              root.render(
+                React.createElement(StackProvider, {},
+                  React.createElement(UserButton)
+                )
+              );
+            }
           </script>
         </div>
       </div>
@@ -130,36 +125,20 @@ const user = await getUser(Astro);
         {!user && (
           <div id="signin-island">
             <script>
-              import { SignIn, AstroStackProvider } from 'astro-stack-auth/components';
+              import React from 'react';
+              import { SignIn, StackProvider } from 'astro-stack-auth/components';
               import { createRoot } from 'react-dom/client';
               
               const container = document.getElementById('signin-island');
-              const root = createRoot(container);
-              
-              root.render(
-                React.createElement(AstroStackProvider, {
-                  hydrationStrategy: 'immediate',
-                  errorFallback: ({ error, retry }) => 
-                    React.createElement('div', { className: 'error-display' },
-                      React.createElement('p', null, `Error: ${error.message}`),
-                      React.createElement('button', { 
-                        onClick: retry, 
-                        className: 'warning' 
-                      }, 'Try Again')
-                    )
-                },
-                  React.createElement(SignIn, {
-                    className: 'primary',
-                    onSuccess: (data) => {
-                      console.log('Sign in successful:', data);
-                      window.location.reload();
-                    },
-                    onError: (error) => {
-                      console.error('Sign in error:', error);
-                    }
-                  })
-                )
-              );
+              if (container) {
+                const root = createRoot(container);
+                
+                root.render(
+                  React.createElement(StackProvider, {},
+                    React.createElement(SignIn)
+                  )
+                );
+              }
             </script>
           </div>
         )}
@@ -180,36 +159,20 @@ const user = await getUser(Astro);
         {!user && (
           <div id="signup-island">
             <script>
-              import { SignUp, AstroStackProvider } from 'astro-stack-auth/components';
+              import React from 'react';
+              import { SignUp, StackProvider } from 'astro-stack-auth/components';
               import { createRoot } from 'react-dom/client';
               
               const container = document.getElementById('signup-island');
-              const root = createRoot(container);
-              
-              root.render(
-                React.createElement(AstroStackProvider, {
-                  hydrationStrategy: 'lazy',
-                  errorFallback: ({ error, retry }) => 
-                    React.createElement('div', { className: 'error-display' },
-                      React.createElement('p', null, `Registration Error: ${error.message}`),
-                      React.createElement('button', { 
-                        onClick: retry, 
-                        className: 'warning' 
-                      }, 'Retry Registration')
-                    )
-                },
-                  React.createElement(SignUp, {
-                    className: 'secondary',
-                    onSuccess: (data) => {
-                      console.log('Sign up successful:', data);
-                      window.location.reload();
-                    },
-                    onError: (error) => {
-                      console.error('Sign up error:', error);
-                    }
-                  })
-                )
-              );
+              if (container) {
+                const root = createRoot(container);
+                
+                root.render(
+                  React.createElement(StackProvider, {},
+                    React.createElement(SignUp)
+                  )
+                );
+              }
             </script>
           </div>
         )}
@@ -389,29 +352,25 @@ const user = await getUser(Astro);
         <h4>Island 1: Primary UserButton</h4>
         <div id="sync-island-1">
           <script>
-            import { UserButton, AstroStackProvider } from 'astro-stack-auth/components';
+            import React from 'react';
+            import { UserButton, StackProvider } from 'astro-stack-auth/components';
             import { createRoot } from 'react-dom/client';
             
             const container = document.getElementById('sync-island-1');
-            const root = createRoot(container);
-            
-            root.render(
-              React.createElement(AstroStackProvider, {
-                initialUser: {user && JSON.stringify(user)},
-                enableSync: true,
-                syncAcrossTabs: true,
-                onAuthStateChange: (state) => {
-                  console.log('Island 1 auth state:', state.isAuthenticated ? 'signed in' : 'signed out');
-                }
-              },
-                React.createElement('div', null,
-                  React.createElement(UserButton, { className: 'primary' }),
-                  React.createElement('p', { style: { fontSize: '12px', color: '#666' } }, 
-                    'Island 1 - Syncs across tabs'
+            if (container) {
+              const root = createRoot(container);
+              
+              root.render(
+                React.createElement(StackProvider, {},
+                  React.createElement('div', null,
+                    React.createElement(UserButton),
+                    React.createElement('p', { style: { fontSize: '12px', color: '#666' } }, 
+                      'Island 1 - Syncs across tabs'
+                    )
                   )
                 )
-              )
-            );
+              );
+            }
           </script>
         </div>
       </div>
@@ -420,29 +379,25 @@ const user = await getUser(Astro);
         <h4>Island 2: Secondary UserButton</h4>
         <div id="sync-island-2">
           <script>
-            import { UserButton, AstroStackProvider } from 'astro-stack-auth/components';
+            import React from 'react';
+            import { UserButton, StackProvider } from 'astro-stack-auth/components';
             import { createRoot } from 'react-dom/client';
             
             const container = document.getElementById('sync-island-2');
-            const root = createRoot(container);
-            
-            root.render(
-              React.createElement(AstroStackProvider, {
-                initialUser: {user && JSON.stringify(user)},
-                enableSync: true,
-                hydrationStrategy: 'onVisible',
-                onAuthStateChange: (state) => {
-                  console.log('Island 2 auth state:', state.isAuthenticated ? 'signed in' : 'signed out');
-                }
-              },
-                React.createElement('div', null,
-                  React.createElement(UserButton, { className: 'secondary' }),
-                  React.createElement('p', { style: { fontSize: '12px', color: '#666' } }, 
-                    'Island 2 - Lazy hydration'
+            if (container) {
+              const root = createRoot(container);
+              
+              root.render(
+                React.createElement(StackProvider, {},
+                  React.createElement('div', null,
+                    React.createElement(UserButton),
+                    React.createElement('p', { style: { fontSize: '12px', color: '#666' } }, 
+                      'Island 2 - Lazy hydration'
+                    )
                   )
                 )
-              )
-            );
+              );
+            }
           </script>
         </div>
       </div>
