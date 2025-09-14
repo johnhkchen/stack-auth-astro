@@ -2,7 +2,7 @@
 
 Community Astro integration for [Stack Auth](https://stack-auth.com) - Server-side authentication for Astro projects.
 
-> **🚧 Current Status**: This integration provides **server-side authentication** (Sprint 003 complete). Client-side functions and React components coming in Sprint 004.
+> **✅ Current Status**: Full-featured authentication integration with **server-side authentication** (Sprint 003) and **client-side functions & React components** (Sprint 004) complete.
 
 ## 5-Minute Quick Start
 
@@ -48,7 +48,7 @@ npm run dev
 
 ## What Works Right Now ✅
 
-**Server-Side Authentication (Sprint 003 Complete)**
+**Server-Side Authentication (Sprint 003)**
 - ✅ `getUser(context)` - Get authenticated user in pages/API routes
 - ✅ `getSession(context)` - Get current session information  
 - ✅ `requireAuth(context)` - Enforce authentication with automatic redirects
@@ -59,13 +59,13 @@ npm run dev
 - ✅ TypeScript support with full type safety
 - ✅ Production-ready with performance monitoring
 
-## Coming in Sprint 004 🚧
-
-**Client-Side & React Components (In Development)**
-- 🚧 `signIn()`, `signOut()` - Browser authentication functions  
-- 🚧 `<SignIn />`, `<SignUp />`, `<UserButton />` - React UI components
-- 🚧 Client-side authentication state management
-- 🚧 Cross-tab authentication synchronization
+**Client-Side & React Components (Sprint 004)**
+- ✅ `signIn()`, `signOut()` - Browser authentication functions  
+- ✅ `<SignIn />`, `<SignUp />`, `<UserButton />` - React UI components
+- ✅ Client-side authentication state management
+- ✅ Cross-tab authentication synchronization
+- ✅ Astro island hydration support (`client:load`, `client:visible`, etc.)
+- ✅ Error handling and recovery mechanisms
 
 ## Environment Configuration
 
@@ -186,6 +186,83 @@ if (!user) {
 </html>
 ```
 
+### Using Client-Side Functions
+
+```astro
+---
+// src/pages/custom-signin.astro
+---
+<html>
+  <body>
+    <h1>Custom Sign In</h1>
+    <button id="github-signin">Sign in with GitHub</button>
+    <button id="google-signin">Sign in with Google</button>
+    <button id="signout-btn" style="display: none;">Sign Out</button>
+    
+    <script>
+      import { signIn, signOut } from 'astro-stack-auth/client';
+      
+      // GitHub sign in
+      document.getElementById('github-signin')?.addEventListener('click', () => {
+        signIn('github', {
+          redirectTo: '/dashboard',
+          onError: (error) => console.error('Sign in failed:', error)
+        });
+      });
+      
+      // Google sign in  
+      document.getElementById('google-signin')?.addEventListener('click', () => {
+        signIn('google', { redirectTo: '/dashboard' });
+      });
+      
+      // Sign out
+      document.getElementById('signout-btn')?.addEventListener('click', () => {
+        signOut({ 
+          redirectTo: '/',
+          clearLocalStorage: true 
+        });
+      });
+    </script>
+  </body>
+</html>
+```
+
+### Using React Components
+
+```astro
+---
+// src/pages/auth.astro
+import { SignIn, SignUp, UserButton } from 'astro-stack-auth/components';
+import { getUser } from 'astro-stack-auth/server';
+
+const user = await getUser(Astro);
+---
+<html>
+  <body>
+    {user ? (
+      <div>
+        <h1>Welcome back!</h1>
+        <UserButton user={user} client:load />
+      </div>
+    ) : (
+      <div>
+        <h1>Sign In or Sign Up</h1>
+        <div style="display: flex; gap: 2rem;">
+          <div>
+            <h2>Sign In</h2>
+            <SignIn client:visible />
+          </div>
+          <div>
+            <h2>Sign Up</h2>
+            <SignUp client:visible />
+          </div>
+        </div>
+      </div>
+    )}
+  </body>
+</html>
+```
+
 ## User Testing Guide
 
 ### What You Can Test Right Now ✅
@@ -197,21 +274,25 @@ if (!user) {
    - Test automatic redirects to Stack Auth sign-in
    - Verify user data access in pages and API routes
 
-2. **Environment Configuration**
+2. **Client-Side Functions**
+   - Use `signIn()` and `signOut()` functions in browser context
+   - Test redirect functions (`redirectToSignIn()`, `redirectToSignUp()`, `redirectToAccount()`)
+   - Implement custom sign-in/sign-out UI with client functions
+
+3. **React Components**
+   - Import and use `<SignIn />`, `<SignUp />`, `<UserButton />` components
+   - Test different hydration strategies (`client:load`, `client:visible`, etc.)
+   - Customize component styling and behavior
+
+4. **Environment Configuration**
    - Test with your Stack Auth project credentials
    - Try custom endpoint prefixes with `STACK_AUTH_PREFIX`
    - Validate environment variable error handling
 
-3. **Integration Features**
+5. **Integration Features**
    - Middleware population of `Astro.locals.user` and `Astro.locals.session`
-   - TypeScript support and type safety
+   - TypeScript support and full type safety
    - Production deployment with your hosting platform
-
-### What to Skip for Now 🚧
-
-- Don't try to use `signIn()` or `signOut()` functions (Sprint 004)
-- Don't try to import React components like `<SignIn />` (Sprint 004)
-- Don't expect client-side authentication state management (Sprint 004)
 
 ### How to Provide Feedback
 
@@ -244,33 +325,38 @@ curl http://localhost:4321/api/user
 
 ## Project Status & Roadmap
 
-### Current Status: Sprint 003 Complete ✅
+### Current Status: All Core Features Complete ✅
 
 **What's Production-Ready:**
 - ✅ Server-side authentication functions (`getUser`, `getSession`, `requireAuth`)
+- ✅ Client-side authentication functions (`signIn`, `signOut`, redirects)
+- ✅ React UI components (`<SignIn />`, `<SignUp />`, `<UserButton />`, `<AccountSettings />`)
 - ✅ Middleware integration with `Astro.locals`
 - ✅ Environment configuration and validation
 - ✅ TypeScript support with full type safety
 - ✅ Performance monitoring and security features
 - ✅ Production deployment support
+- ✅ Cross-tab authentication synchronization
+- ✅ Error handling and recovery mechanisms
 
-### Sprint 004: Client-Side & React Components 🚧
+### Features Available Now
 
-**Coming Soon:**
-- 🚧 Client-side authentication functions (`signIn`, `signOut`)
-- 🚧 React UI components (`<SignIn />`, `<SignUp />`, `<UserButton />`)
-- 🚧 Browser authentication state management
-- 🚧 Cross-tab authentication synchronization
+**Sprint 003: Server-Side Authentication ✅**
+- Complete server-side auth with `getUser`, `requireAuth`, and middleware
 
-**Expected Timeline:** Sprint 004 features coming soon
+**Sprint 004: Client-Side & React Components ✅**
+- Browser authentication functions with proper error handling
+- React UI components with Astro island hydration support
+- State management and cross-tab synchronization
 
 ### Contributing to Testing
 
-**Help us improve by testing Sprint 003 features:**
-1. Try the server-side authentication in your projects
-2. Test with different Astro adapters (Vercel, Netlify, etc.)
-3. Report any issues or suggest improvements
-4. Share feedback on what Sprint 004 features are most important
+**Help us improve by testing all available features:**
+1. Try both server-side and client-side authentication in your projects
+2. Test React components with different hydration strategies
+3. Test with different Astro adapters (Vercel, Netlify, etc.)
+4. Report any issues or suggest improvements
+5. Share feedback on developer experience and documentation
 
 **GitHub Repository:** [stack-auth-astro](https://github.com/johnhkchen/stack-auth-astro)
 
