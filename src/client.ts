@@ -142,12 +142,13 @@ function logClientError(error: StackAuthClientError, operation: string): void {
 }
 
 /**
- * Retry mechanism with exponential backoff
+ * Retry mechanism with exponential backoff and network-aware delays
  */
 async function retryOperation<T>(
   operation: () => Promise<T>,
   maxRetries: number = 3,
-  baseDelay: number = 1000
+  baseDelay: number = 1000,
+  context?: string
 ): Promise<T> {
   let lastError: unknown;
   
@@ -170,17 +171,113 @@ async function retryOperation<T>(
         throw error;
       }
       
-      // Wait before retrying with exponential backoff
-      const delay = baseDelay * Math.pow(2, attempt);
+      // Adjust delay based on error type and network conditions
+      let delay = baseDelay * Math.pow(2, attempt);
+      
+      // Longer delays for network and service issues
+      if (code === 'NETWORK_ERROR' || code === 'SERVICE_UNAVAILABLE') {
+        delay *= 2;
+      }
+      
+      // Check if we're offline and extend delay
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        delay = Math.max(delay, 5000); // At least 5 seconds when offline
+      }
+      
+      // Cap maximum delay
+      delay = Math.min(delay, 30000); // Maximum 30 seconds
+      
       await new Promise(resolve => setTimeout(resolve, delay));
       
       if (process.env.NODE_ENV === 'development') {
-        console.warn(`🔄 Retrying operation (attempt ${attempt + 2}/${maxRetries + 1})`);
+        console.warn(`🔄 Retrying ${context || 'operation'} (attempt ${attempt + 2}/${maxRetries + 1}) after ${delay}ms`);
       }
     }
   }
   
   throw lastError;
+}
+
+/**
+ * Enhanced operation with graceful degradation and fallbacks
+ */
+async function performNetworkAwareOperation<T>(
+  primaryOperation: () => Promise<T>,
+  fallbackOperation?: () => Promise<T> | T,
+  options: {
+    maxRetries?: number;
+    timeout?: number;
+    context?: string;
+    requireNetwork?: boolean;
+  } = {}
+): Promise<T> {
+  const { 
+    maxRetries = 3, 
+    timeout = 10000, 
+    context = 'operation',
+    requireNetwork = true 
+  } = options;
+
+  // Check if operation requires network and we're offline
+  if (requireNetwork && typeof navigator !== 'undefined' && !navigator.onLine) {
+    if (fallbackOperation) {
+      console.warn(`${context} performed offline using fallback`);
+      return await Promise.resolve(fallbackOperation());
+    } else {
+      throw createClientError(
+        new Error('Operation requires network connection'), 
+        `${context} failed - offline`
+      );
+    }
+  }
+
+  // Create timeout promise
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    setTimeout(() => reject(new Error(`${context} timed out after ${timeout}ms`)), timeout);
+  });
+
+  try {
+    // Race the operation against timeout
+    const operationPromise = retryOperation(primaryOperation, maxRetries, 1000, context);
+    return await Promise.race([operationPromise, timeoutPromise]);
+  } catch (error) {
+    // Try fallback on failure if available
+    if (fallbackOperation) {
+      console.warn(`${context} failed, using fallback:`, error);
+      return await Promise.resolve(fallbackOperation());
+    }
+    throw error;
+  }
+}
+
+/**
+ * Wait for network to become available
+ */
+function waitForNetwork(timeout: number = 30000): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (typeof navigator === 'undefined') {
+      resolve();
+      return;
+    }
+
+    if (navigator.onLine) {
+      resolve();
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      window.removeEventListener('online', onOnline);
+      reject(new Error('Network timeout'));
+    }, timeout);
+
+    const onOnline = () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('online', onOnline);
+      resolve();
+    };
+
+    window.addEventListener('online', onOnline);
+  });
 }
 
 // Initialize state management on module load
@@ -249,53 +346,70 @@ export async function signIn(provider?: string, options: SignInOptions = {}): Pr
     // Set loading state
     authStateManager.setLoading(true);
     
-    // Use retry mechanism for sign in operation
-    await retryOperation(async () => {
-      // Construct API endpoint for sign in
-      const baseUrl = '/handler';
-      const endpoint = provider ? `${baseUrl}/signin/${provider}` : `${baseUrl}/signin`;
-      
-      // Make POST request to sign in endpoint
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          redirectTo: redirectTo
-        }),
-        credentials: 'same-origin'
-      });
-
-      if (!response.ok) {
-        // Create error with response details
-        const errorData = await response.json().catch(() => ({ message: 'Sign in failed' }));
-        const errorMessage = errorData.message || `Sign in failed with status: ${response.status}`;
-        const error = new Error(errorMessage);
+    // Use enhanced network-aware operation with fallbacks
+    await performNetworkAwareOperation(
+      // Primary operation - API-based sign in
+      async () => {
+        const baseUrl = '/handler';
+        const endpoint = provider ? `${baseUrl}/signin/${provider}` : `${baseUrl}/signin`;
         
-        // Add response status for better error classification
-        (error as any).status = response.status;
-        throw error;
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            redirectTo: redirectTo
+          }),
+          credentials: 'same-origin'
+        });
+
+        if (!response.ok) {
+          // Create error with response details
+          const errorData = await response.json().catch(() => ({ message: 'Sign in failed' }));
+          const errorMessage = errorData.message || `Sign in failed with status: ${response.status}`;
+          const error = new Error(errorMessage);
+          
+          // Add response status for better error classification
+          (error as any).status = response.status;
+          throw error;
+        }
+        
+        // Check if response contains user/session data
+        const responseData = await response.json().catch(() => ({}));
+        
+        // Update auth state if user data is available
+        if (responseData.user && responseData.session) {
+          authStateManager.setAuthData(responseData.user, responseData.session);
+          broadcastSignIn(responseData.user, responseData.session);
+        }
+        
+        // Handle successful sign in
+        if (onSuccess) {
+          onSuccess();
+        }
+        
+        // Redirect to the final destination
+        const finalRedirectTo = responseData.redirectUrl || redirectTo;
+        window.location.href = finalRedirectTo;
+      },
+      // Fallback operation - redirect-based sign in
+      () => {
+        console.warn('Sign in API unavailable, using redirect fallback');
+        
+        const signInUrl = provider 
+          ? `/handler/signin/${provider}?redirectTo=${encodeURIComponent(redirectTo)}`
+          : `/handler/signin?redirectTo=${encodeURIComponent(redirectTo)}`;
+        
+        window.location.href = signInUrl;
+      },
+      {
+        maxRetries: 3,
+        timeout: 10000,
+        context: 'signIn',
+        requireNetwork: true
       }
-      
-      // Check if response contains user/session data
-      const responseData = await response.json().catch(() => ({}));
-      
-      // Update auth state if user data is available
-      if (responseData.user && responseData.session) {
-        authStateManager.setAuthData(responseData.user, responseData.session);
-        broadcastSignIn(responseData.user, responseData.session);
-      }
-      
-      // Handle successful sign in
-      if (onSuccess) {
-        onSuccess();
-      }
-      
-      // Redirect to the final destination
-      const finalRedirectTo = responseData.redirectUrl || redirectTo;
-      window.location.href = finalRedirectTo;
-    }, 3, 1000); // 3 retries with 1s base delay
+    );
     
   } catch (error) {
     // Create enhanced client error with recovery guidance
@@ -374,43 +488,63 @@ export async function signOut(options: SignOutOptions = {}): Promise<void> {
       }
     }
     
-    // Use retry mechanism for sign out operation
-    await retryOperation(async () => {
-      // Make POST request to sign out endpoint
-      const response = await fetch('/handler/signout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          redirectTo: redirectTo
-        }),
-        credentials: 'same-origin'
-      });
+    // Use enhanced network-aware operation with fallbacks
+    await performNetworkAwareOperation(
+      // Primary operation - API call to sign out
+      async () => {
+        const response = await fetch('/handler/signout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            redirectTo: redirectTo
+          }),
+          credentials: 'same-origin'
+        });
 
-      if (!response.ok) {
-        // Create error with response details
-        const errorData = await response.json().catch(() => ({ message: 'Sign out failed' }));
-        const errorMessage = errorData.message || `Sign out failed with status: ${response.status}`;
-        const error = new Error(errorMessage);
+        if (!response.ok) {
+          // Create error with response details
+          const errorData = await response.json().catch(() => ({ message: 'Sign out failed' }));
+          const errorMessage = errorData.message || `Sign out failed with status: ${response.status}`;
+          const error = new Error(errorMessage);
+          
+          // Add response status for better error classification
+          (error as any).status = response.status;
+          throw error;
+        }
         
-        // Add response status for better error classification
-        (error as any).status = response.status;
-        throw error;
+        // Handle successful sign out
+        if (onSuccess) {
+          onSuccess();
+        }
+        
+        // Check if response contains redirect URL
+        const responseData = await response.json().catch(() => ({}));
+        const finalRedirectTo = responseData.redirectUrl || redirectTo;
+        
+        // Redirect to the final destination
+        window.location.href = finalRedirectTo;
+      },
+      // Fallback operation - direct redirect when API fails
+      () => {
+        console.warn('Sign out API unavailable, using direct redirect fallback');
+        
+        if (onSuccess) {
+          onSuccess();
+        }
+        
+        // Try redirect-based sign out
+        const signOutUrl = `/handler/signout?redirectTo=${encodeURIComponent(redirectTo)}`;
+        window.location.href = signOutUrl;
+      },
+      {
+        maxRetries: 3,
+        timeout: 8000,
+        context: 'signOut',
+        requireNetwork: false // We have a fallback
       }
-      
-      // Handle successful sign out
-      if (onSuccess) {
-        onSuccess();
-      }
-      
-      // Check if response contains redirect URL
-      const responseData = await response.json().catch(() => ({}));
-      const finalRedirectTo = responseData.redirectUrl || redirectTo;
-      
-      // Redirect to the final destination
-      window.location.href = finalRedirectTo;
-    }, 3, 1000); // 3 retries with 1s base delay
+    );
     
   } catch (error) {
     // Create enhanced client error with recovery guidance
@@ -425,20 +559,15 @@ export async function signOut(options: SignOutOptions = {}): Promise<void> {
     if (onError) {
       onError(clientError);
     } else {
-      // Check if fallback redirect should be used
-      const shouldFallback = clientError.code === 'NETWORK_ERROR' || 
-                           clientError.code === 'TIMEOUT' || 
-                           clientError.code === 'SERVICE_UNAVAILABLE';
-      
-      if (shouldFallback) {
-        // Fallback to redirect-based sign out for certain errors
-        console.warn('Sign out API failed, falling back to redirect method:', clientError.message);
+      // Always fall back to redirect on complete failure
+      console.error('All sign out methods failed, attempting final redirect fallback');
+      try {
         const signOutUrl = `/handler/signout?redirectTo=${encodeURIComponent(redirectTo)}`;
-        
         window.location.href = signOutUrl;
-      } else {
-        // For other errors, throw to let caller handle
-        throw clientError;
+      } catch (redirectError) {
+        // If even redirect fails, just redirect to the target destination
+        console.error('Redirect fallback failed, redirecting to target:', redirectError);
+        window.location.href = redirectTo;
       }
     }
   } finally {

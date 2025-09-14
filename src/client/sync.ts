@@ -8,18 +8,24 @@
 import type { AuthState } from './state.js';
 
 export interface SyncMessage {
-  type: 'AUTH_STATE_CHANGE' | 'SIGN_IN' | 'SIGN_OUT' | 'SESSION_REFRESH' | 'SYNC_REQUEST';
+  type: 'AUTH_STATE_CHANGE' | 'SIGN_IN' | 'SIGN_OUT' | 'SESSION_REFRESH' | 'SYNC_REQUEST' | 'SYNC_RESPONSE' | 'HEALTH_CHECK';
   payload?: any;
   timestamp: number;
   tabId: string;
+  version?: string;
+  sequenceId?: number;
 }
 
 export interface SyncOptions {
   channelName?: string;
   enableStorageSync?: boolean;
   enableBroadcastSync?: boolean;
+  syncTimeout?: number;
+  maxRetries?: number;
+  heartbeatInterval?: number;
   onSync?: (message: SyncMessage) => void;
   onError?: (error: Error) => void;
+  onTabsChanged?: (activeTabs: string[]) => void;
 }
 
 type SyncListener = (message: SyncMessage) => void;
@@ -30,14 +36,24 @@ class CrossTabSync {
   private tabId: string;
   private options: Required<SyncOptions>;
   private isDestroyed = false;
+  private activeTabs = new Set<string>();
+  private sequenceCounter = 0;
+  private heartbeatTimer: NodeJS.Timeout | null = null;
+  private pendingSyncRequests = new Map<number, { resolve: Function; reject: Function; timeout: NodeJS.Timeout }>(); 
+  private lastSyncTime = 0;
+  private syncRetryCount = 0;
 
   constructor(options: SyncOptions = {}) {
     this.options = {
       channelName: 'astro-stack-auth-sync',
       enableStorageSync: true,
       enableBroadcastSync: true,
+      syncTimeout: 5000,
+      maxRetries: 3,
+      heartbeatInterval: 30000,
       onSync: () => {},
       onError: () => {},
+      onTabsChanged: () => {},
       ...options
     };
 
@@ -64,6 +80,13 @@ class CrossTabSync {
       if (this.options.enableStorageSync) {
         this.initializeStorageSync();
       }
+
+      // Start heartbeat system
+      this.startHeartbeat();
+
+      // Add this tab to active tabs
+      this.activeTabs.add(this.tabId);
+      this.notifyTabsChanged();
     } catch (error) {
       this.handleError(error instanceof Error ? error : new Error('Failed to initialize sync'));
     }
@@ -135,6 +158,25 @@ class CrossTabSync {
   };
 
   private processMessage(message: SyncMessage): void {
+    // Handle internal sync messages first
+    switch (message.type) {
+      case 'SYNC_REQUEST':
+        this.handleSyncRequest(message);
+        break;
+      case 'SYNC_RESPONSE':
+        this.handleSyncResponse(message);
+        break;
+      case 'HEALTH_CHECK':
+        this.handleHealthCheck(message);
+        break;
+    }
+
+    // Update tab tracking for heartbeat messages
+    if (message.tabId && message.tabId !== this.tabId) {
+      this.activeTabs.add(message.tabId);
+      this.notifyTabsChanged();
+    }
+
     // Notify all listeners
     this.listeners.forEach(listener => {
       try {
@@ -151,6 +193,127 @@ class CrossTabSync {
   private handleError(error: Error): void {
     console.error('CrossTabSync error:', error);
     this.options.onError(error);
+  }
+
+  /**
+   * Handle sync request messages
+   */
+  private handleSyncRequest(message: SyncMessage): void {
+    if (message.sequenceId) {
+      // Respond with current auth state if we have it
+      const authState = this.getCurrentAuthState();
+      this.sendSyncResponse(message.sequenceId, authState);
+    }
+  }
+
+  /**
+   * Handle sync response messages
+   */
+  private handleSyncResponse(message: SyncMessage): void {
+    if (message.sequenceId) {
+      const pendingRequest = this.pendingSyncRequests.get(message.sequenceId);
+      if (pendingRequest) {
+        clearTimeout(pendingRequest.timeout);
+        this.pendingSyncRequests.delete(message.sequenceId);
+        pendingRequest.resolve(message.payload);
+      }
+    }
+  }
+
+  /**
+   * Handle health check messages (heartbeat)
+   */
+  private handleHealthCheck(message: SyncMessage): void {
+    if (message.tabId !== this.tabId) {
+      this.activeTabs.add(message.tabId);
+      this.lastSyncTime = Date.now();
+    }
+  }
+
+  /**
+   * Start heartbeat system
+   */
+  private startHeartbeat(): void {
+    this.heartbeatTimer = setInterval(() => {
+      this.sendHealthCheck();
+      this.cleanupInactiveTabs();
+    }, this.options.heartbeatInterval);
+  }
+
+  /**
+   * Stop heartbeat system
+   */
+  private stopHeartbeat(): void {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+    }
+  }
+
+  /**
+   * Send health check (heartbeat)
+   */
+  private sendHealthCheck(): void {
+    this.sendMessage({
+      type: 'HEALTH_CHECK',
+      payload: null,
+      timestamp: Date.now(),
+      tabId: this.tabId
+    });
+  }
+
+  /**
+   * Clean up inactive tabs
+   */
+  private cleanupInactiveTabs(): void {
+    const now = Date.now();
+    const maxInactiveTime = this.options.heartbeatInterval * 2; // 2x heartbeat interval
+    
+    let hasChanges = false;
+    for (const tabId of this.activeTabs) {
+      if (tabId !== this.tabId && (now - this.lastSyncTime) > maxInactiveTime) {
+        this.activeTabs.delete(tabId);
+        hasChanges = true;
+      }
+    }
+
+    if (hasChanges) {
+      this.notifyTabsChanged();
+    }
+  }
+
+  /**
+   * Notify listeners of tab changes
+   */
+  private notifyTabsChanged(): void {
+    const tabIds = Array.from(this.activeTabs);
+    this.options.onTabsChanged(tabIds);
+  }
+
+  /**
+   * Get current auth state from auth state manager
+   */
+  private getCurrentAuthState(): any {
+    try {
+      // Import auth state manager dynamically to avoid circular dependencies
+      const { getAuthStateManager } = require('./state.js');
+      return getAuthStateManager().getState();
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
+   * Send sync response with auth state
+   */
+  private sendSyncResponse(sequenceId: number, authState: any): void {
+    this.sendMessage({
+      type: 'SYNC_RESPONSE',
+      payload: authState,
+      timestamp: Date.now(),
+      tabId: this.tabId,
+      sequenceId
+    });
   }
 
   /**
@@ -224,6 +387,59 @@ class CrossTabSync {
     });
   }
 
+  /**
+   * Send sync request with promise return (reliable sync)
+   */
+  requestAuthStateSync(): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const sequenceId = ++this.sequenceCounter;
+      
+      const timeout = setTimeout(() => {
+        this.pendingSyncRequests.delete(sequenceId);
+        reject(new Error('Sync request timeout'));
+      }, this.options.syncTimeout);
+
+      this.pendingSyncRequests.set(sequenceId, { resolve, reject, timeout });
+
+      this.sendMessage({
+        type: 'SYNC_REQUEST',
+        payload: null,
+        timestamp: Date.now(),
+        tabId: this.tabId,
+        sequenceId
+      });
+    });
+  }
+
+  /**
+   * Ensure sync with retry mechanism
+   */
+  async ensureSync(): Promise<boolean> {
+    if (this.syncRetryCount >= this.options.maxRetries) {
+      this.syncRetryCount = 0;
+      return false;
+    }
+
+    try {
+      if (this.activeTabs.size <= 1) {
+        return true; // Only this tab, nothing to sync
+      }
+
+      await this.requestAuthStateSync();
+      this.syncRetryCount = 0;
+      return true;
+    } catch (error) {
+      this.syncRetryCount++;
+      this.handleError(error instanceof Error ? error : new Error('Sync failed'));
+      
+      // Exponential backoff for retries
+      const delay = Math.min(1000 * Math.pow(2, this.syncRetryCount - 1), 5000);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      
+      return this.ensureSync();
+    }
+  }
+
   private sendMessage(message: SyncMessage): void {
     if (this.isDestroyed) return;
 
@@ -289,22 +505,84 @@ class CrossTabSync {
   }
 
   /**
+   * Get active tab information
+   */
+  getActiveTabsInfo(): { 
+    totalTabs: number; 
+    activeTabs: string[]; 
+    isLeaderTab: boolean;
+    syncHealth: 'healthy' | 'degraded' | 'offline';
+  } {
+    const activeTabs = Array.from(this.activeTabs);
+    const isLeaderTab = this.tabId === Math.min(...activeTabs.map(id => parseInt(id.split('-')[1]) || 0)).toString();
+    
+    let syncHealth: 'healthy' | 'degraded' | 'offline' = 'healthy';
+    const timeSinceLastSync = Date.now() - this.lastSyncTime;
+    
+    if (activeTabs.length <= 1) {
+      syncHealth = 'offline';
+    } else if (timeSinceLastSync > this.options.heartbeatInterval * 1.5) {
+      syncHealth = 'degraded';
+    }
+
+    return {
+      totalTabs: activeTabs.length,
+      activeTabs,
+      isLeaderTab,
+      syncHealth
+    };
+  }
+
+  /**
+   * Force sync all tabs to current state
+   */
+  async forceSyncAll(): Promise<boolean> {
+    try {
+      const currentState = this.getCurrentAuthState();
+      this.broadcastAuthStateChange(currentState);
+      return await this.ensureSync();
+    } catch (error) {
+      this.handleError(error instanceof Error ? error : new Error('Force sync failed'));
+      return false;
+    }
+  }
+
+  /**
    * Clean up resources and stop listening
    */
   destroy(): void {
     this.isDestroyed = true;
     
+    // Stop heartbeat system
+    this.stopHeartbeat();
+    
+    // Clean up pending sync requests
+    this.pendingSyncRequests.forEach(({ timeout, reject }) => {
+      clearTimeout(timeout);
+      reject(new Error('Sync destroyed'));
+    });
+    this.pendingSyncRequests.clear();
+    
+    // Clean up broadcast channel
     if (this.channel) {
       this.channel.removeEventListener('message', this.handleBroadcastMessage);
       this.channel.close();
       this.channel = null;
     }
 
+    // Clean up storage listeners
     if (typeof window !== 'undefined') {
       window.removeEventListener('storage', this.handleStorageEvent);
     }
 
+    // Remove this tab from active tabs and notify
+    this.activeTabs.delete(this.tabId);
+    if (this.activeTabs.size > 0) {
+      this.notifyTabsChanged();
+    }
+
     this.listeners.clear();
+    this.activeTabs.clear();
   }
 }
 

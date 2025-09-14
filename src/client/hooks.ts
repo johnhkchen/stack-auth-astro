@@ -23,6 +23,21 @@ export interface UseAuthStateReturn {
   isAuthenticated: boolean;
   error: Error | null;
   lastUpdated: number;
+  isOnline: boolean;
+  networkStatus: 'online' | 'offline' | 'reconnecting' | 'degraded';
+  loadingState: {
+    type: 'idle' | 'signing-in' | 'signing-out' | 'refreshing' | 'checking-auth' | 'syncing';
+    message: string;
+    progress?: number;
+    startTime: number;
+  };
+  operationHistory: Array<{
+    operation: string;
+    timestamp: number;
+    success: boolean;
+    duration: number;
+    error?: string;
+  }>;
 }
 
 export interface UseAuthActionsReturn {
@@ -81,7 +96,11 @@ export function useAuthState(options: UseAuthStateOptions = {}): UseAuthStateRet
     isLoading: state.isLoading,
     isAuthenticated: state.isAuthenticated,
     error: state.error,
-    lastUpdated: state.lastUpdated
+    lastUpdated: state.lastUpdated,
+    isOnline: state.isOnline,
+    networkStatus: state.networkStatus,
+    loadingState: state.loadingState,
+    operationHistory: state.operationHistory
   };
 }
 
@@ -126,6 +145,51 @@ export function useAuthError(): Error | null {
 }
 
 /**
+ * Hook to access network status
+ */
+export function useNetworkStatus(): {
+  isOnline: boolean;
+  networkStatus: 'online' | 'offline' | 'reconnecting' | 'degraded';
+} {
+  const { isOnline, networkStatus } = useAuthState();
+  return { isOnline, networkStatus };
+}
+
+/**
+ * Hook to access detailed loading state
+ */
+export function useAuthLoadingState(): {
+  type: 'idle' | 'signing-in' | 'signing-out' | 'refreshing' | 'checking-auth' | 'syncing';
+  message: string;
+  progress?: number;
+  duration: number;
+  isLoading: boolean;
+} {
+  const { loadingState, isLoading } = useAuthState();
+  const duration = loadingState.type !== 'idle' ? Date.now() - loadingState.startTime : 0;
+  
+  return {
+    ...loadingState,
+    duration,
+    isLoading
+  };
+}
+
+/**
+ * Hook to access operation history for debugging/analytics
+ */
+export function useAuthOperationHistory(): Array<{
+  operation: string;
+  timestamp: number;
+  success: boolean;
+  duration: number;
+  error?: string;
+}> {
+  const { operationHistory } = useAuthState();
+  return operationHistory;
+}
+
+/**
  * Hook to access authentication actions
  */
 export function useAuthActions(): UseAuthActionsReturn {
@@ -134,27 +198,35 @@ export function useAuthActions(): UseAuthActionsReturn {
   
   const signIn = useCallback(async (provider?: string, options: any = {}) => {
     try {
-      authStateManager.setLoading(true);
+      authStateManager.setLoadingState(
+        'signing-in', 
+        provider ? `Signing in with ${provider}...` : 'Signing in...'
+      );
+      
       await clientSignIn(provider, options);
       
       // Broadcast sign in to other tabs
       syncManager.broadcastSignIn(null, null);
     } catch (error) {
-      authStateManager.setError(error instanceof Error ? error : new Error('Sign in failed'));
+      const authError = error instanceof Error ? error : new Error('Sign in failed');
+      authStateManager.setError(authError);
+      authStateManager.setLoadingState('idle', '');
       throw error;
     }
   }, [authStateManager, syncManager]);
 
   const signOut = useCallback(async (options: any = {}) => {
     try {
-      authStateManager.setLoading(true);
+      authStateManager.setLoadingState('signing-out', 'Signing out...');
       await clientSignOut(options);
       
       // Clear auth state and broadcast to other tabs
       authStateManager.clearAuth();
       syncManager.broadcastSignOut();
     } catch (error) {
-      authStateManager.setError(error instanceof Error ? error : new Error('Sign out failed'));
+      const authError = error instanceof Error ? error : new Error('Sign out failed');
+      authStateManager.setError(authError);
+      authStateManager.setLoadingState('idle', '');
       throw error;
     }
   }, [authStateManager, syncManager]);
@@ -369,5 +441,99 @@ export function useSessionManagement(): {
     refreshSession,
     isSessionValid,
     timeUntilExpiry
+  };
+}
+
+/**
+ * Performance-optimized hook that only re-renders when specific auth properties change
+ */
+export function useAuthSelector<T>(
+  selector: (state: UseAuthStateReturn) => T,
+  equality?: (a: T, b: T) => boolean
+): T {
+  const authState = useAuthState();
+  const selectorRef = useRef(selector);
+  const [selectedValue, setSelectedValue] = useState(() => selector(authState));
+  const selectedValueRef = useRef(selectedValue);
+
+  // Update selector ref if it changes
+  useEffect(() => {
+    selectorRef.current = selector;
+  }, [selector]);
+
+  // Update selected value when auth state changes
+  useEffect(() => {
+    const newValue = selectorRef.current(authState);
+    const hasChanged = equality 
+      ? !equality(selectedValueRef.current, newValue)
+      : selectedValueRef.current !== newValue;
+
+    if (hasChanged) {
+      selectedValueRef.current = newValue;
+      setSelectedValue(newValue);
+    }
+  }, [authState, equality]);
+
+  return selectedValue;
+}
+
+/**
+ * Hook for optimized auth status checking with debouncing
+ */
+export function useOptimizedAuthCheck(): {
+  isChecking: boolean;
+  isAuthenticated: boolean;
+  user: User | null;
+  error: Error | null;
+  forceCheck: () => void;
+} {
+  const authState = useAuthState();
+  const { checkAuthStatus } = useAuthActions();
+  const [isChecking, setIsChecking] = useState(false);
+  const hasChecked = useRef(false);
+  const checkTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+
+  // Debounced check function
+  const debouncedCheck = useCallback(() => {
+    if (checkTimeoutRef.current) {
+      clearTimeout(checkTimeoutRef.current);
+    }
+
+    checkTimeoutRef.current = setTimeout(async () => {
+      if (!hasChecked.current || authState.error) {
+        setIsChecking(true);
+        try {
+          await checkAuthStatus();
+          hasChecked.current = true;
+        } catch (error) {
+          // Error is handled by the auth state manager
+        } finally {
+          setIsChecking(false);
+        }
+      }
+    }, 100); // 100ms debounce
+  }, [checkAuthStatus, authState.error]);
+
+  const forceCheck = useCallback(async () => {
+    hasChecked.current = false;
+    await debouncedCheck();
+  }, [debouncedCheck]);
+
+  useEffect(() => {
+    debouncedCheck();
+
+    return () => {
+      if (checkTimeoutRef.current) {
+        clearTimeout(checkTimeoutRef.current);
+      }
+    };
+  }, [debouncedCheck]);
+
+  return {
+    isChecking: isChecking || authState.isLoading,
+    isAuthenticated: authState.isAuthenticated,
+    user: authState.user,
+    error: authState.error,
+    forceCheck
   };
 }
