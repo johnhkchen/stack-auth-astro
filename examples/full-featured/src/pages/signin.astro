@@ -11,7 +11,21 @@ import { SignIn } from 'astro-stack-auth/components';
           Sign In to Your Account
         </h1>
         
-        <SignIn client:load />
+        <SignIn 
+          client:load 
+          onSuccess={(user) => {
+            console.log('Sign in successful!', user);
+            // Redirect to dashboard or show welcome message
+            window.location.href = '/dashboard';
+          }}
+          onError={(error) => {
+            console.error('Sign in error:', error);
+            alert('Sign in failed: ' + error.message);
+          }}
+          extraInfo="Welcome back! Sign in to access your dashboard."
+          className="signin-form"
+          style={{ fontFamily: 'system-ui' }}
+        />
         
         <div class="mt-6 text-center">
           <p class="text-sm text-gray-600">

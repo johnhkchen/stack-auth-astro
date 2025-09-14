@@ -20,7 +20,22 @@ const user = await requireAuth(Astro);
         </div>
         
         <div class="px-6 py-4">
-          <AccountSettings client:load />
+          <AccountSettings 
+            client:load 
+            onUpdateSuccess={(updatedUser) => {
+              console.log('Profile updated successfully!', updatedUser);
+              alert('Your profile has been updated successfully!');
+            }}
+            onUpdateError={(error) => {
+              console.error('Profile update error:', error);
+              alert('Failed to update profile: ' + error.message);
+            }}
+            showProfile={true}
+            showSecurity={true}
+            showPreferences={true}
+            className="account-settings"
+            style={{ padding: '1rem' }}
+          />
         </div>
       </div>
       
