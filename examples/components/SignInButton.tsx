@@ -20,7 +20,7 @@ export const SignInButton: React.FC<SignInButtonProps> = ({
 }) => {
   const handleSignIn = async () => {
     try {
-      await signIn(provider, { callbackUrl: redirectTo });
+      await signIn(provider, { redirectTo });
     } catch (error) {
       console.error('Sign in failed:', error);
     }

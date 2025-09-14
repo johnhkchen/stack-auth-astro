@@ -18,7 +18,7 @@ export const SignOutButton: React.FC<SignOutButtonProps> = ({
 }) => {
   const handleSignOut = async () => {
     try {
-      await signOut({ callbackUrl: redirectTo });
+      await signOut({ redirectTo });
     } catch (error) {
       console.error('Sign out failed:', error);
     }

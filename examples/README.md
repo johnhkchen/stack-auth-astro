@@ -261,8 +261,8 @@ cp -r examples/minimal-astro/* your-project/
 ---
 // Customize redirect URLs
 const user = await requireAuth(Astro, {
-  redirectTo: '/custom-signin',
-  callbackUrl: '/custom-dashboard'
+  signInUrl: '/custom-signin',
+  redirectTo: '/custom-dashboard'
 });
 ---
 ```
