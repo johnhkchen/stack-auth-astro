@@ -160,6 +160,7 @@
     "deps:check:verbose": "node scripts/check-optional-deps.js --verbose",
     "deps:detect": "node scripts/smart-dependency-detector.js",
     "deps:detect:verbose": "STACK_AUTH_DEBUG=true node scripts/smart-dependency-detector.js",
+    "test:user-ready": "node scripts/user-testing-validation.js",
     "postinstall": "npm run stack:validate"
   },
   "keywords": [
