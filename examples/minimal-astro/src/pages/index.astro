@@ -62,19 +62,24 @@ const user = await getUser(Astro);
           <a href="/signup">Sign Up</a>
         </>
       ) : (
-        <>
-          <a href="/account">Account</a>
-          <a href="/protected">Protected Page</a>
-        </>
+        <a href="#" onclick="signOut()">Sign Out</a>
       )}
     </div>
 
-    <h2>Features Demonstrated</h2>
+    <h2>What This Example Shows</h2>
     <ul>
-      <li>Server-side auth state with <code>getUser()</code></li>
-      <li>Simple sign in and sign up pages</li>
-      <li>Protected routes requiring authentication</li>
-      <li>Account page with user details</li>
+      <li>Server-side authentication with <code>getUser()</code></li>
+      <li>Basic Stack Auth React components</li>
+      <li>Simple sign in and sign up flows</li>
     </ul>
+
+    <script>
+      async function signOut() {
+        const { signOut } = await import('astro-stack-auth/client');
+        await signOut();
+        window.location.reload();
+      }
+      (window as any).signOut = signOut;
+    </script>
   </body>
 </html>
