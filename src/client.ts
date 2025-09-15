@@ -8,6 +8,7 @@
 import type { SignInOptions, SignOutOptions } from './types.js';
 import { getAuthStateManager, initAuthState } from './client/state.js';
 import { initSync, broadcastSignIn, broadcastSignOut } from './client/sync.js';
+import { getAuthPrefix, buildAuthUrl, discoverAuthPrefix, clearPrefixCache } from './client/prefix.js';
 
 /**
  * Client-side error class with recovery guidance
@@ -350,7 +351,7 @@ export async function signIn(provider?: string, options: SignInOptions = {}): Pr
     await performNetworkAwareOperation(
       // Primary operation - API-based sign in
       async () => {
-        const baseUrl = '/handler';
+        const baseUrl = getAuthPrefix();
         const endpoint = provider ? `${baseUrl}/signin/${provider}` : `${baseUrl}/signin`;
         
         const response = await fetch(endpoint, {
@@ -397,9 +398,10 @@ export async function signIn(provider?: string, options: SignInOptions = {}): Pr
       () => {
         console.warn('Sign in API unavailable, using redirect fallback');
         
+        const baseUrl = getAuthPrefix();
         const signInUrl = provider 
-          ? `/handler/signin/${provider}?redirectTo=${encodeURIComponent(redirectTo)}`
-          : `/handler/signin?redirectTo=${encodeURIComponent(redirectTo)}`;
+          ? `${baseUrl}/signin/${provider}?redirectTo=${encodeURIComponent(redirectTo)}`
+          : `${baseUrl}/signin?redirectTo=${encodeURIComponent(redirectTo)}`;
         
         window.location.href = signInUrl;
       },
@@ -432,9 +434,10 @@ export async function signIn(provider?: string, options: SignInOptions = {}): Pr
       if (shouldFallback) {
         // Fallback to redirect-based sign in for certain errors
         console.warn('Sign in API failed, falling back to redirect method:', clientError.message);
+        const baseUrl = getAuthPrefix();
         const signInUrl = provider 
-          ? `/handler/signin/${provider}?redirectTo=${encodeURIComponent(redirectTo)}`
-          : `/handler/signin?redirectTo=${encodeURIComponent(redirectTo)}`;
+          ? `${baseUrl}/signin/${provider}?redirectTo=${encodeURIComponent(redirectTo)}`
+          : `${baseUrl}/signin?redirectTo=${encodeURIComponent(redirectTo)}`;
         
         window.location.href = signInUrl;
       } else {
@@ -492,7 +495,8 @@ export async function signOut(options: SignOutOptions = {}): Promise<void> {
     await performNetworkAwareOperation(
       // Primary operation - API call to sign out
       async () => {
-        const response = await fetch('/handler/signout', {
+        const baseUrl = getAuthPrefix();
+        const response = await fetch(`${baseUrl}/signout`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -535,7 +539,8 @@ export async function signOut(options: SignOutOptions = {}): Promise<void> {
         }
         
         // Try redirect-based sign out
-        const signOutUrl = `/handler/signout?redirectTo=${encodeURIComponent(redirectTo)}`;
+        const baseUrl = getAuthPrefix();
+        const signOutUrl = `${baseUrl}/signout?redirectTo=${encodeURIComponent(redirectTo)}`;
         window.location.href = signOutUrl;
       },
       {
@@ -562,7 +567,8 @@ export async function signOut(options: SignOutOptions = {}): Promise<void> {
       // Always fall back to redirect on complete failure
       console.error('All sign out methods failed, attempting final redirect fallback');
       try {
-        const signOutUrl = `/handler/signout?redirectTo=${encodeURIComponent(redirectTo)}`;
+        const baseUrl = getAuthPrefix();
+        const signOutUrl = `${baseUrl}/signout?redirectTo=${encodeURIComponent(redirectTo)}`;
         window.location.href = signOutUrl;
       } catch (redirectError) {
         // If even redirect fails, just redirect to the target destination
@@ -592,7 +598,7 @@ export function redirectToSignIn(callbackUrl?: string): void {
  */
 export function redirectToSignUp(callbackUrl?: string): void {
   const redirectTo = callbackUrl || window.location.href;
-  const signUpUrl = `/handler/signup?redirect=${encodeURIComponent(redirectTo)}`;
+  const signUpUrl = buildAuthUrl('signup', { redirect: redirectTo });
   window.location.href = signUpUrl;
 }
 
@@ -603,7 +609,7 @@ export function redirectToSignUp(callbackUrl?: string): void {
  */
 export function redirectToAccount(callbackUrl?: string): void {
   const redirectTo = callbackUrl || window.location.href;
-  const accountUrl = `/handler/account?redirect=${encodeURIComponent(redirectTo)}`;
+  const accountUrl = buildAuthUrl('account', { redirect: redirectTo });
   window.location.href = accountUrl;
 }
 
@@ -645,3 +651,11 @@ export {
   useUserProfile,
   useSessionManagement
 } from './client/hooks.js';
+
+// Export prefix discovery utilities
+export {
+  getAuthPrefix,
+  discoverAuthPrefix,
+  clearPrefixCache,
+  buildAuthUrl
+};

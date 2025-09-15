@@ -134,6 +134,40 @@ STACK_AUTH_PREFIX=/api/auth
 NODE_ENV=development
 ```
 
+### Advanced Configuration
+
+You can also configure the integration directly in your `astro.config.mjs`:
+
+```javascript
+// astro.config.mjs
+import { defineConfig } from 'astro/config';
+import stackAuth from 'astro-stack-auth';
+
+export default defineConfig({
+  integrations: [
+    stackAuth({
+      // Custom endpoint prefix - overrides STACK_AUTH_PREFIX
+      prefix: '/api/auth',
+      
+      // Whether to add React renderer (default: true)
+      addReactRenderer: true,
+      
+      // Whether to inject API routes (default: true) 
+      injectRoutes: true,
+      
+      // Whether to add middleware (default: true)
+      addMiddleware: true
+    })
+  ]
+});
+```
+
+**Prefix Configuration:**
+- **Default**: `/handler` - All Stack Auth endpoints available at `/handler/*`
+- **Custom**: Set `prefix: '/api/auth'` or `STACK_AUTH_PREFIX=/api/auth`
+- **Client Auto-Detection**: Client-side functions automatically discover and use the configured prefix
+- **No Conflicts**: The integration validates that your custom prefix doesn't conflict with existing routes
+
 ## Working Examples
 
 ### Basic Protected Page

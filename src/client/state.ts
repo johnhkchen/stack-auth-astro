@@ -6,6 +6,7 @@
  */
 
 import type { User, Session } from '@stackframe/stack';
+import { buildAuthUrl } from './prefix.js';
 
 export interface AuthState {
   user: User | null;
@@ -263,7 +264,7 @@ class AuthStateManager {
 
     try {
       // Quick validation call to ensure session is still valid
-      const response = await fetch('/handler/session', {
+      const response = await fetch(buildAuthUrl('session'), {
         method: 'HEAD', // Use HEAD for lightweight check
         credentials: 'same-origin',
         headers: {
@@ -540,7 +541,7 @@ class AuthStateManager {
    */
   private async verifyConnectivity(): Promise<boolean> {
     try {
-      const response = await fetch('/handler/health', {
+      const response = await fetch(buildAuthUrl('health'), {
         method: 'HEAD',
         cache: 'no-cache',
         headers: { 'Cache-Control': 'no-cache' }
@@ -783,7 +784,7 @@ class AuthStateManager {
     const startTime = this.startOperation('refresh', 'Refreshing session...');
 
     try {
-      const response = await fetch('/handler/session', {
+      const response = await fetch(buildAuthUrl('session'), {
         method: 'GET',
         credentials: 'same-origin',
         headers: {
@@ -834,7 +835,7 @@ class AuthStateManager {
     const startTime = this.startOperation('auth-check', 'Checking authentication status...');
 
     try {
-      const response = await fetch('/handler/user', {
+      const response = await fetch(buildAuthUrl('user'), {
         method: 'GET',
         credentials: 'same-origin',
         headers: {

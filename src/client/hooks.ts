@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { User, Session } from '@stackframe/stack';
 import { getAuthStateManager, type AuthState } from './state.js';
+import { buildAuthUrl } from './prefix.js';
 import { getSyncManager, type SyncMessage } from './sync.js';
 import { signIn as clientSignIn, signOut as clientSignOut } from '../client.js';
 
@@ -294,7 +295,7 @@ export function useRequireAuth(): {
     if (!isLoading && !isAuthenticated) {
       // Redirect to sign in page
       const currentUrl = encodeURIComponent(window.location.href);
-      window.location.href = `/handler/signin?redirectTo=${currentUrl}`;
+      window.location.href = buildAuthUrl('signin', { redirectTo: currentUrl });
     }
   }, [isLoading, isAuthenticated]);
 
@@ -355,7 +356,7 @@ export function useUserProfile(): {
   
   const updateProfile = useCallback(async (updates: Partial<User>) => {
     try {
-      const response = await fetch('/handler/user/profile', {
+      const response = await fetch(buildAuthUrl('user/profile'), {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
