@@ -130,10 +130,25 @@ async function testApiReachability(
 
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        result.errors.push(`API timeout after ${timeout}ms - check your internet connection`);
+        result.errors.push(
+          `🕑 Connection timeout after ${timeout}ms\n` +
+          `   Possible causes:\n` +
+          `   • Slow internet connection\n` +
+          `   • Stack Auth API is temporarily slow\n` +
+          `   • Network latency issues\n` +
+          `   Try: Increasing timeout in integration options`
+        );
         result.apiReachable = false;
-      } else if (error instanceof Error && error.message.includes('fetch')) {
-        result.errors.push(`Unable to reach Stack Auth API: ${error.message}`);
+      } else if (error instanceof Error && (error.message.includes('fetch') || error.message.includes('ENOTFOUND'))) {
+        result.errors.push(
+          `🌐 Cannot reach Stack Auth API\n` +
+          `   Error: ${error.message}\n` +
+          `   Troubleshooting:\n` +
+          `   • Check internet connection\n` +
+          `   • Verify firewall settings\n` +
+          `   • Test: curl https://api.stack-auth.com/health\n` +
+          `   • Check proxy configuration if applicable`
+        );
         result.apiReachable = false;
       } else {
         result.warnings.push(`Network test inconclusive: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -186,15 +201,34 @@ async function testProjectValidation(
           result.warnings.push('Project data structure unexpected');
         }
       } else if (response.status === 404) {
-        result.errors.push(`Project ID '${config.projectId}' does not exist`);
-      } else if (response.status === 403) {
-        result.errors.push(`Project ID '${config.projectId}' - access denied with current credentials`);
+        result.errors.push(
+          `🏗️ Project not found: '${config.projectId}'\n` +
+          `   Possible issues:\n` +
+          `   • Project ID is incorrect or has typos\n` +
+          `   • Project was deleted\n` +
+          `   • Using wrong environment (test vs production)\n` +
+          `   Fix: Verify project ID in Stack Auth dashboard`
+        );
+      } else if (response.status === 403 || response.status === 401) {
+        result.errors.push(
+          `🔒 Authentication failed for project '${config.projectId}'\n` +
+          `   HTTP ${response.status}: Access denied\n` +
+          `   Likely causes:\n` +
+          `   • Invalid or expired API keys\n` +
+          `   • Keys don't match this project\n` +
+          `   • Using client key instead of server key\n` +
+          `   Fix: Regenerate keys in Stack Auth dashboard`
+        );
       } else {
         result.warnings.push(`Could not validate project: HTTP ${response.status}`);
       }
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        result.errors.push(`Project validation timeout after ${timeout}ms`);
+        result.errors.push(
+          `⏱️ Project validation timeout (${timeout}ms)\n` +
+          `   The request to validate your project timed out.\n` +
+          `   Try: Increasing timeout or checking network speed`
+        );
       } else {
         result.warnings.push(`Could not validate project: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }

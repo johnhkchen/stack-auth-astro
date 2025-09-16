@@ -38,13 +38,23 @@ export function getConfig(): StackAuthConfig {
     if (!process.env.STACK_PUBLISHABLE_CLIENT_KEY) missingVars.push('STACK_PUBLISHABLE_CLIENT_KEY');
     if (!process.env.STACK_SECRET_SERVER_KEY) missingVars.push('STACK_SECRET_SERVER_KEY');
     
-    const helpMessage = createMissingConfigHelp(missingVars);
-    const summary = createValidationSummary(envValidation.errors);
-    
-    throw new StackAuthEnvironmentError(
-      `Missing required Stack Auth environment variables\n${summary}\n${helpMessage}`,
-      missingVars
-    );
+    // Different error messages for development vs production
+    if (process.env.NODE_ENV === 'production') {
+      // In production, provide minimal error info for security
+      throw new StackAuthEnvironmentError(
+        'Stack Auth configuration error. Please check server configuration.',
+        missingVars
+      );
+    } else {
+      // In development, provide detailed help
+      const helpMessage = createMissingConfigHelp(missingVars);
+      const summary = createValidationSummary(envValidation.errors);
+      
+      throw new StackAuthEnvironmentError(
+        `Missing required Stack Auth environment variables\n${summary}\n${helpMessage}`,
+        missingVars
+      );
+    }
   }
 
   // Extract and validate configuration
@@ -60,8 +70,14 @@ export function getConfig(): StackAuthConfig {
   const configValidation = validateConfiguration(config);
   
   if (!configValidation.isValid) {
-    const summary = createValidationSummary(configValidation.errors);
-    throw new StackAuthConfigurationError(`Invalid Stack Auth configuration\n${summary}`);
+    if (process.env.NODE_ENV === 'production') {
+      // Minimal error in production
+      throw new StackAuthConfigurationError('Stack Auth configuration validation failed');
+    } else {
+      // Detailed error in development
+      const summary = createValidationSummary(configValidation.errors);
+      throw new StackAuthConfigurationError(`Invalid Stack Auth configuration\n${summary}`);
+    }
   }
 
   // Log warnings in development
