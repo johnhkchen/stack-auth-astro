@@ -339,6 +339,27 @@ const user = await getUser(Astro);
 </html>
 ```
 
+### Important: Build Environment Requirements
+
+**Stack Auth components have Next.js dependencies and require an Astro/React build environment:**
+
+Stack Auth's underlying `@stackframe/stack` SDK includes Next.js dependencies that are resolved at build time. This means:
+
+- ✅ **Components work correctly** within Astro's build system and runtime
+- ✅ **Full functionality** is available when using standard Astro development and production builds
+- ❌ **Direct Node.js imports will fail** when attempting to import components outside of Astro's build context
+- ❌ **Unit testing requires Astro's test infrastructure** - cannot import components directly in Node.js test files
+
+**Error you might see in Node.js contexts:**
+```
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module 'next/navigation' imported from @stackframe/stack
+```
+
+**Solution for testing:**
+Use Astro's built-in testing infrastructure or test components through Astro Container API rather than direct Node.js imports. The components are designed to work within Astro's build pipeline where Next.js dependencies are properly resolved.
+
+This is an expected limitation of Stack Auth's current architecture and does not affect normal usage within Astro applications.
+
 ## User Testing Guide
 
 ### What You Can Test Right Now ✅

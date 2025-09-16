@@ -5,6 +5,16 @@
  * with proper TypeScript support, component hydration, and development-time
  * prop validation.
  * 
+ * IMPORTANT: Build Environment Requirements
+ * ==========================================
+ * Stack Auth components have Next.js dependencies that are resolved at build time.
+ * These components MUST be used within Astro's build system where dependencies
+ * are properly resolved. Direct Node.js imports (e.g., in unit tests) will fail
+ * with "Cannot find module 'next/navigation'" errors.
+ * 
+ * For testing: Use Astro's Container API or integration testing rather than
+ * attempting to import these components directly in Node.js test runners.
+ * 
  * Features:
  * - Complete TypeScript prop autocompletion
  * - Astro island hydration compatibility  
@@ -24,6 +34,42 @@
  */
 
 import * as React from 'react';
+
+// Runtime environment check for helpful error messages
+const checkBuildEnvironment = () => {
+  // Check if we're in a Node.js context without proper build setup
+  if (typeof process !== 'undefined' && process.versions?.node) {
+    // Check for common test/Node.js direct execution indicators
+    const isDirectNodeExecution = 
+      !process.env.VITE_USER_NODE_ENV && // Not in Vite/Astro build
+      !process.env.ASTRO_VERSION && // Not in Astro runtime
+      typeof (globalThis as any).astroGlobal === 'undefined'; // No Astro global
+    
+    if (isDirectNodeExecution) {
+      const errorMessage = `
+========================================
+Stack Auth Component Import Error
+========================================
+Stack Auth components cannot be imported directly in Node.js contexts.
+The @stackframe/stack SDK has Next.js dependencies that require a build environment.
+
+Current context appears to be: Direct Node.js execution (e.g., unit tests)
+
+SOLUTION:
+- For testing: Use Astro's Container API or integration tests
+- For development: Import components only within Astro pages/components
+- These components work correctly when used through Astro's build system
+
+For more information, see the README section: "Build Environment Requirements"
+========================================
+`;
+      console.error(errorMessage);
+    }
+  }
+};
+
+// Run the check when module is imported
+checkBuildEnvironment();
 
 // Import and re-export Stack Auth types and components with enhanced TypeScript support
 export type { 
