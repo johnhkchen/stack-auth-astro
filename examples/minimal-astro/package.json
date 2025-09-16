@@ -17,7 +17,7 @@
     "@astrojs/node": "^9.4.3",
     "@astrojs/react": "^4.3.1",
     "astro": "^5.13.7",
-    "astro-stack-auth": "file:../../",
+    "astro-stack-auth": "file:../../astro-stack-auth-0.1.0.tgz",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
