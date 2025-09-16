@@ -7,6 +7,7 @@ describe('requireAuth URL Preservation', () => {
   let mockRedirect: vi.Mock;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     mockRedirect = vi.fn();
     mockContext = {
       url: new URL('http://localhost:3000/dashboard?tab=settings&sort=name'),
@@ -36,6 +37,7 @@ describe('requireAuth URL Preservation', () => {
       // requireAuth should call context.redirect for unauthenticated users
     }
 
+    expect(mockRedirect).toHaveBeenCalledTimes(1);
     expect(mockRedirect).toHaveBeenCalledWith(
       '/handler/signin?redirect=' + encodeURIComponent('/dashboard?tab=settings&sort=name')
     );
@@ -48,6 +50,7 @@ describe('requireAuth URL Preservation', () => {
       // requireAuth should call context.redirect for unauthenticated users
     }
 
+    expect(mockRedirect).toHaveBeenCalledTimes(1);
     expect(mockRedirect).toHaveBeenCalledWith(
       '/custom-signin?redirect=' + encodeURIComponent('/dashboard?tab=settings&sort=name')
     );
@@ -60,6 +63,7 @@ describe('requireAuth URL Preservation', () => {
       // requireAuth should call context.redirect for unauthenticated users
     }
 
+    expect(mockRedirect).toHaveBeenCalledTimes(1);
     expect(mockRedirect).toHaveBeenCalledWith(
       '/handler/signin?redirect=' + encodeURIComponent('/specific-return-page')
     );
@@ -77,6 +81,7 @@ describe('requireAuth URL Preservation', () => {
       // requireAuth should call context.redirect for unauthenticated users
     }
 
+    expect(mockRedirect).toHaveBeenCalledTimes(1);
     expect(mockRedirect).toHaveBeenCalledWith(
       '/handler/signin?redirect=' + encodeURIComponent('/search?q=test%20query&filter=active&page=2')
     );
@@ -94,6 +99,7 @@ describe('requireAuth URL Preservation', () => {
       // requireAuth should call context.redirect for unauthenticated users
     }
 
+    expect(mockRedirect).toHaveBeenCalledTimes(1);
     expect(mockRedirect).toHaveBeenCalledWith(
       '/handler/signin?redirect=' + encodeURIComponent('/profile')
     );
