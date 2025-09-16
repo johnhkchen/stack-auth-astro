@@ -1,7 +1,7 @@
 # Stack Auth Astro Integration - Technical Specification
 
 ## Project Overview
-**Package Name:** `@stackframe/astro`  
+**Package Name:** `astro-stack-auth`  
 **Purpose:** Official Stack Auth integration for Astro projects  
 **Pattern:** Community integration following `auth-astro` architecture  
 
@@ -32,7 +32,7 @@ Provide a single integration that:
 
 ### **Entry Points**
 ```
-@stackframe/astro/
+astro-stack-auth/
 ├── index.ts              # Main integration export
 ├── server.ts             # Server-side auth methods
 ├── client.ts             # Client-side auth methods
@@ -134,7 +134,7 @@ export { StackProvider } from './components/StackProvider'
 // Automatically inject Stack Auth handler
 injectRoute({
   pattern: `${prefix}/[...stack]`,
-  entrypoint: "@stackframe/astro/api/handler",
+  entrypoint: "astro-stack-auth/api/handler",
   prerender: false
 })
 ```
@@ -161,7 +161,7 @@ declare namespace App {
 ### **Installation and Setup**
 ```bash
 # Single command installation
-npm install @stackframe/astro
+npm install astro-stack-auth
 
 # Automatic peer dependency handling
 # Auto-installs @astrojs/react if components are used
@@ -204,7 +204,7 @@ const session = Astro.locals.session;
 #### **Protected Pages**
 ```astro
 ---
-import { requireAuth } from '@stackframe/astro/server';
+import { requireAuth } from 'astro-stack-auth/server';
 
 const user = await requireAuth(Astro);
 // Automatically redirects if not authenticated
@@ -216,7 +216,7 @@ const user = await requireAuth(Astro);
 #### **Client-Side Actions**
 ```astro
 ---
-import { signIn, signOut } from '@stackframe/astro/client';
+import { signIn, signOut } from 'astro-stack-auth/client';
 ---
 
 <button onclick="signIn()">Sign In</button>
@@ -226,7 +226,7 @@ import { signIn, signOut } from '@stackframe/astro/client';
 #### **React Components**
 ```astro
 ---
-import { SignIn, UserButton } from '@stackframe/astro/components';
+import { SignIn, UserButton } from 'astro-stack-auth/components';
 ---
 
 <SignIn client:load />
