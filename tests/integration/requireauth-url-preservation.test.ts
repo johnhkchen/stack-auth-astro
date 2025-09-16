@@ -1,36 +1,48 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { requireAuth } from '../../src/server.js';
 import type { APIContext } from 'astro';
 
-describe('requireAuth URL Preservation', () => {
-  let mockContext: Partial<APIContext>;
-  let mockRedirect: vi.Mock;
+// Helper function to create isolated mock context for each test
+function createMockContext(url: string, options: { 
+  user?: any; 
+  session?: any; 
+  acceptHeader?: string 
+} = {}) {
+  const mockRedirect = vi.fn();
+  const mockContext: Partial<APIContext> = {
+    url: new URL(url),
+    request: new Request(url, {
+      headers: {
+        'accept': options.acceptHeader || 'text/html',
+      }
+    }),
+    locals: {
+      user: options.user || null,
+      session: options.session || null
+    },
+    redirect: mockRedirect
+  };
+  return { mockContext, mockRedirect };
+}
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockRedirect = vi.fn();
-    mockContext = {
-      url: new URL('http://localhost:3000/dashboard?tab=settings&sort=name'),
-      request: new Request('http://localhost:3000/dashboard?tab=settings&sort=name', {
-        headers: {
-          'accept': 'text/html',
-        }
-      }),
-      locals: {
-        user: null,
-        session: null
-      },
-      redirect: mockRedirect
-    };
-
-    // Mock environment variables
+describe.sequential('requireAuth URL Preservation', () => {
+  beforeAll(() => {
+    // Set up environment variables once for all tests
     process.env.STACK_PROJECT_ID = 'test-project';
     process.env.STACK_PUBLISHABLE_CLIENT_KEY = 'test-key';
     process.env.STACK_SECRET_SERVER_KEY = 'test-secret';
     process.env.STACK_AUTH_PREFIX = '/handler';
   });
 
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('should preserve original URL with query parameters in redirect', async () => {
+    const { mockContext, mockRedirect } = createMockContext(
+      'http://localhost:3000/dashboard?tab=settings&sort=name'
+    );
+
     try {
       await requireAuth(mockContext as APIContext);
     } catch (response) {
@@ -44,6 +56,10 @@ describe('requireAuth URL Preservation', () => {
   });
 
   it('should handle custom sign-in URL', async () => {
+    const { mockContext, mockRedirect } = createMockContext(
+      'http://localhost:3000/dashboard?tab=settings&sort=name'
+    );
+
     try {
       await requireAuth(mockContext as APIContext, { signInUrl: '/custom-signin' });
     } catch (response) {
@@ -57,6 +73,10 @@ describe('requireAuth URL Preservation', () => {
   });
 
   it('should use custom redirectTo option when provided', async () => {
+    const { mockContext, mockRedirect } = createMockContext(
+      'http://localhost:3000/dashboard?tab=settings&sort=name'
+    );
+
     try {
       await requireAuth(mockContext as APIContext, { redirectTo: '/specific-return-page' });
     } catch (response) {
@@ -70,10 +90,9 @@ describe('requireAuth URL Preservation', () => {
   });
 
   it('should preserve complex URLs with special characters', async () => {
-    mockContext.url = new URL('http://localhost:3000/search?q=test%20query&filter=active&page=2');
-    mockContext.request = new Request('http://localhost:3000/search?q=test%20query&filter=active&page=2', {
-      headers: { 'accept': 'text/html' }
-    });
+    const { mockContext, mockRedirect } = createMockContext(
+      'http://localhost:3000/search?q=test%20query&filter=active&page=2'
+    );
 
     try {
       await requireAuth(mockContext as APIContext);
@@ -88,10 +107,9 @@ describe('requireAuth URL Preservation', () => {
   });
 
   it('should handle URLs without query parameters', async () => {
-    mockContext.url = new URL('http://localhost:3000/profile');
-    mockContext.request = new Request('http://localhost:3000/profile', {
-      headers: { 'accept': 'text/html' }
-    });
+    const { mockContext, mockRedirect } = createMockContext(
+      'http://localhost:3000/profile'
+    );
 
     try {
       await requireAuth(mockContext as APIContext);
@@ -107,10 +125,13 @@ describe('requireAuth URL Preservation', () => {
 
   it('should return user when authenticated', async () => {
     const mockUser = { id: 'user-123', email: 'test@example.com' };
-    mockContext.locals = {
-      user: mockUser,
-      session: { id: 'session-123' }
-    };
+    const { mockContext, mockRedirect } = createMockContext(
+      'http://localhost:3000/dashboard',
+      { 
+        user: mockUser,
+        session: { id: 'session-123' }
+      }
+    );
 
     const result = await requireAuth(mockContext as APIContext);
 
@@ -119,10 +140,10 @@ describe('requireAuth URL Preservation', () => {
   });
 
   it('should return 401 JSON response for API routes', async () => {
-    mockContext.url = new URL('http://localhost:3000/api/protected');
-    mockContext.request = new Request('http://localhost:3000/api/protected', {
-      headers: { 'accept': 'application/json' }
-    });
+    const { mockContext, mockRedirect } = createMockContext(
+      'http://localhost:3000/api/protected',
+      { acceptHeader: 'application/json' }
+    );
 
     try {
       await requireAuth(mockContext as APIContext);
