@@ -135,18 +135,43 @@ export const onRequest = defineMiddleware(async (context, next) => {
     if (!validation.isValid) {
       // Configuration is invalid - handle gracefully
       if (process.env.NODE_ENV === 'development') {
-        const setupGuide = createSetupGuide();
-        const errorMessage = createErrorWithGuide(
-          'Stack Auth Configuration Invalid',
-          `Missing or invalid configuration:\n${validation.errors.join('\n')}`,
-          [
-            'Check your environment variables are set correctly',
-            'Ensure STACK_PROJECT_ID, STACK_PUBLISHABLE_CLIENT_KEY, and STACK_SECRET_SERVER_KEY are defined',
-            'Refer to the setup guide below'
-          ]
-        );
+        // Provide specific, helpful error messages for missing environment variables
+        const missingVars = [];
+        if (!process.env.STACK_PROJECT_ID) missingVars.push('STACK_PROJECT_ID');
+        if (!process.env.STACK_PUBLISHABLE_CLIENT_KEY) missingVars.push('STACK_PUBLISHABLE_CLIENT_KEY');
+        if (!process.env.STACK_SECRET_SERVER_KEY) missingVars.push('STACK_SECRET_SERVER_KEY');
         
-        console.error(`❌ ${errorMessage}\n\n${setupGuide}`);
+        if (missingVars.length > 0) {
+          // Show specific missing variable error with actionable steps
+          const specificError = missingVars.map(varName => {
+            switch(varName) {
+              case 'STACK_PROJECT_ID':
+                return `\n🔑 Missing STACK_PROJECT_ID\n   → Go to https://app.stack-auth.com\n   → Select your project\n   → Copy the Project ID from settings\n   → Add to .env: STACK_PROJECT_ID=your_project_id`;
+              case 'STACK_PUBLISHABLE_CLIENT_KEY':
+                return `\n🔑 Missing STACK_PUBLISHABLE_CLIENT_KEY\n   → Go to https://app.stack-auth.com\n   → Navigate to API Keys\n   → Copy the Publishable Client Key\n   → Add to .env: STACK_PUBLISHABLE_CLIENT_KEY=pk_...`;
+              case 'STACK_SECRET_SERVER_KEY':
+                return `\n🔑 Missing STACK_SECRET_SERVER_KEY\n   → Go to https://app.stack-auth.com\n   → Navigate to API Keys\n   → Copy the Secret Server Key\n   → Add to .env: STACK_SECRET_SERVER_KEY=sk_...\n   ⚠️  Keep this key secret!`;
+              default:
+                return '';
+            }
+          }).join('\n');
+          
+          console.error(`❌ Stack Auth Configuration Error\n${specificError}\n\n📚 Quick Setup Guide:\n   1. Create a .env file in your project root\n   2. Add all three required environment variables\n   3. Restart your development server\n\n💡 Learn more: https://docs.stack-auth.com/getting-started`);
+        } else {
+          // Show validation errors for invalid configuration
+          const setupGuide = createSetupGuide();
+          const errorMessage = createErrorWithGuide(
+            'Stack Auth Configuration Invalid',
+            `Configuration issues found:\n${validation.errors.join('\n')}`,
+            [
+              'Verify your API keys are correct',
+              'Check that keys match your project',
+              'Ensure you\'re using the right environment (test vs live)'
+            ]
+          );
+          
+          console.error(`❌ ${errorMessage}\n\n${setupGuide}`);
+        }
         
         // Add debugging context in development
         if (context.url.searchParams.has('debug-auth')) {
@@ -159,8 +184,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
           });
         }
       } else {
-        // In production, log errors but don't expose configuration details
-        console.error('❌ Stack Auth configuration invalid - authentication disabled');
+        // In production, log minimal error without exposing sensitive details
+        console.error('Stack Auth: Configuration error detected. Check server logs.');
       }
       
       // Set locals to null when configuration is invalid

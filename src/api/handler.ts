@@ -126,28 +126,79 @@ function handleProxyError(error: unknown, context: APIContext): Response {
   const { url, request } = context;
   const method = request.method;
   const stackPath = url.pathname.replace(/^.*\/handler\//, '');
+  const isDevelopment = process.env.NODE_ENV === 'development';
   
-  console.error(`Stack Auth API proxy error for ${method} ${stackPath}:`, error);
+  // Log detailed error in development, minimal in production
+  if (isDevelopment) {
+    console.error(`Stack Auth API proxy error for ${method} ${stackPath}:`, error);
+  } else {
+    console.error(`Stack Auth API error: ${method} ${stackPath}`);
+  }
   
-  // Return user-friendly error response
-  return new Response(
-    JSON.stringify({
-      error: 'Proxy Error',
-      message: 'Failed to communicate with Stack Auth API',
-      details: {
-        path: stackPath,
-        method: method,
-        timestamp: new Date().toISOString(),
-        error: error instanceof Error ? error.message : 'Unknown error'
-      },
-      troubleshooting: {
-        description: 'This error occurred while proxying to Stack Auth API',
-        steps: [
-          'Verify your Stack Auth environment variables are correct',
-          'Check your network connection',
-          'Ensure Stack Auth service is available',
-          'Check the browser console for more details'
-        ],
+  // Classify the error type for better troubleshooting
+  let errorType = 'UNKNOWN_ERROR';
+  let specificSteps = [];
+  
+  if (error instanceof Error) {
+    const errorMessage = error.message.toLowerCase();
+    
+    if (errorMessage.includes('fetch') || errorMessage.includes('network') || errorMessage.includes('enotfound')) {
+      errorType = 'NETWORK_ERROR';
+      specificSteps = [
+        '🌐 Check your internet connection',
+        '🔍 Verify Stack Auth API is accessible: curl https://api.stack-auth.com/health',
+        '🔥 Check if a firewall or proxy is blocking the connection',
+        '📋 Stack Auth service status: https://status.stack-auth.com'
+      ];
+    } else if (errorMessage.includes('timeout') || errorMessage.includes('timedout')) {
+      errorType = 'TIMEOUT_ERROR';
+      specificSteps = [
+        '⏱️ Connection timed out - this could indicate network issues',
+        '🌐 Check your internet connection speed',
+        '🔄 Try again in a few moments',
+        '📋 Check Stack Auth service status: https://status.stack-auth.com'
+      ];
+    } else if (errorMessage.includes('invalid') || errorMessage.includes('malformed')) {
+      errorType = 'INVALID_REQUEST';
+      specificSteps = [
+        '🔍 Check that your request data is properly formatted',
+        '✅ Verify all required fields are present',
+        '📖 Review the Stack Auth API documentation',
+        '🔧 If using custom code, check for syntax errors'
+      ];
+    }
+  }
+  
+  // Check for missing configuration
+  if (!process.env.STACK_PROJECT_ID || !process.env.STACK_PUBLISHABLE_CLIENT_KEY || !process.env.STACK_SECRET_SERVER_KEY) {
+    errorType = 'MISSING_CONFIGURATION';
+    specificSteps = [
+      '🔑 Missing required environment variables:',
+      !process.env.STACK_PROJECT_ID ? '   ❌ STACK_PROJECT_ID is not set' : '',
+      !process.env.STACK_PUBLISHABLE_CLIENT_KEY ? '   ❌ STACK_PUBLISHABLE_CLIENT_KEY is not set' : '',
+      !process.env.STACK_SECRET_SERVER_KEY ? '   ❌ STACK_SECRET_SERVER_KEY is not set' : '',
+      '',
+      '📚 To fix: Add missing variables to your .env file',
+      '🔗 Dashboard: https://app.stack-auth.com'
+    ].filter(step => step !== '');
+  }
+  
+  // Build response based on environment
+  const responseBody = isDevelopment ? {
+    error: errorType,
+    message: 'Failed to communicate with Stack Auth API',
+    endpoint: stackPath,
+    method: method,
+    timestamp: new Date().toISOString(),
+    details: error instanceof Error ? error.message : 'Unknown error',
+    troubleshooting: {
+      description: `Error type: ${errorType}`,
+      steps: specificSteps.length > 0 ? specificSteps : [
+        '🔍 Verify your Stack Auth environment variables are correct',
+        '🌐 Check your network connection',
+        '✅ Ensure Stack Auth service is available',
+        '📱 Check the browser console for more details'
+      ],
         documentation: 'https://docs.stack-auth.com/troubleshooting'
       }
     }),
@@ -166,8 +217,42 @@ function handleProxyError(error: unknown, context: APIContext): Response {
  */
 async function proxyToStackAuth(context: APIContext): Promise<Response> {
   try {
-    // Get Stack Auth configuration
-    const config = getConfig();
+    // Get Stack Auth configuration with error handling
+    let config;
+    try {
+      config = getConfig();
+    } catch (configError) {
+      // Handle missing configuration gracefully
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      const missingVars = [];
+      if (!process.env.STACK_PROJECT_ID) missingVars.push('STACK_PROJECT_ID');
+      if (!process.env.STACK_PUBLISHABLE_CLIENT_KEY) missingVars.push('STACK_PUBLISHABLE_CLIENT_KEY'); 
+      if (!process.env.STACK_SECRET_SERVER_KEY) missingVars.push('STACK_SECRET_SERVER_KEY');
+      
+      return new Response(
+        JSON.stringify({
+          error: 'CONFIGURATION_ERROR',
+          message: 'Stack Auth is not configured properly',
+          ...(isDevelopment && {
+            missingVariables: missingVars,
+            troubleshooting: [
+              '🔑 Add the missing environment variables to your .env file:',
+              ...missingVars.map(v => `   ${v}=your_value_here`),
+              '',
+              '📚 Get your keys from: https://app.stack-auth.com',
+              '🔄 After adding variables, restart your dev server'
+            ]
+          }),
+          ...(!isDevelopment && {
+            message: 'Authentication service is not configured. Contact your administrator.'
+          })
+        }),
+        {
+          status: 503, // Service Unavailable
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+    }
     
     // Create the target API URL
     const apiUrl = createApiUrl(context);
