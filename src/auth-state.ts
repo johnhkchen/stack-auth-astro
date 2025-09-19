@@ -6,7 +6,7 @@
  * authentication state across isolated component islands.
  */
 
-import type { User, Session } from '@stackframe/stack';
+import type { User, Session } from './rest-api/types.js';
 import { getAuthStateManager, getAuthState as getClientAuthState, subscribeToAuthState as subscribeToClientAuthState } from './client/state.js';
 import { broadcastAuthChange } from './client/sync.js';
 

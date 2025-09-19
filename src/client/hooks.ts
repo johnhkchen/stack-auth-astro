@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { User, Session } from '@stackframe/stack';
+import type { User, Session } from '../rest-api/types.js';
 import { getAuthStateManager, type AuthState } from './state.js';
 import { buildAuthUrl } from './prefix.js';
 import { getSyncManager, type SyncMessage } from './sync.js';

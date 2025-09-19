@@ -137,7 +137,7 @@ function handleProxyError(error: unknown, context: APIContext): Response {
   
   // Classify the error type for better troubleshooting
   let errorType = 'UNKNOWN_ERROR';
-  let specificSteps = [];
+  let specificSteps: string[] = [];
   
   if (error instanceof Error) {
     const errorMessage = error.message.toLowerCase();
@@ -199,9 +199,15 @@ function handleProxyError(error: unknown, context: APIContext): Response {
         '✅ Ensure Stack Auth service is available',
         '📱 Check the browser console for more details'
       ],
-        documentation: 'https://docs.stack-auth.com/troubleshooting'
-      }
-    }),
+      documentation: 'https://docs.stack-auth.com/troubleshooting'
+    }
+  } : {
+    error: 'SERVICE_UNAVAILABLE',
+    message: 'Authentication service temporarily unavailable'
+  };
+  
+  return new Response(
+    JSON.stringify(responseBody),
     {
       status: 502, // Bad Gateway
       headers: {

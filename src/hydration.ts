@@ -6,7 +6,7 @@
  */
 
 import * as React from 'react';
-import type { User, Session } from '@stackframe/stack';
+import type { User, Session } from './rest-api/types.js';
 import type { APIContext } from 'astro';
 import { getServerAuthState, createHydrationScript } from './auth-state.js';
 

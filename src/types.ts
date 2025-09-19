@@ -1,4 +1,5 @@
-import type { User, Session } from '@stackframe/stack';
+// Import our custom types instead of SDK types
+import type { User, Session } from './rest-api/types.js';
 
 export interface StackAuthOptions {
   projectId?: string;
@@ -131,5 +132,5 @@ export interface UseAuthActionsReturn {
   clearError: () => void;
 }
 
-// Re-export Stack Auth types for convenience
+// Re-export our custom types for convenience
 export type { User, Session };

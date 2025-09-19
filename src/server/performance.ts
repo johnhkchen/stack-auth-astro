@@ -6,7 +6,7 @@
  */
 
 import type { APIContext } from 'astro';
-import type { User, Session } from '@stackframe/stack';
+import type { User, Session } from '../rest-api/types.js';
 
 export interface AuthPerformanceMetrics {
   operation: string;

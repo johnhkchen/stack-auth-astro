@@ -9,7 +9,6 @@
  */
 
 import { defineMiddleware } from 'astro:middleware';
-import { StackServerApp } from '@stackframe/stack';
 import { tryGetConfig } from './config.js';
 import { createSetupGuide } from './validation.js';
 import { 
@@ -17,8 +16,10 @@ import {
   StackAuthConfigurationError,
   createErrorWithGuide 
 } from './errors.js';
-import type { User, Session, StackAuthConfig } from './types.js';
+import type { StackAuthConfig } from './types.js';
+import type { User, Session } from './rest-api/types.js';
 import { recordProviderApiTime } from './server/performance.js';
+import { StackAuthRestClient } from './rest-api/client.js';
 
 // Simple in-memory session cache for performance optimization
 interface CachedSession {
@@ -79,37 +80,29 @@ function setCachedSession(cacheKey: string, user: User | null, session: Session 
 }
 
 /**
- * Validate session and resolve user using Stack Auth SDK
+ * Validate session and resolve user using Stack Auth REST API
  */
 async function validateSession(config: StackAuthConfig, request: Request): Promise<{ user: User | null; session: Session | null }> {
   try {
-    // Initialize Stack Auth server app with request-based token store
-    const stackApp = new StackServerApp({
+    // Initialize Stack Auth REST client
+    const client = new StackAuthRestClient({
       projectId: config.projectId,
       publishableClientKey: config.publishableClientKey,
       secretServerKey: config.secretServerKey,
-      ...(config.baseUrl && { baseUrl: config.baseUrl }),
-      tokenStore: request // Stack Auth will extract tokens from cookies/headers automatically
+      baseUrl: config.baseUrl
     });
 
     // Track Stack Auth API response time
     const apiStartTime = performance.now();
     
-    // Get user - this handles session validation internally
-    const user = await stackApp.getUser();
+    // Get user and session - REST client handles token extraction from request
+    const { user, session } = await client.getUserAndSession(request);
     
     // Record API response time
     const apiResponseTime = performance.now() - apiStartTime;
     recordProviderApiTime(apiResponseTime);
     
-    if (user) {
-      // User is authenticated - access session if available
-      const session = user.currentSession || null;
-      return { user, session };
-    }
-    
-    // No valid session
-    return { user: null, session: null };
+    return { user, session };
     
   } catch (error) {
     // Handle session validation errors gracefully

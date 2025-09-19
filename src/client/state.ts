@@ -5,7 +5,7 @@
  * automatic token refresh, and cross-tab synchronization support.
  */
 
-import type { User, Session } from '@stackframe/stack';
+import type { User, Session } from '../rest-api/types.js';
 import { buildAuthUrl } from './prefix.js';
 
 export interface AuthState {

@@ -5,15 +5,18 @@
  * with proper TypeScript support, component hydration, and development-time
  * prop validation.
  * 
- * IMPORTANT: Build Environment Requirements
+ * IMPORTANT: REST API Migration Status
  * ==========================================
- * Stack Auth components have Next.js dependencies that are resolved at build time.
- * These components MUST be used within Astro's build system where dependencies
- * are properly resolved. Direct Node.js imports (e.g., in unit tests) will fail
- * with "Cannot find module 'next/navigation'" errors.
+ * We've migrated all authentication logic to use Stack Auth's REST API directly
+ * to eliminate Next.js coupling issues. However, we still import UI components
+ * from @stackframe/stack because:
  * 
- * For testing: Use Astro's Container API or integration testing rather than
- * attempting to import these components directly in Node.js test runners.
+ * 1. The UI components (SignIn, SignUp, UserButton, etc.) are bundled with the SDK
+ * 2. These components work correctly in the browser environment
+ * 3. We use our custom StackProvider for state management instead of the SDK's
+ * 
+ * The SDK is ONLY used for importing pre-built UI components. All auth logic
+ * uses our REST API client in src/rest-api/client.ts.
  * 
  * Features:
  * - Complete TypeScript prop autocompletion
@@ -35,69 +38,35 @@
 
 import * as React from 'react';
 
-// Runtime environment check for helpful error messages
-const checkBuildEnvironment = () => {
-  // Check if we're in a Node.js context without proper build setup
-  if (typeof process !== 'undefined' && process.versions?.node) {
-    // Check for common test/Node.js direct execution indicators
-    const isDirectNodeExecution = 
-      !process.env.VITE_USER_NODE_ENV && // Not in Vite/Astro build
-      !process.env.ASTRO_VERSION && // Not in Astro runtime
-      typeof (globalThis as any).astroGlobal === 'undefined'; // No Astro global
-    
-    if (isDirectNodeExecution) {
-      const errorMessage = `
-========================================
-Stack Auth Component Import Error
-========================================
-Stack Auth components cannot be imported directly in Node.js contexts.
-The @stackframe/stack SDK has Next.js dependencies that require a build environment.
+// No longer need build environment check since we're not using @stackframe/stack SDK
 
-Current context appears to be: Direct Node.js execution (e.g., unit tests)
-
-SOLUTION:
-- For testing: Use Astro's Container API or integration tests
-- For development: Import components only within Astro pages/components
-- These components work correctly when used through Astro's build system
-
-For more information, see the README section: "Build Environment Requirements"
-========================================
-`;
-      console.error(errorMessage);
-    }
-  }
-};
-
-// Run the check when module is imported
-checkBuildEnvironment();
-
-// Import and re-export Stack Auth types and components with enhanced TypeScript support
+// Import and re-export our custom types
 export type { 
   User, 
-  Session, 
-  StackClientApp,
-  StackServerApp,
-  StackAdminApp
-} from '@stackframe/stack';
+  Session
+} from './rest-api/types.js';
 
-// Import Stack Auth components for type extraction
+// Import Stack Auth UI components from SDK (UI components are bundled with SDK)
 import {
   SignIn as StackSignIn,
   SignUp as StackSignUp,
   UserButton as StackUserButton,
-  AccountSettings as StackAccountSettings,
-  StackProvider as StackStackProvider
+  AccountSettings as StackAccountSettings
 } from '@stackframe/stack';
 
-// Re-export Stack Auth components with full TypeScript prop inference
+// Import our custom StackProvider
+import { StackProvider as CustomStackProvider } from './components/StackProvider.js';
+
+// Re-export Stack Auth UI components
 export {
-  // Core authentication components
   SignIn,        // Props: fullPage?, automaticRedirect?, extraInfo?, firstTab?, mockProject?
   SignUp,        // Props: fullPage?, automaticRedirect?, noPasswordRepeat?, extraInfo?, firstTab?
   UserButton,    // Props: showUserInfo?, colorModeToggle?, extraItems?, mockUser?
-  AccountSettings, // Props: fullPage?, extraItems?, mockUser?, mockApiKeys?, mockProject?, mockSessions?
-  StackProvider,   // Props: lang?, translationOverrides?, children (required), app (required)
+  AccountSettings // Props: fullPage?, extraItems?, mockUser?, mockApiKeys?, mockProject?, mockSessions?
 } from '@stackframe/stack';
+
+// Export our custom StackProvider
+export { StackProvider } from './components/StackProvider.js';
 
 // Extract and re-export component prop types using TypeScript utility types
 // This enables TypeScript autocompletion and proper prop validation
@@ -105,7 +74,7 @@ export type SignInProps = React.ComponentProps<typeof StackSignIn>;
 export type SignUpProps = React.ComponentProps<typeof StackSignUp>;
 export type UserButtonProps = React.ComponentProps<typeof StackUserButton>;
 export type AccountSettingsProps = React.ComponentProps<typeof StackAccountSettings>;
-export type StackProviderProps = React.ComponentProps<typeof StackStackProvider>;
+export type StackProviderProps = React.ComponentProps<typeof CustomStackProvider>;
 
 // Additional TypeScript helper types for Stack Auth components
 export type StackAuthComponentProps<T extends React.ElementType = React.ElementType> = React.ComponentProps<T>;

@@ -2,8 +2,8 @@
 
 declare namespace App {
   interface Locals {
-    user: import('@stackframe/stack').User | null;
-    session: import('@stackframe/stack').Session | null;
+    user: import('./src/rest-api/types').User | null;
+    session: import('./src/rest-api/types').Session | null;
   }
 }
 

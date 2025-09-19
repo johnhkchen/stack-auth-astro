@@ -7,7 +7,7 @@
  */
 
 import type { APIContext } from 'astro';
-import type { User, Session } from '@stackframe/stack';
+import type { User, Session } from './rest-api/types.js';
 import type { RequireAuthOptions } from './types.js';
 import { tryGetConfig } from './config.js';
 import { 

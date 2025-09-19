@@ -7,7 +7,7 @@
 
 import { getClientIP, generateSecureHash } from './security.js';
 import type { APIContext } from 'astro';
-import type { User, Session } from '@stackframe/stack';
+import type { User, Session } from '../rest-api/types.js';
 
 // Audit event types
 export enum AuditEventType {
