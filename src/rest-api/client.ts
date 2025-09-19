@@ -6,10 +6,37 @@
  */
 
 import type { StackAuthConfig } from '../types.js';
-import type { User, Session, TokenResponse } from './types.js';
+import type { 
+  User, 
+  Session, 
+  TokenResponse, 
+  SignInRequest, 
+  SignUpRequest, 
+  AuthResponse,
+  PasswordResetRequest,
+  PasswordResetComplete,
+  OTPSignInRequest,
+  EmailVerificationRequest,
+  UserUpdateRequest,
+  StackAuthError
+} from './types.js';
 
 interface ClientOptions extends StackAuthConfig {
   timeout?: number;
+  retryAttempts?: number;
+  retryDelay?: number;
+}
+
+export class StackAuthRestError extends Error {
+  constructor(
+    message: string, 
+    public code: string, 
+    public status?: number,
+    public details?: Record<string, any>
+  ) {
+    super(message);
+    this.name = 'StackAuthRestError';
+  }
 }
 
 export class StackAuthRestClient {
@@ -18,6 +45,8 @@ export class StackAuthRestClient {
   private publishableClientKey: string;
   private secretServerKey: string;
   private timeout: number;
+  private retryAttempts: number;
+  private retryDelay: number;
 
   constructor(options: ClientOptions) {
     this.baseUrl = options.baseUrl || 'https://api.stack-auth.com/api/v1';
@@ -25,6 +54,8 @@ export class StackAuthRestClient {
     this.publishableClientKey = options.publishableClientKey;
     this.secretServerKey = options.secretServerKey;
     this.timeout = options.timeout || 30000;
+    this.retryAttempts = options.retryAttempts || 3;
+    this.retryDelay = options.retryDelay || 1000;
   }
 
   /**
@@ -102,14 +133,23 @@ export class StackAuthRestClient {
     options: RequestInit & {
       accessToken?: string;
       refreshToken?: string;
+      useClientKey?: boolean;
     } = {}
   ): Promise<T> {
     const url = `${this.baseUrl}${path}`;
-    const { accessToken, refreshToken, ...fetchOptions } = options;
+    const { accessToken, refreshToken, useClientKey, ...fetchOptions } = options;
 
     const headers = new Headers(fetchOptions.headers || {});
     headers.set('X-Stack-Project-Id', this.projectId);
-    headers.set('X-Stack-Access-Type', 'server');
+    
+    // Use client key for public endpoints, server key for protected endpoints
+    if (useClientKey) {
+      headers.set('X-Stack-Publishable-Client-Key', this.publishableClientKey);
+      headers.set('X-Stack-Access-Type', 'client');
+    } else {
+      headers.set('X-Stack-Secret-Server-Key', this.secretServerKey);
+      headers.set('X-Stack-Access-Type', 'server');
+    }
     
     if (accessToken) {
       headers.set('X-Stack-Access-Token', accessToken);
@@ -118,9 +158,6 @@ export class StackAuthRestClient {
     if (refreshToken) {
       headers.set('X-Stack-Refresh-Token', refreshToken);
     }
-    
-    // Always include server key for server-side operations
-    headers.set('X-Stack-Secret-Server-Key', this.secretServerKey);
     
     // Set content type for JSON requests
     if (fetchOptions.body && !headers.has('Content-Type')) {
@@ -140,8 +177,24 @@ export class StackAuthRestClient {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: response.statusText }));
-        throw new Error(error.message || `Request failed: ${response.status}`);
+        let errorData: any;
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = { message: response.statusText };
+        }
+
+        // Extract error details from Stack Auth error format
+        const errorCode = errorData.error?.code || this.mapStatusToErrorCode(response.status);
+        const errorMessage = errorData.error?.message || errorData.message || `Request failed: ${response.status}`;
+        const errorDetails = errorData.error?.details || {};
+
+        throw new StackAuthRestError(
+          errorMessage,
+          errorCode,
+          response.status,
+          errorDetails
+        );
       }
 
       return response.json();
@@ -273,5 +326,202 @@ export class StackAuthRestClient {
     } catch (error) {
       return false;
     }
+  }
+
+  /**
+   * Map HTTP status codes to error codes
+   */
+  private mapStatusToErrorCode(status: number): string {
+    switch (status) {
+      case 400: return 'INVALID_REQUEST';
+      case 401: return 'UNAUTHORIZED';
+      case 403: return 'FORBIDDEN';
+      case 404: return 'NOT_FOUND';
+      case 429: return 'RATE_LIMITED';
+      case 500: return 'SERVER_ERROR';
+      case 503: return 'SERVICE_UNAVAILABLE';
+      default: return 'UNKNOWN_ERROR';
+    }
+  }
+
+  /**
+   * Retry logic for transient failures
+   */
+  private async makeRequestWithRetry<T>(
+    path: string,
+    options: RequestInit & {
+      accessToken?: string;
+      refreshToken?: string;
+      useClientKey?: boolean;
+    } = {}
+  ): Promise<T> {
+    let lastError: Error | null = null;
+    const isRetriableError = (error: any): boolean => {
+      if (error instanceof StackAuthRestError) {
+        // Retry on rate limiting or server errors
+        return ['RATE_LIMITED', 'SERVER_ERROR', 'SERVICE_UNAVAILABLE'].includes(error.code);
+      }
+      // Retry on network errors
+      return error instanceof Error && (
+        error.name === 'NetworkError' ||
+        error.name === 'TimeoutError' ||
+        error.message.includes('fetch failed')
+      );
+    };
+
+    for (let attempt = 0; attempt < this.retryAttempts; attempt++) {
+      try {
+        return await this.makeRequest<T>(path, options);
+      } catch (error) {
+        lastError = error as Error;
+        
+        if (attempt < this.retryAttempts - 1 && isRetriableError(error)) {
+          // Exponential backoff with jitter
+          const delay = this.retryDelay * Math.pow(2, attempt) + Math.random() * 1000;
+          await new Promise(resolve => setTimeout(resolve, delay));
+        } else {
+          throw error;
+        }
+      }
+    }
+
+    throw lastError;
+  }
+
+  /**
+   * Sign in with email and password
+   */
+  async signIn(data: SignInRequest): Promise<AuthResponse> {
+    return this.makeRequestWithRetry<AuthResponse>('/auth/signin', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      useClientKey: true
+    });
+  }
+
+  /**
+   * Sign up with email and password
+   */
+  async signUp(data: SignUpRequest): Promise<AuthResponse> {
+    return this.makeRequestWithRetry<AuthResponse>('/auth/signup', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      useClientKey: true
+    });
+  }
+
+  /**
+   * Update current user profile
+   */
+  async updateUser(request: Request, data: UserUpdateRequest): Promise<User> {
+    const accessToken = this.extractAccessToken(request);
+    if (!accessToken) {
+      throw new StackAuthRestError('No access token found', 'UNAUTHORIZED', 401);
+    }
+
+    return this.makeRequestWithRetry<User>('/users/me', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+      accessToken
+    });
+  }
+
+  /**
+   * Send password reset code
+   */
+  async sendPasswordResetCode(data: PasswordResetRequest): Promise<void> {
+    await this.makeRequestWithRetry('/auth/password/send-reset-code', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      useClientKey: true
+    });
+  }
+
+  /**
+   * Reset password with code
+   */
+  async resetPassword(data: PasswordResetComplete): Promise<void> {
+    await this.makeRequestWithRetry('/auth/password/reset', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      useClientKey: true
+    });
+  }
+
+  /**
+   * Send email verification code
+   */
+  async sendEmailVerificationCode(request: Request, email: string): Promise<void> {
+    const accessToken = this.extractAccessToken(request);
+    if (!accessToken) {
+      throw new StackAuthRestError('No access token found', 'UNAUTHORIZED', 401);
+    }
+
+    await this.makeRequestWithRetry('/contact-channels/send-verification-code', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+      accessToken
+    });
+  }
+
+  /**
+   * Verify email with code
+   */
+  async verifyEmail(data: EmailVerificationRequest): Promise<void> {
+    await this.makeRequestWithRetry('/contact-channels/verify', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      useClientKey: true
+    });
+  }
+
+  /**
+   * Send OTP sign-in code
+   */
+  async sendOTPCode(email: string): Promise<void> {
+    await this.makeRequestWithRetry('/auth/otp/send-sign-in-code', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+      useClientKey: true
+    });
+  }
+
+  /**
+   * Sign in with OTP code
+   */
+  async signInWithOTP(data: OTPSignInRequest): Promise<AuthResponse> {
+    return this.makeRequestWithRetry<AuthResponse>('/auth/otp/signin', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      useClientKey: true
+    });
+  }
+
+  /**
+   * Get OAuth authorization URL
+   */
+  getOAuthAuthorizationUrl(provider: string, callbackUrl?: string): string {
+    const params = new URLSearchParams({
+      client_id: this.publishableClientKey,
+      project_id: this.projectId,
+      provider
+    });
+
+    if (callbackUrl) {
+      params.append('redirect_uri', callbackUrl);
+    }
+
+    return `${this.baseUrl.replace('/api/v1', '')}/handler/authorize?${params.toString()}`;
+  }
+
+  /**
+   * Validate OAuth callback and exchange code for tokens
+   */
+  async handleOAuthCallback(code: string, state?: string): Promise<AuthResponse> {
+    return this.makeRequestWithRetry<AuthResponse>('/auth/oauth/callback', {
+      method: 'POST',
+      body: JSON.stringify({ code, state }),
+      useClientKey: true
+    });
   }
 }
